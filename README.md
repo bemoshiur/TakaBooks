@@ -348,7 +348,7 @@ Please read this before relying on anything TakaBooks produces.
 - **Not an e-filing tool.** TakaBooks prepares figures and explains forms. Humans file returns.
 - **Rates change, and some are unverified.** Every Finance Act re-rates something. Every figure in `src/data/rates-AY2026-27.toml` carries a `source` URL, an `as_of` date, a `verified` flag and a `placeholder` flag, and the engine surfaces the flag on every figure it uses. As it ships today, **362 of its 436 figures are verified against primary text, 55 rest on agreeing professional summaries (or, in one case, on an unresolved conflict between two readings that the node states in full) because the Finance Act 2026 gazette could not be text-extracted, and 19 are placeholders that were never landed.** Check the flag before you rely on a number, check the node's `note` for the conditions attached to it, and check both again after a new Finance Act. No figure in the file has been reviewed by an ITP or a CA.
 - **The assistant can still be wrong.** TakaBooks stops the LLM from doing arithmetic and from inventing rates, but the LLM still chooses which accounts a transaction hits and which rule applies. Review every classification. You are responsible for your books and your return.
-- **No warranty.** Provided "as is" under the [MIT License](LICENSE), without warranty of any kind. The authors and Ticon Sys accept no liability for any loss arising from its use.
+- **No warranty.** Provided "as is" under the [MIT License](LICENSE), without warranty of any kind. The authors and TICON SYSTEM LTD accept no liability for any loss arising from its use.
 
 > **দাবিত্যাগ:** টাকাবুকস পেশাদার পরামর্শ নয় এবং এটি জাতীয় রাজস্ব বোর্ড (NBR) বা বাংলাদেশ সরকারের কোনো সংস্থার সঙ্গে সম্পৃক্ত, অনুমোদিত বা যুক্ত নয়। রিটার্ন দাখিলের আগে প্রতিটি সংখ্যা লাইসেন্সপ্রাপ্ত আয়কর আইনজীবী (ITP) বা চার্টার্ড অ্যাকাউন্ট্যান্ট (CA)-এর সঙ্গে যাচাই করুন।
 
@@ -496,11 +496,11 @@ If TakaBooks helped you close your books, a ⭐ helps other Bangladeshi business
 
 Released under the [MIT License](LICENSE). Use it, fork it, ship it inside your own tools — just keep the notice.
 
-TakaBooks is maintained by **Moshiur Rahman** ([@bemoshiur](https://github.com/bemoshiur)) at **[Ticon Sys](https://ticonsys.com)** — a system-integration and software company founded in 2007, with its head office in Suwon, South Korea, an R&D centre in Dhaka, Bangladesh and a US office in Tysons Corner, Virginia, building AI, streaming, IoT, business-intelligence and cloud ERP solutions for enterprise and government clients. Ticon Sys is credited in every built bundle, and the project's homepage is [ticonsys.com](https://ticonsys.com).
+TakaBooks is maintained by **Moshiur Rahman** ([@bemoshiur](https://github.com/bemoshiur)) at **[TICON SYSTEM LTD](https://ticonsys.com)** — a system-integration and software company founded in 2007, with its head office in Suwon, South Korea, an R&D centre in Dhaka, Bangladesh and a US office in Tysons Corner, Virginia, building AI, streaming, IoT, business-intelligence and cloud ERP solutions for enterprise and government clients. TICON SYSTEM LTD is credited in every built bundle, and the project's homepage is [ticonsys.com](https://ticonsys.com).
 
 If you cite TakaBooks in a paper, a practice note or a training course, use the **Cite this repository** button on GitHub, which reads [`CITATION.cff`](CITATION.cff).
 
 <p align="center">
   <sub>TakaBooks · টাকাবুকস — Bangladeshi bookkeeping and taxation for any LLM · মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger<br>
-  Moshiur Rahman (@bemoshiur) · Ticon Sys — <a href="https://ticonsys.com">ticonsys.com</a> · MIT</sub>
+  Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — <a href="https://ticonsys.com">ticonsys.com</a> · MIT</sub>
 </p>

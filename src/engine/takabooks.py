@@ -25,7 +25,7 @@ Hard rules encoded here (see the design spec, sections 4.1–4.4):
    Rates live in ``src/data/rates-AY*.toml`` and are read through
    :class:`RatesTable`, which surfaces ``verified = false`` to the caller.
 
-TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys
+TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD
 https://ticonsys.com · https://github.com/bemoshiur/TakaBooks · MIT licensed.
 """
 
@@ -212,7 +212,7 @@ __version__ = "0.1.0"
 PROJECT_NAME = "TakaBooks"
 PROJECT_URL = "https://github.com/bemoshiur/TakaBooks"
 MAINTAINER = "Moshiur Rahman (@bemoshiur)"
-COMPANY = "Ticon Sys"
+COMPANY = "TICON SYSTEM LTD"
 COMPANY_URL = "https://ticonsys.com"
 ATTRIBUTION = f"{PROJECT_NAME} — {MAINTAINER} · {COMPANY} ({COMPANY_URL})"
 

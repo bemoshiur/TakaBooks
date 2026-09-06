@@ -11,7 +11,7 @@ arithmetic.  The suite proves, per spec §7, that every report ties back to the 
 that the Markdown and CSV renderings never disagree, and that books that do not reconcile
 exit non-zero instead of printing.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -165,7 +165,7 @@ normal = "debit"
 
 CONFIG_TOML = """
 [business]
-name = "Ticon Sys Demo Traders"
+name = "TICON SYSTEM LTD Demo Traders"
 name_bn = "টিকন সিস ডেমো ট্রেডার্স"
 tin = "000000000000"
 bin = "000000000-0000"
@@ -861,7 +861,7 @@ class TestRenderingsAgree(BooksTestCase):
         self.assertNotIn("FAIL", self.markdown)
 
     def test_markdown_states_the_business_the_assessment_year_and_the_terms(self):
-        self.assertIn("Ticon Sys Demo Traders (টিকন সিস ডেমো ট্রেডার্স)", self.markdown)
+        self.assertIn("TICON SYSTEM LTD Demo Traders (টিকন সিস ডেমো ট্রেডার্স)", self.markdown)
         self.assertIn("করবর্ষ / assessment year: 2026-27", self.markdown)
         self.assertIn("## রেওয়ামিল / Trial balance — as at 2026-08-31", self.markdown)
         self.assertIn("## লাভ-ক্ষতি হিসাব / Profit and loss — 2026-06-01 → 2026-08-31", self.markdown)

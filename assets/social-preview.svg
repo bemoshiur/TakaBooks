@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t d">
   <title id="t">TakaBooks — টাকাবুকস</title>
-  <desc id="d">Social preview card: TakaBooks, Bangladeshi bookkeeping and taxation for any LLM. Ticon Sys.</desc>
+  <desc id="d">Social preview card: TakaBooks, Bangladeshi bookkeeping and taxation for any LLM. TICON SYSTEM LTD.</desc>
   <rect width="1280" height="640" fill="#0B2E24"/>
   <path d="M0 40h1280M0 80h1280M0 120h1280M0 160h1280M0 200h1280M0 240h1280M0 280h1280M0 320h1280M0 360h1280M0 400h1280M0 440h1280M0 480h1280M0 520h1280M0 560h1280M0 600h1280" stroke="#F4F8F5" stroke-opacity=".05"/>
   <path d="M8 21a13 13 0 0 1 26 0v52a19 19 0 1 0 19-19M24 33h46" transform="translate(1010 -30) scale(3.2)" fill="none" stroke="#F4F8F5" stroke-opacity=".06" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
@@ -54,7 +54,7 @@
       <text x="738" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".9">every figure carries its source</text>
     </g>
     <g font-size="20" fill="#F4F8F5" fill-opacity=".8">
-      <text x="90" y="608">Ticon Sys · ticonsys.com</text>
+      <text x="90" y="608">TICON SYSTEM LTD · ticonsys.com</text>
       <text x="640" y="608" text-anchor="middle">Python 3.11+ · zero dependencies · MIT</text>
       <text x="1190" y="608" text-anchor="end">github.com/bemoshiur/TakaBooks</text>
     </g>

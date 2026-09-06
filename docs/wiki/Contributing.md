@@ -1,7 +1,7 @@
 # Contributing — অবদান
 
 TakaBooks is maintained by Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) at
-Ticon Sys and welcomes contributions of every size. This page is the wiki version of the
+TICON SYSTEM LTD and welcomes contributions of every size. This page is the wiki version of the
 repository's `CONTRIBUTING.md`; where the two differ, the repository file wins.
 
 ## Ways to help, most valuable first
@@ -180,5 +180,5 @@ token; in CI the default `GITHUB_TOKEN` with `packages: write` suffices.
 ## Code of conduct and licence
 
 Be kind, be precise, cite your sources. The repository's `CODE_OF_CONDUCT.md` applies to every
-interaction. Contributions are accepted under the MIT License and credit Ticon Sys
+interaction. Contributions are accepted under the MIT License and credit TICON SYSTEM LTD
 (https://ticonsys.com) as the project's home.

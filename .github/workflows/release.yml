@@ -1,6 +1,6 @@
 # .github/workflows/release.yml
 # TakaBooks — tag-triggered release: test, build every bundle, attach assets.
-# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # Flow on `git push origin vX.Y.Z`:
 #   1. tests on Python 3.11 / 3.12 / 3.13 inside an empty virtualenv (stdlib only)
@@ -319,7 +319,7 @@ jobs:
             echo
             echo "টাকাবুকস কেবল হিসাব প্রস্তুত করে। এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত ITP/CA-এর সঙ্গে যাচাই করুন।"
             echo
-            echo "Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT"
+            echo "Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT"
             echo
             echo "---"
           } > "$notes"

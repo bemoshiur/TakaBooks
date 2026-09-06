@@ -24,7 +24,7 @@ description: "Double-entry bookkeeping, income tax, VAT/মূসক, Mushak for
   "description": "Bangladeshi bookkeeping and taxation for any large language model: double-entry books, income tax, VAT (মূসক) and Mushak forms, TDS/VDS withholding, payroll and the NBR compliance calendar for assessment year 2026-27.",
   "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
   "author": { "@type": "Person", "name": "Moshiur Rahman", "url": "https://github.com/bemoshiur" },
-  "publisher": { "@type": "Organization", "name": "Ticon Sys", "url": "https://ticonsys.com" },
+  "publisher": { "@type": "Organization", "name": "TICON SYSTEM LTD", "url": "https://ticonsys.com" },
   "keywords": "Bangladesh tax, NBR, VAT, মূসক, Mushak, income tax, TDS, VDS, bookkeeping, double-entry, BDT, taka, Claude Skill, ChatGPT, Gemini, LLM, assessment year 2026-27"
 }
 </script>
@@ -105,4 +105,4 @@ TakaBooks is **not professional advice**. It is **not affiliated with, endorsed 
 
 ---
 
-MIT licensed · Maintained by [Moshiur Rahman](https://github.com/bemoshiur) at [Ticon Sys](https://ticonsys.com)
+MIT licensed · Maintained by [Moshiur Rahman](https://github.com/bemoshiur) at [TICON SYSTEM LTD](https://ticonsys.com)

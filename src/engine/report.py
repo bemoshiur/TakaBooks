@@ -32,7 +32,7 @@ Integrity, per spec §2 — a report that does not reconcile is never printed:
 This module defines **no Bangladeshi tax rate, threshold, deadline or statute number**.
 It only adds up what the journal already says.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

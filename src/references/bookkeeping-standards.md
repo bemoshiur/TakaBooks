@@ -743,4 +743,4 @@ https://roc.gov.bd/pages/static-pages/6922dc05933eb65569e0dfb6 · RJSC portal: h
 ICAB DVS portal: https://dvs.icab.org.bd
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

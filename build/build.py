@@ -44,7 +44,7 @@ Design contracts this file honours:
 * **This file never states a tax rate, threshold, deadline or statute number.**
   Every figure lives in ``src/data/rates-AY*.toml`` and travels verbatim.
 
-TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys
+TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD
 https://ticonsys.com · https://github.com/bemoshiur/TakaBooks · MIT licensed.
 """
 
@@ -97,7 +97,7 @@ __all__ = [
 PROJECT_NAME = "TakaBooks"
 PROJECT_VERSION = "1.0.0"
 REPO_URL = "https://github.com/bemoshiur/TakaBooks"
-COMPANY = "Ticon Sys"
+COMPANY = "TICON SYSTEM LTD"
 COMPANY_URL = "https://ticonsys.com"
 MAINTAINER = "Moshiur Rahman (@bemoshiur)"
 LICENSE_NAME = "MIT"

@@ -21,7 +21,7 @@ drives the cap and behaviour tests, so they stay green no matter what ``src/`` s
 A copy of the real ``src/`` drives the "does the repository actually build" tests, which
 is the release gate the spec asks for.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -269,7 +269,7 @@ class TestConstants(unittest.TestCase):
         self.assertIn("3.11", build.SKILL_COMPATIBILITY)
 
     def test_attribution_credits_ticon_sys(self):
-        self.assertIn("Ticon Sys", build.ATTRIBUTION)
+        self.assertIn("TICON SYSTEM LTD", build.ATTRIBUTION)
         self.assertIn("https://ticonsys.com", build.ATTRIBUTION)
         self.assertIn("@bemoshiur", build.ATTRIBUTION)
         self.assertIn("MIT", build.ATTRIBUTION)
@@ -464,7 +464,7 @@ class TestAllTargetsEmit(FixtureCase):
         self.assertEqual(data["license"], "MIT")
         self.assertLessEqual(len(data["compatibility"]), 500)
         metadata = data["metadata"]
-        self.assertEqual(metadata["author"], "Ticon Sys")
+        self.assertEqual(metadata["author"], "TICON SYSTEM LTD")
         self.assertEqual(metadata["homepage"], "https://ticonsys.com")
         self.assertEqual(metadata["assessment_year"], FIXTURE_AY)
         self.assertEqual(set(data), {"name", "description", "license", "compatibility", "metadata"})
@@ -480,7 +480,7 @@ class TestAllTargetsEmit(FixtureCase):
         self.assertIn("`scripts/validate.py`", body)
         self.assertIn("(templates/accounts.toml)", body)
         self.assertIn("(scripts/USAGE.md)", body)
-        self.assertIn("Ticon Sys", body)
+        self.assertIn("TICON SYSTEM LTD", body)
         self.assertNotIn("Non-negotiable rules", body, "the build does not restate the core")
         self.assertNotIn("<!-- knowledge-only -->", body)
         self.assertIn(f"assessment year {FIXTURE_AY}", body)
@@ -619,7 +619,7 @@ class TestAllTargetsEmit(FixtureCase):
         for needle in (
             "python3 -m unittest discover tests",
             "python3 build/build.py",
-            "Ticon Sys",
+            "TICON SYSTEM LTD",
             "https://ticonsys.com",
             "paisa",
             "মূসক / VAT",
@@ -640,7 +640,7 @@ class TestAllTargetsEmit(FixtureCase):
             "dist/universal/takabooks-complete.md",
             "AGENTS.md",
         ):
-            self.assertIn("Ticon Sys", self.text(rel), rel)
+            self.assertIn("TICON SYSTEM LTD", self.text(rel), rel)
 
     def test_no_absolute_path_leaks_into_output(self):
         needle = str(self.root)
@@ -972,7 +972,7 @@ class TestDeterminismAndCli(FixtureCase):
             self.assertIn(flag, text, flag)
         for target in build.TARGETS:
             self.assertIn(target, text, target)
-        self.assertIn("Ticon Sys", text)
+        self.assertIn("TICON SYSTEM LTD", text)
 
     def test_write_refuses_to_leave_the_repo(self):
         root = self.repo()

@@ -1,6 +1,6 @@
 # .github/workflows/ci.yml
 # TakaBooks — continuous integration.
-# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # Two things must stay true on every push:
 #   1. The Python engine passes its unittest suite on 3.11, 3.12 and 3.13,

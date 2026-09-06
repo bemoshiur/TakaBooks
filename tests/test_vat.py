@@ -21,7 +21,7 @@ What is covered, per spec §7 "VAT: output/input/net position, VDS":
 prose deadlines).  They exist to exercise arithmetic and plumbing and assert nothing
 about Bangladeshi law — the rates file the tests write is labelled FIXTURE throughout.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -1030,7 +1030,7 @@ class TestRendering(VatFixture):
         tail = text.rstrip().splitlines()[-4:]
         self.assertTrue(any(tb.DISCLAIMER_BN in line for line in tail))
         self.assertTrue(text.rstrip().endswith(f"_{tb.ATTRIBUTION}_"))
-        self.assertIn("Ticon Sys", text)
+        self.assertIn("TICON SYSTEM LTD", text)
         self.assertNotIn("PROVISIONAL", text.split("## 1.")[0])
 
     def test_markdown_english_locale_has_only_english_disclaimer(self):
@@ -1182,7 +1182,7 @@ class TestCli(VatFixture):
                      "--allow-placeholder-rates"):
             self.assertIn(flag, out)
         self.assertIn("vat.rates.standard", out)
-        self.assertIn("Ticon Sys", out)
+        self.assertIn("TICON SYSTEM LTD", out)
 
     def test_markdown_by_default(self):
         books = self.write_books()

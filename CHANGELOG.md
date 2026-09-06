@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 TakaBooks — Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) ·
-Ticon Sys — https://ticonsys.com
+TICON SYSTEM LTD — https://ticonsys.com
 
 ## How versions and rate changes are recorded
 

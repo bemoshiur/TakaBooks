@@ -12,7 +12,7 @@ exact bytes a real run writes, that rows written by ``post.py`` are rows the res
 of the engine (``Ledger.load``) accepts, and that ``init_books.py`` scaffolds books
 without inventing a statutory value.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -597,7 +597,7 @@ class TestPostEntry(BooksCase):
         self.assertEqual(result["postings"][0]["account_name"], "Accounts Receivable — Trade")
         self.assertEqual(result["postings"][0]["amount_formatted"], "৳11,500.00")
         self.assertEqual(result["warnings"], [])
-        self.assertIn("Ticon Sys", result["attribution"])
+        self.assertIn("TICON SYSTEM LTD", result["attribution"])
 
     def test_second_post_appends_without_a_second_header(self):
         post.post_entry(self.books, sale())
@@ -825,7 +825,7 @@ class TestPostCli(BooksCase):
         self.assertIn("--books", proc.stdout)
         self.assertIn("--json", proc.stdout)
         self.assertIn("exit codes", proc.stdout)
-        self.assertIn("Ticon Sys", proc.stdout)
+        self.assertIn("TICON SYSTEM LTD", proc.stdout)
         proc = run_cli("--version")
         self.assertEqual(proc.returncode, 0)
         self.assertIn("TakaBooks", proc.stdout)
@@ -957,7 +957,7 @@ class TestInitBooks(unittest.TestCase):
         return code, out.getvalue(), err.getvalue()
 
     def test_scaffold_layout(self):
-        code, out, err = self.run_main("--books", str(self.books), "--name", "Ticon Sys",
+        code, out, err = self.run_main("--books", str(self.books), "--name", "TICON SYSTEM LTD",
                                        "--fiscal-year-start", "07-01", "--assessment-year", "2026-27",
                                        "--vat-registered", "yes", "--city-tier", "dhaka-chattogram-city")
         self.assertEqual(code, 0, err)
@@ -965,7 +965,7 @@ class TestInitBooks(unittest.TestCase):
             self.assertTrue((self.books / name).exists(), name)
         self.assertEqual(sorted((self.books / "journal").iterdir()), [])
         config = tb.Config.load(self.books)
-        self.assertEqual(config.business_name, "Ticon Sys")
+        self.assertEqual(config.business_name, "TICON SYSTEM LTD")
         self.assertEqual(config.fiscal_year_start, "07-01")
         self.assertEqual(config.assessment_year, "2026-27")
         self.assertEqual(config.get("compliance.vat_registered"), "yes")
@@ -975,7 +975,7 @@ class TestInitBooks(unittest.TestCase):
         self.assertEqual(chart.code_format_warnings(), [])
         self.assertEqual(chart.block_warnings(), [])
         self.assertIn("books ready", out)
-        self.assertIn("Ticon Sys", out)
+        self.assertIn("TICON SYSTEM LTD", out)
 
     def test_statutory_values_are_never_defaulted(self):
         code, out, _ = self.run_main("--books", str(self.books), "--name", "X")
@@ -1069,7 +1069,7 @@ class TestInitBooks(unittest.TestCase):
         self.assertEqual(data["missing_roles"], [])
         self.assertEqual(sorted(data["roles_present"]), sorted(tb.REQUIRED_ROLES))
         self.assertEqual(data["warnings"], [])
-        self.assertIn("Ticon Sys", data["attribution"])
+        self.assertIn("TICON SYSTEM LTD", data["attribution"])
 
     def test_rates_file_year_mismatch_warns(self):
         code, _, err = self.run_main("--books", str(self.books), "--assessment-year", "2026-27",

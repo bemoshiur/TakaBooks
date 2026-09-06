@@ -20,12 +20,12 @@ deadline appears in this file — those live in ``src/data/rates-AY*.toml``.
 
 Examples::
 
-    python3 src/engine/init_books.py --books books --name "Ticon Sys" \
+    python3 src/engine/init_books.py --books books --name "TICON SYSTEM LTD" \
         --fiscal-year-start 07-01 --assessment-year 2026-27 --vat-registered yes
     python3 src/engine/init_books.py --interactive
     python3 src/engine/init_books.py --dry-run --json
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -112,7 +112,7 @@ FALLBACK_ACCOUNTS_TOML = '''# TakaBooks — হিসাব তালিকা /
 # type: asset|liability|equity|income|expense
 # normal: debit for asset/expense, credit for liability/equity/income
 #
-# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 
 [[account]]
 code = "1100"

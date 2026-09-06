@@ -29,4 +29,4 @@
 - [Repository](https://github.com/bemoshiur/TakaBooks)
 - [Releases](https://github.com/bemoshiur/TakaBooks/releases)
 - [Issues](https://github.com/bemoshiur/TakaBooks/issues)
-- [Ticon Sys](https://ticonsys.com)
+- [TICON SYSTEM LTD](https://ticonsys.com)

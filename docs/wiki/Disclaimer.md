@@ -8,7 +8,7 @@ carefully and it means what it says.
 TakaBooks — its reference files, its rates data, its Python engine, every bundle built from
 it, and every answer an LLM gives while using it — is **not professional advice**. It is not
 tax advice, legal advice, accounting advice or audit advice. It does not create an
-adviser–client relationship of any kind with the maintainer, with Ticon Sys, or with any
+adviser–client relationship of any kind with the maintainer, with TICON SYSTEM LTD, or with any
 contributor.
 
 Bangladeshi tax law is decided by the Acts, the Rules, the gazetted SROs and NBR's circulars,
@@ -86,7 +86,7 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 In plain words: if you file a wrong figure, pay a penalty, miss a deadline, over- or
-under-deduct tax, or suffer any other loss after using TakaBooks, the maintainer, Ticon Sys
+under-deduct tax, or suffer any other loss after using TakaBooks, the maintainer, TICON SYSTEM LTD
 and the contributors are not liable for it. The responsibility for what is filed rests with
 the person who files it and with the licensed professional who advised them.
 
@@ -134,4 +134,4 @@ security vulnerability, and it must not be hidden behind private disclosure.
 the right questions. It is not your accountant. Verify with a licensed ITP or CA, and against
 NBR, before you file.
 
-TakaBooks — Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · Ticon Sys — https://ticonsys.com · MIT licensed
+TakaBooks — Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · TICON SYSTEM LTD — https://ticonsys.com · MIT licensed

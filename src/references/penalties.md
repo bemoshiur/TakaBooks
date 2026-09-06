@@ -430,4 +430,4 @@ the change, and its effective date. That footnote apparatus is why every figure 
 use it rather than a summary. Then update this file and `compliance-calendar.md` together.
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

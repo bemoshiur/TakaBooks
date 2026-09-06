@@ -2,7 +2,7 @@
 
 Thank you for helping. TakaBooks is a portable, LLM-agnostic bookkeeping and taxation
 package for Bangladesh, maintained by Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur))
-at [Ticon Sys](https://ticonsys.com) and released under the MIT license.
+at [TICON SYSTEM LTD](https://ticonsys.com) and released under the MIT license.
 
 Two things make this project different from most open-source repositories, and both shape
 how contributions are reviewed:
@@ -377,4 +377,4 @@ afternoon looking for one):
 ---
 
 Maintained by **Moshiur Rahman** ([@bemoshiur](https://github.com/bemoshiur)) ·
-**Ticon Sys** — https://ticonsys.com · MIT licensed.
+**TICON SYSTEM LTD** — https://ticonsys.com · MIT licensed.

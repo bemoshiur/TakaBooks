@@ -1243,4 +1243,4 @@ with a note saying exactly what is missing.
 [penalties.md](penalties.md) · [glossary-bn-en.md](glossary-bn-en.md)
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

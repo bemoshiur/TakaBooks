@@ -3,7 +3,7 @@
 # Machine-readable rates, thresholds, deadlines and policy switches for করবর্ষ /
 # assessment year 2026-27 (income year 1 July 2025 – 30 June 2026, ended).
 #
-# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # -----------------------------------------------------------------------------------------
 # STATUS OF THIS FILE — read this before the numbers
@@ -138,7 +138,7 @@ placeholder = false           # rates.py reads this: the file as a whole now car
 verified = false              # but not every node is primary-verified — see `note`.
 authority = "National Board of Revenue (NBR), Bangladesh — জাতীয় রাজস্ব বোর্ড"
 authority_url = "https://nbr.gov.bd/"
-maintainer = "Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com"
+maintainer = "Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com"
 
 # The instruments this file's figures come from. These are the URLs a `source` key may cite;
 # the bare authority_url above names the authority and is NEVER an acceptable `source`.
@@ -4069,7 +4069,7 @@ note = "Rule number read from the primary Rules gazette. ⚠️ Rule 49(1A), ins
 # SECTION — TDS (উৎসে কর কর্তন) and VDS (উৎসে মূসক কর্তন)  ·  [tds] and [vds]
 #
 # Read by src/engine/vat.py (vds.deposit.deadline) and quoted by the assistant.
-# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # -----------------------------------------------------------------------------------------
 # WHICH INSTRUMENT SETS THESE RATES — read this before changing a single figure

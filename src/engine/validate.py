@@ -30,7 +30,7 @@ Findings are grouped by severity.  **The exit code is 0 only when nothing was fo
 This script defines no Bangladeshi rate, threshold, deadline or statute number.  It
 checks structure only; every figure it prints comes from the user's own journal.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 MIT licensed · https://github.com/bemoshiur/TakaBooks
 """
 

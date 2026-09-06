@@ -33,7 +33,7 @@
 # ############################################################################
 #
 # TakaBooks — publish the npm installer package to GitHub Packages.
-# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # WHAT GETS PUBLISHED: the package at the repo root — bin/takabooks.mjs plus the
 # freshly built dist/ bundles and AGENTS.md (see "files" in package.json). The

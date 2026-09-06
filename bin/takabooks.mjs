@@ -19,7 +19,7 @@
  *     src/data/rates-AY2026-27.toml with a source URL and a `verified` flag.
  *     (spec sections 4.5 and 6)
  *
- * TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+ * TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
  * MIT licensed.
  */
 
@@ -425,7 +425,7 @@ function printFooter(log) {
   log(dim('  source URL and a `verified` flag. Check it before you rely on a number.'));
   for (const line of disclaimer()) log(dim(`  ${line}`));
   log('');
-  log(dim(`  ${REPO_URL}  ·  Ticon Sys — ${COMPANY_URL}`));
+  log(dim(`  ${REPO_URL}  ·  TICON SYSTEM LTD — ${COMPANY_URL}`));
   log('');
 }
 
@@ -471,7 +471,7 @@ function helpText() {
     '',
     '  Exit codes: 0 success · 1 failure · 2 bad usage',
     '',
-    `  Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — ${COMPANY_URL}`,
+    `  Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — ${COMPANY_URL}`,
     `  ${REPO_URL}`,
     '',
   ].join('\n');

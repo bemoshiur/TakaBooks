@@ -60,7 +60,7 @@ value while still naming the key and its state.  One rule, two domains.
 ``--strict`` refuses anything short of fully verified (exit 7), which is how a caller asks
 for "final or nothing".
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

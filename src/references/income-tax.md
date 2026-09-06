@@ -734,4 +734,4 @@ them to NBR and a licensed ITP or CA, and do not improvise a figure. **Absent be
 6. ✅ Header block replaced — "Current as of", "Sources" and "Status" filled in.
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

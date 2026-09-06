@@ -627,4 +627,4 @@ Practitioner (ITP) or Chartered Accountant (CA) before you file anything with th
 of Revenue.** Anything marked **⚠** above is unsettled in the source pack — say so rather than
 smoothing it over. **Absent beats wrong.**
 
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

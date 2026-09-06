@@ -472,4 +472,4 @@ here to fill the gap.
 nothing here is professional advice — see the disclaimer at the top. Anything marked **⚠** is
 unsettled in the source pack; say so rather than smoothing it over.
 
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

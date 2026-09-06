@@ -87,5 +87,5 @@ Absent beats wrong. A figure nobody has checked must never look checked.
 - Releases and bundles: https://github.com/bemoshiur/TakaBooks/releases
 - Issues (bug reports and rate corrections): https://github.com/bemoshiur/TakaBooks/issues
 - Design specification: https://github.com/bemoshiur/TakaBooks/blob/main/docs/superpowers/specs/2026-09-05-takabooks-design.md
-- Maintainer: Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · Ticon Sys — https://ticonsys.com
+- Maintainer: Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · TICON SYSTEM LTD — https://ticonsys.com
 - License: MIT

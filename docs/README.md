@@ -142,5 +142,5 @@ wiki.
 
 ---
 
-TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com ·
+TakaBooks — maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com ·
 MIT licensed · https://github.com/bemoshiur/TakaBooks

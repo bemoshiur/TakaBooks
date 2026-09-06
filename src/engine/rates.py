@@ -29,7 +29,7 @@ What it guarantees, and why each guarantee exists:
 
 TakaBooks defines **no** Bangladeshi figure in Python.  Everything below is structure.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

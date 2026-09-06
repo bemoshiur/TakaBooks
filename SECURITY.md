@@ -34,7 +34,7 @@ Report it privately through GitHub's private vulnerability reporting:
 
 That form is visible only to you and the repository maintainer. If the form is unavailable
 (the maintainer has to enable it once in the repository settings), contact the maintainer
-through the Ticon Sys website, https://ticonsys.com, and say that you have a security report
+through the TICON SYSTEM LTD website, https://ticonsys.com, and say that you have a security report
 for TakaBooks; do not put the details on a public channel.
 
 Please include:
@@ -181,4 +181,4 @@ policy.
 ---
 
 Maintained by **Moshiur Rahman** ([@bemoshiur](https://github.com/bemoshiur)) ·
-**Ticon Sys** — https://ticonsys.com
+**TICON SYSTEM LTD** — https://ticonsys.com

@@ -1,5 +1,5 @@
 # .github/dependabot.yml — TakaBooks
-# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # TakaBooks has NO runtime dependencies: the Python engine is standard library only
 # (spec §4.1) and the npm installer declares none. The only things that can go stale are

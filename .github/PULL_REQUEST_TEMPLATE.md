@@ -1,5 +1,5 @@
 <!--
-TakaBooks pull request — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks pull request — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 Keep what applies, delete what does not. The checklist is what CI and the reviewer will
 look for; ticking it honestly saves a round-trip.
 -->
@@ -33,7 +33,7 @@ look for; ticking it honestly saves a round-trip.
       (মূসক / VAT, উৎসে কর কর্তন / TDS, খতিয়ান / ledger).
 - [ ] Any script that could emit an unbalanced entry or an unreconciled figure exits
       non-zero with a clear message — no silent correction.
-- [ ] Attribution to Moshiur Rahman (@bemoshiur) and Ticon Sys is intact in anything
+- [ ] Attribution to Moshiur Rahman (@bemoshiur) and TICON SYSTEM LTD is intact in anything
       generated or bundled.
 - [ ] `CHANGELOG.md` updated if a user would notice the change.
 

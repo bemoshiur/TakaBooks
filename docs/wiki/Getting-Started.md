@@ -76,7 +76,7 @@ next steps:
   1. Check TIN/BIN and the chart of accounts against your own records.
   2. Record your first entry:  python3 src/engine/post.py --books books --date YYYY-MM-DD --description '...' --debit 1100=1000.00 --credit 4100=1000.00
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys (https://ticonsys.com)
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD (https://ticonsys.com)
 ```
 
 The template path is printed in full and is absolute; `/path/to/TakaBooks` above stands in
@@ -322,7 +322,7 @@ python3 src/engine/validate.py --books books
 
 ```
 TakaBooks — খতিয়ান যাচাই / ledger validation
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys (https://ticonsys.com)
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD (https://ticonsys.com)
 ==============================================================================
 Books directory          : books
 Business                 : Rahman Traders (রহমান ট্রেডার্স)

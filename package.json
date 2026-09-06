@@ -21,7 +21,7 @@
     "claude-skill",
     "ai-agent",
     "bangla",
-    "ticon-sys"
+    "ticon-system-ltd"
   ],
   "homepage": "https://ticonsys.com",
   "bugs": {
@@ -32,7 +32,7 @@
     "url": "https://github.com/bemoshiur/TakaBooks.git"
   },
   "license": "MIT",
-  "author": "Moshiur Rahman (Ticon Sys) <https://ticonsys.com>",
+  "author": "Moshiur Rahman (TICON SYSTEM LTD) <https://ticonsys.com>",
   "bin": {
     "takabooks": "bin/takabooks.mjs"
   },

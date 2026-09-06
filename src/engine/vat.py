@@ -110,7 +110,7 @@ Usage::
     python3 vat.py --books books --json
     python3 vat.py --books books --period 2026-07 --strict
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

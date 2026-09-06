@@ -412,4 +412,4 @@ move `as_of` forward without re-reading the section: a stale `as_of` on a change
 dangerous state these files can be in.
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

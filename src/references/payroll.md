@@ -567,4 +567,4 @@ Finance Act 2026 (Act 96 of 2026) gazette: https://nbr.gov.bd/uploads/acts/Finan
 Bangladesh Labour Act 2006: http://bdlaws.minlaw.gov.bd/act-952.html
 
 ---
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com · MIT

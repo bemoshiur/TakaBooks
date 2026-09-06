@@ -255,7 +255,7 @@ unrecorded receipt — check it before you close a month.
 
 ---
 
-TakaBooks — Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · **Ticon Sys** —
+TakaBooks — Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · **TICON SYSTEM LTD** —
 https://ticonsys.com · MIT licensed. Not professional advice: verify with a licensed ITP or
 CA before filing. এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত আইটিপি বা সিএ-এর সঙ্গে
 যাচাই করুন।

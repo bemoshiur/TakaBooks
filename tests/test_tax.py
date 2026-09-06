@@ -25,7 +25,7 @@ Golden case (fixture AY 2031-32, category ``general``, threshold ৳1,00,000):
     surcharge: wealth 6,00,00,000 > 5,00,00,000 → band 3 @ 20% × 1,27,500 = 25,500
     total 1,53,000 · less paid 20,000 → net payable 1,33,000
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

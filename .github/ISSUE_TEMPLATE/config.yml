@@ -1,5 +1,5 @@
 # .github/ISSUE_TEMPLATE/config.yml
-# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # Blank issues are off so every report arrives through a form that asks for the source URL,
 # the assessment year and the fake-data confirmation. Personal tax questions do not belong
@@ -15,6 +15,6 @@ contact_links:
   - name: "Your own tax return — NBR / জাতীয় রাজস্ব বোর্ড"
     url: https://nbr.gov.bd/
     about: "TakaBooks is not professional advice. For your own filing, verify with a licensed ITP/CA and with NBR."
-  - name: "Ticon Sys"
+  - name: "TICON SYSTEM LTD"
     url: https://ticonsys.com
     about: "The company that maintains TakaBooks."

@@ -1,7 +1,7 @@
 # =========================================================================================
 # TakaBooks — হিসাব তালিকা / chart of accounts (default template)
 #
-# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # A starting chart for a Bangladeshi SME — a trading business or a service business.
 # init_books.py copies this file to books/accounts.toml; from then on it is yours.

@@ -1,7 +1,7 @@
 # TakaBooks — Design Specification
 
 **Status:** Approved 2026-09-05 · **Branch:** `build/v1` · **Repo:** https://github.com/bemoshiur/TakaBooks
-**Maintainer:** Moshiur Rahman (@bemoshiur) · **Company:** Ticon Sys — https://ticonsys.com
+**Maintainer:** Moshiur Rahman (@bemoshiur) · **Company:** TICON SYSTEM LTD — https://ticonsys.com
 
 ---
 
@@ -216,5 +216,5 @@ CI runs the suite on push. Green tests are a release precondition.
 
 ## 9. Attribution
 
-Maintained by **Moshiur Rahman** (@bemoshiur) · **Ticon Sys** — https://ticonsys.com
-Licensed MIT. Credit Ticon Sys in README, LICENSE, AGENTS.md, docs and every built bundle.
+Maintained by **Moshiur Rahman** (@bemoshiur) · **TICON SYSTEM LTD** — https://ticonsys.com
+Licensed MIT. Credit TICON SYSTEM LTD in README, LICENSE, AGENTS.md, docs and every built bundle.

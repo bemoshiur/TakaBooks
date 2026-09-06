@@ -14,7 +14,7 @@ validator only checks that a tag parses and sits on a sensible account.  Likewis
 ``fiscal_year_start = "07-01"`` in the fixture config is a value *read from* the
 config, never a default the code assumes.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations

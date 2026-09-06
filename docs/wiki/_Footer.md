@@ -5,4 +5,4 @@ _এই উইকি রিপোজিটরির `docs/wiki/` থেকে �
 
 _Wiki pages quote tax figures only to make a worked example readable — they are illustrations, not the source of truth. Every figure TakaBooks actually uses lives in [`src/data/rates-AY<year>.toml`](https://github.com/bemoshiur/TakaBooks/tree/main/src/data) with a source URL, an `as_of` date and a `verified` flag; check it there before you rely on a number you read here. Nothing here is professional advice — verify with a licensed ITP or CA, and against NBR, before you file. See the [Disclaimer](Disclaimer)._
 
-**TakaBooks** — maintained by Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · **Ticon Sys** — https://ticonsys.com · MIT licensed · https://github.com/bemoshiur/TakaBooks
+**TakaBooks** — maintained by Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) · **TICON SYSTEM LTD** — https://ticonsys.com · MIT licensed · https://github.com/bemoshiur/TakaBooks

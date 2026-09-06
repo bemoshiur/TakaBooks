@@ -8,7 +8,7 @@ Emphasis, per spec §7: money arithmetic (int paisa, never float, ROUND_HALF_UP)
 লাখ/কোটি lakh-crore formatting edge cases, the ``tax_tag`` grammar, and the
 double-entry invariant — an unbalanced entry must fail loudly and name itself.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -562,7 +562,7 @@ tags = ["opex"]
 
 CONFIG_TOML = """
 [business]
-name = "Ticon Sys Demo Traders"
+name = "TICON SYSTEM LTD Demo Traders"
 name_bn = "টিকন সিস ডেমো ট্রেডার্স"
 tin = "000000000000"
 bin = "000000000-0000"
@@ -1556,7 +1556,7 @@ class TestConfig(unittest.TestCase):
 
     def test_load(self):
         config = tb.Config.load(self.books)
-        self.assertEqual(config.business_name, "Ticon Sys Demo Traders")
+        self.assertEqual(config.business_name, "TICON SYSTEM LTD Demo Traders")
         self.assertEqual(config.business_name_bn, "টিকন সিস ডেমো ট্রেডার্স")
         self.assertEqual(config.currency, "BDT")
         self.assertEqual(config.fiscal_year_start, "07-01")
@@ -1837,7 +1837,7 @@ class TestCliHelpers(unittest.TestCase):
             self.assertTrue(tb.ensure_dir(Path(name) / "a" / "b").is_dir())
 
     def test_attribution_and_disclaimer(self):
-        self.assertIn("Ticon Sys", tb.ATTRIBUTION)
+        self.assertIn("TICON SYSTEM LTD", tb.ATTRIBUTION)
         self.assertIn("ticonsys.com", tb.ATTRIBUTION)
         self.assertIn("bemoshiur", tb.PROJECT_URL)
         self.assertIn("ITP", tb.DISCLAIMER_EN)

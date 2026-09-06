@@ -63,9 +63,9 @@ representative at an online or offline event.
 Instances of abusive, harassing, or otherwise unacceptable behavior may be
 reported to the community leaders responsible for enforcement — the TakaBooks
 maintainer, Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)), on
-behalf of Ticon Sys — through either of these private routes:
+behalf of TICON SYSTEM LTD — through either of these private routes:
 
-* **The Ticon Sys website** — https://ticonsys.com — via its contact page. This
+* **The TICON SYSTEM LTD website** — https://ticonsys.com — via its contact page. This
   reaches the maintainer directly and is not visible to anyone else in the
   project.
 * **A private report on GitHub** —
@@ -170,4 +170,4 @@ These do not change the Covenant above; they say how it applies here.
   small-business owner facing a deadline, and answer accordingly.
 
 Maintained by Moshiur Rahman ([@bemoshiur](https://github.com/bemoshiur)) ·
-Ticon Sys — https://ticonsys.com
+TICON SYSTEM LTD — https://ticonsys.com

@@ -1,6 +1,6 @@
 # .github/workflows/wiki-sync.yml
 # TakaBooks — mirror docs/wiki/ into the repository wiki.
-# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+# Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 #
 # docs/wiki/ is the source of truth; https://github.com/bemoshiur/TakaBooks/wiki is a
 # mirror of it. This workflow is the mirroring step described in docs/README.md

@@ -20,7 +20,7 @@ What is proven here, per spec §4.3–§4.4 and §6:
 * The ``.github`` issue forms ask for what keeps the project current after each Finance
   Act: statute reference, primary source URL, assessment year, old and new value.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 """
 
 from __future__ import annotations
@@ -245,7 +245,7 @@ class TestAccountsTemplate(unittest.TestCase):
         _assert_no_tax_figures(self, self.text, "accounts.toml")
 
     def test_attribution_present(self):
-        self.assertIn("Ticon Sys", self.text)
+        self.assertIn("TICON SYSTEM LTD", self.text)
         self.assertIn("ticonsys.com", self.text)
 
     def test_init_books_uses_this_template_not_its_fallback(self):
@@ -459,7 +459,7 @@ class TestReadmeWorkedExamples(unittest.TestCase):
         self.assertIn("cross-checks this file", self.readme)
         self.assertIn("placeholder", self.readme.lower())
         self.assertIn("rates-AY<year>.toml", self.readme)
-        self.assertIn("Ticon Sys", self.readme)
+        self.assertIn("TICON SYSTEM LTD", self.readme)
 
 
 # ======================================================================================
@@ -552,7 +552,7 @@ class TestGithubCommunityFiles(unittest.TestCase):
                     self.assertRegex(field_id, r"^[A-Za-z0-9_-]+$")
                 # Every form insists on fake data only.
                 self.assertIn("TIN", text)
-                self.assertIn("Ticon Sys", text)
+                self.assertIn("TICON SYSTEM LTD", text)
 
     def test_tax_rule_update_asks_for_what_keeps_the_project_current(self):
         text = self._form("tax-rule-update.yml")
@@ -590,7 +590,7 @@ class TestGithubCommunityFiles(unittest.TestCase):
             "paisa",
             "rates-AY<year>.toml",
             "verified = true",
-            "Ticon Sys",
+            "TICON SYSTEM LTD",
             "মূসক",
         ):
             self.assertIn(needle, text)

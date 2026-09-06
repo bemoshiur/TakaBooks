@@ -7,7 +7,7 @@ package pages, forks, release tarballs and offline previews. The one raster file
 `social-preview.png`, exists only because GitHub's social-preview uploader will not take
 an SVG; it is generated from `social-preview.svg` and never edited directly.
 
-Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+Maintained by Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 
 ## Files
 
@@ -100,7 +100,7 @@ nothing important is lost when X, LinkedIn, Slack or Discord crop to 1.91 : 1.
 What the card carries: the mark, the "TakaBooks" wordmark, টাকাবুকস, the tagline
 *Bangladeshi bookkeeping & taxation for any LLM*, the statutory term pairs
 মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger, a row of the LLMs it targets ending
-in *any LLM*, and the Ticon Sys credit. No rates, no deadlines (rule 5 above).
+in *any LLM*, and the TICON SYSTEM LTD credit. No rates, no deadlines (rule 5 above).
 
 ### 1. Render the PNG
 
@@ -192,6 +192,6 @@ more reason the repository description must be strong.
 ## Licence and credit
 
 The files here are part of the TakaBooks repository and carry its MIT licence. The
-TakaBooks name and mark identify a project of **Ticon Sys** — https://ticonsys.com —
+TakaBooks name and mark identify a project of **TICON SYSTEM LTD** — https://ticonsys.com —
 maintained by Moshiur Rahman (@bemoshiur). Use them to refer to TakaBooks; do not use
 them to name a different product or to suggest endorsement by any government body.

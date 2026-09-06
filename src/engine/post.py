@@ -62,7 +62,7 @@ no randomness.
 This script defines **no Bangladeshi tax rate, threshold, deadline or statute number**.
 The ``tax_tag`` carries whatever rate you wrote; the rates live in ``src/data/rates-AY*.toml``.
 
-TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+TakaBooks — Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
 MIT licensed · https://github.com/bemoshiur/TakaBooks
 """
 

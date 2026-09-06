@@ -15,7 +15,7 @@ bundle, a Gemini bundle, a single universal file for any LLM, and an `AGENTS.md`
 agents. Portability is the identity; see [Installation](Installation).
 
 **Is it free?**
-Yes. MIT licensed, maintained by Moshiur Rahman (@bemoshiur) at Ticon Sys
+Yes. MIT licensed, maintained by Moshiur Rahman (@bemoshiur) at TICON SYSTEM LTD
 (https://ticonsys.com).
 
 **Can I use it for my business right now?**
