@@ -1,0 +1,33 @@
+title: TakaBooks
+description: >-
+  Bangladeshi bookkeeping and taxation for any LLM — double-entry books, income tax,
+  VAT/মূসক and Mushak forms, TDS/VDS withholding and NBR compliance for assessment
+  year 2026-27, with a zero-dependency Python engine.
+url: https://bemoshiur.github.io
+baseurl: /TakaBooks
+lang: en
+author: Moshiur Rahman
+repository: bemoshiur/TakaBooks
+logo: /TakaBooks/assets/social-preview.png
+
+theme: jekyll-theme-cayman
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+twitter:
+  card: summary_large_image
+social:
+  name: TakaBooks
+  links:
+    - https://github.com/bemoshiur/TakaBooks
+    - https://ticonsys.com
+
+defaults:
+  - scope: { path: "" }
+    values: { image: /TakaBooks/assets/social-preview.png }
+
+exclude:
+  - research/
+  - superpowers/
+  - README.md
