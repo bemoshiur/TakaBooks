@@ -1,0 +1,30 @@
+# .github/dependabot.yml — TakaBooks
+# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# TakaBooks has NO runtime dependencies: the Python engine is standard library only
+# (spec §4.1) and the npm installer declares none. The only things that can go stale are
+#   * the GitHub Actions pinned in .github/workflows/*.yml, and
+#   * the npm package metadata (engines, publishConfig) — kept here so a dependency ever
+#     added by mistake is at least surfaced in a PR that reviewers will refuse.
+# There is deliberately no "pip" entry: CI fails on any requirements file.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies"]
+    commit-message:
+      prefix: "build"
+    open-pull-requests-limit: 2

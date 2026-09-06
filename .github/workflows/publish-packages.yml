@@ -1,0 +1,241 @@
+# .github/workflows/publish-packages.yml
+#
+# ############################################################################
+# #                                                                          #
+# #   KNOWN BLOCKER — THIS WORKFLOW FAILS UNTIL A TOKEN SCOPE IS GRANTED      #
+# #                                                                          #
+# #   The repository owner's GitHub token currently LACKS the                #
+# #   `write:packages` scope, so publishing @bemoshiur/takabooks to GitHub    #
+# #   Packages FAILS until that scope is granted. This is not a defect in    #
+# #   the YAML below and no edit here can work around it.                    #
+# #                                                                          #
+# #   THE FIX — run once, as the account that owns the @bemoshiur namespace: #
+# #                                                                          #
+# #       gh auth refresh -h github.com -s write:packages,read:packages       #
+# #                                                                          #
+# #   then re-run the failed run (Actions → "Publish to GitHub Packages" →   #
+# #   Re-run jobs) or dispatch it by hand with the tag name. Spec 8 records  #
+# #   the same caveat: "Requires the write:packages token scope; publishing  #
+# #   fails until it is granted."                                            #
+# #                                                                          #
+# #   What that scope does and does not cover:                               #
+# #   - A hand-run `npm publish` from a laptop authenticates with a CLASSIC   #
+# #     personal access token — fine-grained PATs do not work with the npm    #
+# #     registry — and that token needs write:packages (read:packages just   #
+# #     to install). The command above grants exactly those two scopes.      #
+# #   - Inside Actions the publish step authenticates with                   #
+# #     secrets.GITHUB_TOKEN, which the permissions block below grants        #
+# #     `packages: write`. If a run still fails with 401 / 403 / E404 on the  #
+# #     publish step, the account / namespace side is what to check, not     #
+# #     this file: the scope above, and that the package's `repository`      #
+# #     field points at https://github.com/bemoshiur/TakaBooks.git.          #
+# #                                                                          #
+# ############################################################################
+#
+# TakaBooks — publish the npm installer package to GitHub Packages.
+# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# WHAT GETS PUBLISHED: the package at the repo root — bin/takabooks.mjs plus the
+# freshly built dist/ bundles and AGENTS.md (see "files" in package.json). The
+# bundles must therefore be BUILT in this workflow before `npm publish`; the
+# package is useless without them and the installer would fail on every target.
+#
+# TRIGGER: deliberately the tag push, NOT `on: release: types: [published]`.
+# A release created by release.yml with the default GITHUB_TOKEN never fires
+# further workflow events, so an `on: release` trigger would never run.
+#
+# NAMING RULES (GitHub Packages, verified against the docs):
+#   - scoped packages only: @NAMESPACE/NAME, and NAMESPACE must be the owning
+#     account — @bemoshiur
+#   - "Package names and scopes must only use lowercase letters":
+#       @bemoshiur/takabooks   correct
+#       @bemoshiur/TakaBooks   rejected
+#   - registry URL is exactly https://npm.pkg.github.com (no trailing path)
+#   - package.json "repository.url" must point at the repo, or publish can 404
+#
+# CONSUMER CAVEAT (product decision, not a config bug): GitHub Packages
+# requires authentication even to INSTALL a public package. A plain
+# `npx @bemoshiur/takabooks` on a machine that has never authenticated to
+# npm.pkg.github.com returns 401. Consumers need, in ~/.npmrc:
+#     @bemoshiur:registry=https://npm.pkg.github.com
+#     //npm.pkg.github.com/:_authToken=<token with read:packages>
+# The dependency-free alternative is a bundle from the GitHub Release.
+#
+# ACTION VERSIONS current as of 2026-09-05, verified from each releases.atom:
+#   actions/checkout@v7 (v7.0.1) · actions/setup-python@v7 (v7.0.0)
+#   actions/setup-node@v7 (v7.0.0)
+name: Publish to GitHub Packages
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to publish, e.g. v1.0.0"
+        required: true
+        type: string
+
+# Deny everything at the top level; the job opts in to exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: publish-packages-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish-npm:
+    name: npm → npm.pkg.github.com
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read             # read the repo
+      packages: write            # publish to GitHub Packages — the documented minimum
+    steps:
+      # Validate the ref BEFORE it reaches actions/checkout, so a malformed
+      # workflow_dispatch input fails with a clear message instead of a checkout error.
+      - name: Validate the tag
+        env:
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RAW_TAG' is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - name: Set up Python 3.11 (the floor — bundles are built on it)
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # Green tests are a release precondition (spec 7). This workflow runs in
+      # parallel with release.yml, so it does not get to assume that job passed.
+      - name: Unit tests
+        run: |
+          set -euo pipefail
+          python3 -m venv --without-pip "$RUNNER_TEMP/clean"
+          "$RUNNER_TEMP/clean/bin/python" -m unittest discover tests
+
+      - name: Build every bundle — the package ships dist/
+        run: |
+          set -euo pipefail
+          python3 build/build.py --clean --strict --target all
+          for must in \
+            dist/claude-skill/bd-bookkeeping-tax/SKILL.md \
+            dist/chatgpt/instructions.md \
+            dist/gemini/gem-instructions.md \
+            dist/universal/takabooks-complete.md \
+            AGENTS.md
+          do
+            if [ ! -s "$must" ]; then
+              echo "::error::build/build.py did not produce $must"
+              exit 1
+            fi
+          done
+
+      # setup-node writes an .npmrc pointing the @bemoshiur scope at GitHub
+      # Packages and wires the auth token to NODE_AUTH_TOKEN. Must come before
+      # any npm command below.
+      - name: Set up Node and write .npmrc for GitHub Packages
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+          registry-url: "https://npm.pkg.github.com"
+          scope: "@bemoshiur"
+
+      - name: Resolve version from tag
+        id: ver
+        env:
+          # Never interpolate an input straight into a shell line; go through env.
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RAW_TAG' is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+          version="${RAW_TAG#v}"
+          prerelease=false
+          case "$version" in *-*) prerelease=true ;; esac
+          {
+            printf 'version=%s\n' "$version"
+            printf 'prerelease=%s\n' "$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "version=$version prerelease=$prerelease"
+
+      - name: Set package version to match the tag
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      # Zero dependencies, so there is nothing to `npm ci`. Prove the tarball
+      # is what a consumer needs BEFORE anything leaves the runner.
+      - name: Verify the tarball contents
+        run: |
+          set -euo pipefail
+          npm pack --dry-run --json > "$RUNNER_TEMP/pack.json"
+          node -e "
+            const out = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'))[0];
+            if (out.name !== '@bemoshiur/takabooks') {
+              throw new Error('package name is ' + out.name + ', expected @bemoshiur/takabooks');
+            }
+            const files = new Set(out.files.map(f => f.path));
+            const must = [
+              'package.json',
+              'bin/takabooks.mjs',
+              'AGENTS.md',
+              'LICENSE',
+              'README.md',
+              'dist/claude-skill/bd-bookkeeping-tax/SKILL.md',
+              'dist/chatgpt/instructions.md',
+              'dist/gemini/gem-instructions.md',
+              'dist/universal/takabooks-complete.md',
+            ];
+            const missing = must.filter(f => !files.has(f));
+            if (missing.length) throw new Error('tarball is missing: ' + missing.join(', '));
+            for (const f of files) {
+              if (f === '.npmrc' || f.startsWith('src/') || f.startsWith('tests/')) {
+                throw new Error('tarball must not ship ' + f);
+              }
+            }
+            console.log('tarball OK: ' + files.size + ' files, ' + out.unpackedSize + ' bytes unpacked, version ' + out.version);
+          " "$RUNNER_TEMP/pack.json"
+
+      - name: Installer smoke test against the packaged dist/
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs list --json > "$RUNNER_TEMP/list.json"
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
+            const missing = r.targets.filter(t => !t.available).map(t => t.target);
+            if (missing.length) {
+              throw new Error('installer cannot find these bundles in the package: ' + missing.join(', '));
+            }
+            if (r.distSource !== 'package') throw new Error('installer resolved dist from ' + r.distSource + ', expected the package');
+            console.log('installer sees every bundle from inside the package');
+          " "$RUNNER_TEMP/list.json"
+          node bin/takabooks.mjs install claude --dest "$RUNNER_TEMP/smoke/claude" --quiet
+          test -s "$RUNNER_TEMP/smoke/claude/SKILL.md"
+
+      # No --access public: on GitHub Packages visibility follows the repository.
+      # No --provenance: npm provenance targets npmjs.org, not npm.pkg.github.com.
+      - name: Publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PRERELEASE: ${{ steps.ver.outputs.prerelease }}
+        run: |
+          set -euo pipefail
+          if [ "$PRERELEASE" = "true" ]; then
+            # A pre-release must not become what `npx @bemoshiur/takabooks` resolves by default.
+            npm publish --tag next
+          else
+            npm publish
+          fi

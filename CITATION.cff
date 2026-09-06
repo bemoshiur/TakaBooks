@@ -1,0 +1,54 @@
+# CITATION.cff — Citation File Format 1.2.0
+# https://citation-file-format.github.io/
+# GitHub reads this file and renders a "Cite this repository" button on the repository page.
+# Keep `version` and `date-released` in step with CHANGELOG.md when cutting a release.
+cff-version: 1.2.0
+message: >-
+  If you use TakaBooks in research, teaching, a compliance workflow or a
+  derived tool, please cite it using the metadata below.
+type: software
+title: "TakaBooks — টাকাবুকস"
+abstract: >-
+  TakaBooks is an LLM-agnostic bookkeeping and taxation package for Bangladesh.
+  It ships cited, versioned reference material on income tax, VAT (মূসক),
+  withholding tax (TDS / উৎসে কর কর্তন, VDS), statutory bookkeeping, payroll and
+  the compliance calendar, together with a dependency-free Python engine that
+  keeps double-entry books in integer paisa and computes every figure
+  deterministically from a per-assessment-year rates file in which each value
+  carries a source URL and a verification flag. Bundles are built for Claude,
+  ChatGPT, Gemini, AGENTS.md-aware coding agents and any other LLM. It is not
+  professional advice; figures must be verified with a licensed Income Tax
+  Practitioner or Chartered Accountant before filing.
+version: "1.0.0"
+date-released: 2026-09-06
+license: MIT
+repository-code: "https://github.com/bemoshiur/TakaBooks"
+url: "https://ticonsys.com"
+authors:
+  - family-names: Rahman
+    given-names: Moshiur
+    alias: bemoshiur
+    affiliation: Ticon Sys
+    website: "https://ticonsys.com"
+  - name: Ticon Sys
+    website: "https://ticonsys.com"
+keywords:
+  - bangladesh
+  - bangladesh-tax
+  - nbr
+  - income-tax
+  - vat
+  - mushak
+  - tds
+  - withholding-tax
+  - bookkeeping
+  - double-entry-accounting
+  - accounting
+  - taxation
+  - tax-compliance
+  - sme
+  - llm-agnostic
+  - claude-skill
+  - ai-agent
+  - python
+  - bangla

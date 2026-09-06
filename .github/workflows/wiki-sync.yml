@@ -1,0 +1,206 @@
+# .github/workflows/wiki-sync.yml
+# TakaBooks — mirror docs/wiki/ into the repository wiki.
+# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# docs/wiki/ is the source of truth; https://github.com/bemoshiur/TakaBooks/wiki is a
+# mirror of it. This workflow is the mirroring step described in docs/README.md
+# ("How it gets published"). It runs on a push to main that touches docs/wiki/**,
+# replaces the wiki's working tree wholesale with docs/wiki/, and pushes.
+#
+# ─────────────────────────────────────────────────────────────────────────────────
+# ONE-TIME MANUAL PREREQUISITE — this workflow CANNOT run until it is done.
+#
+# A GitHub wiki is a second git repository at <repo>.wiki.git, and that repository
+# DOES NOT EXIST until a first page has been saved through the web UI. Until then
+# there is no git remote to clone or push to, and every clone fails with
+#   fatal: repository 'https://github.com/bemoshiur/TakaBooks.wiki.git/' not found
+# No token, permission or Action can get past that: enabling the wiki in repository
+# settings turns the tab on but does not create the repository.
+#
+# The maintainer does this once:
+#   1. Repository → Wiki tab → Create the first page → Save.
+#   2. Repository → Settings → Wiki → tick "Restrict editing to collaborators only".
+#      (Without it, any GitHub user can edit pages that the next sync silently wipes.)
+# After that this workflow is self-maintaining. The "Confirm the wiki repository
+# exists" step below detects the un-initialised case and prints those steps rather
+# than failing with git's message, so nobody has to rediscover this.
+# ─────────────────────────────────────────────────────────────────────────────────
+#
+# Deliberate design points:
+#   · It copies docs/wiki/. — never the whole of docs/. research/ and superpowers/
+#     are provenance, not wiki pages; mirroring them would leave stray, un-navigable
+#     files in the wiki namespace.
+#   · It refuses to sync a source tree that looks wrong (empty, no Home.md, or with
+#     subdirectories) rather than emptying the live wiki. A mirror that deletes first
+#     and copies second must never run with a bad source.
+#   · A wiki is a FLAT namespace: files in subdirectories are stored but are not
+#     addressable as pages (docs/README.md, "Page naming"). The flatness check keeps
+#     a page from silently disappearing.
+#   · Manual recovery, if this workflow is ever unavailable, is the clone/rm/cp/push
+#     sequence in docs/README.md. It does exactly what the steps below do.
+#
+# ACTION VERSIONS verified 2026-09-05 from the action's releases.atom, matching
+# ci.yml and release.yml: actions/checkout@v7 (v7.0.1)
+name: Wiki sync
+
+on:
+  push:
+    branches: ["main"]
+    paths: ["docs/wiki/**"]
+  # Manual re-run: how you recover after a bad sync, or publish the first time
+  # immediately after initialising the wiki (see the prerequisite above) without
+  # waiting for the next docs/wiki/ change.
+  workflow_dispatch:
+
+# Deny everything at the top level; the one job opts in to exactly what it needs.
+permissions: {}
+
+# Never let two syncs race: they both delete-then-copy against the same wiki
+# repository, and the loser would push a rejected or half-applied tree.
+# Do not cancel in progress — a cancelled sync could leave the wiki emptied.
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Mirror docs/wiki to the repository wiki
+    runs-on: ubuntu-latest
+    permissions:
+      # contents: write is what the default GITHUB_TOKEN needs to push to the
+      # wiki repository. No other scope is required.
+      contents: write
+    steps:
+      - name: Checkout the source repository
+        uses: actions/checkout@v7
+        with:
+          # Read-only side: nothing is pushed here, so drop the credentials.
+          persist-credentials: false
+
+      - name: Check the source tree before touching the wiki
+        run: |
+          set -euo pipefail
+          src="docs/wiki"
+
+          if [ ! -d "$src" ]; then
+            echo "::error::$src does not exist. Refusing to sync — this would empty the wiki."
+            exit 1
+          fi
+
+          pages="$(find "$src" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')"
+          if [ "$pages" -eq 0 ]; then
+            echo "::error::$src contains no Markdown page. Refusing to sync — this would empty the wiki."
+            exit 1
+          fi
+
+          if [ ! -f "$src/Home.md" ]; then
+            echo "::error::$src/Home.md is missing. Home.md is the wiki landing page and its name is reserved and case-sensitive."
+            exit 1
+          fi
+
+          # A GitHub wiki is flat: a page inside a subdirectory is stored but is not
+          # addressable, so it would vanish from the wiki without any error.
+          nested="$(find "$src" -mindepth 1 -type d || true)"
+          if [ -n "$nested" ]; then
+            echo "::error::$src must stay flat — GitHub wiki pages in subdirectories are not addressable. Found:"
+            echo "$nested"
+            exit 1
+          fi
+
+          echo "$pages page(s) ready to mirror:"
+          find "$src" -maxdepth 1 -type f -name '*.md' -exec basename {} \; | sort
+
+      - name: Confirm the wiki repository exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # git ls-remote is the only reliable probe. The repository API's has_wiki
+          # only reports whether the tab is enabled, not whether the underlying git
+          # repository has been created by saving a first page.
+          # The URL carries the token, so it is never echoed; only the exit status
+          # is used. Actions masks GITHUB_TOKEN in logs regardless.
+          if git ls-remote "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" >/dev/null 2>&1; then
+            echo "Wiki repository is present."
+          else
+            echo "::error title=Wiki not initialised::${GITHUB_REPOSITORY}.wiki.git does not exist yet, so there is nothing to push to."
+            {
+              echo "### Wiki sync could not run"
+              echo
+              echo "\`${GITHUB_REPOSITORY}.wiki.git\` does not exist yet."
+              echo
+              echo "A GitHub wiki is a second git repository, and it is not created until a"
+              echo "first page is saved through the web UI. Enabling the Wiki tab in Settings"
+              echo "is not enough. No token or workflow can create it."
+              echo
+              echo "**Do this once, then re-run this workflow:**"
+              echo
+              echo "1. Open \`https://github.com/${GITHUB_REPOSITORY}/wiki\` → **Create the first page** → **Save**."
+              echo "   (Its content does not matter — this sync replaces it.)"
+              echo "2. **Settings → Wiki → Restrict editing to collaborators only**, so manual"
+              echo "   edits cannot be silently wiped by the next sync."
+              echo "3. Actions → **Wiki sync** → **Run workflow**."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      - name: Checkout the wiki repository
+        uses: actions/checkout@v7
+        with:
+          repository: ${{ github.repository }}.wiki
+          path: .wiki
+          # Full history: pushing from a shallow clone can be rejected with
+          # "shallow update not allowed". A wiki repository is small.
+          fetch-depth: 0
+          # Keep the credentials here — this is the checkout we push from.
+          persist-credentials: true
+
+      - name: Replace the wiki working tree with docs/wiki
+        run: |
+          set -euo pipefail
+          # Delete everything except .git, then copy docs/wiki/. in. The delete is
+          # what makes a page removed from docs/wiki/ disappear from the wiki; a
+          # copy-only sync would leave deleted pages live forever.
+          find .wiki -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} +
+          cp -R docs/wiki/. .wiki/
+          echo "Wiki tree after mirroring:"
+          find .wiki -mindepth 1 -maxdepth 1 -not -name '.git' -exec basename {} \; | sort
+
+      - name: Commit and push
+        working-directory: .wiki
+        run: |
+          set -euo pipefail
+          # The identity GitHub itself uses for Actions commits; the numeric prefix
+          # is the github-actions[bot] user id, which is what links the commit to
+          # the bot account rather than to a ghost user.
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git add --all
+          if git diff --cached --quiet; then
+            echo "Wiki already matches docs/wiki — nothing to push."
+            echo "Wiki already matched \`docs/wiki/\`; no commit was needed." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git commit \
+            --message "docs: sync wiki from ${GITHUB_SHA}" \
+            --message "Mirrored from docs/wiki/ by .github/workflows/wiki-sync.yml.
+
+          Source: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}
+          Run:    ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+
+          Do not edit pages in the wiki UI: the next sync replaces this tree
+          wholesale. Edit docs/wiki/ in the source repository instead."
+
+          git push origin HEAD
+
+          echo "Pushed:"
+          # No pipe into head here: under `set -o pipefail`, head closing the pipe
+          # early would SIGPIPE git and fail the step after a successful push.
+          git --no-pager show --stat --oneline HEAD
+          {
+            echo "### Wiki synced"
+            echo
+            echo "Mirrored \`docs/wiki/\` to [the wiki](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/wiki) from commit \`${GITHUB_SHA}\`."
+          } >> "$GITHUB_STEP_SUMMARY"

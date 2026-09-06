@@ -1,0 +1,347 @@
+# .github/workflows/ci.yml
+# TakaBooks — continuous integration.
+# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# Two things must stay true on every push:
+#   1. The Python engine passes its unittest suite on 3.11, 3.12 and 3.13,
+#      using ONLY the standard library (spec 4.1). We prove that by running the
+#      suite inside an empty virtualenv that contains no third-party package at
+#      all, so an accidental `import requests` cannot pass here and fail on an
+#      SME's office laptop.
+#   2. Every distribution bundle still builds. A broken bundle fails CI.
+#
+# BUILD SCRIPT CONTRACT (build/build.py — re-verified 2026-09-06 against
+# `python3 build/build.py --help` and build_parser() in build/build.py):
+#   python3 build/build.py --check [--strict]
+#     Assembles every target from src/ and verifies every platform limit —
+#     notably the ChatGPT 8,000-character instruction cap (spec 5) — but writes
+#     NOTHING. Exits non-zero on any hard failure. --strict additionally treats
+#     a missing expected source file as a failure: CI applies it on main, and
+#     release.yml / publish-packages.yml apply it always.
+#   python3 build/build.py --target all [--clean] [--strict]
+#     The real build. Writes dist/ and regenerates AGENTS.md at the repo root.
+#     THREE SPELLINGS OF "BUILD EVERYTHING" ARE ALL VALID AND EQUIVALENT:
+#       python3 build/build.py                 (no target given → all)
+#       python3 build/build.py --all           (the flag, for CI scripts)
+#       python3 build/build.py --target all    (the enum choice)
+#     An earlier revision of this file asserted "there is NO --all flag" and a
+#     guard below threw on any script that used it. That was wrong: build.py
+#     declares `--all` (store_true) and main() resolves it as ["all"] before
+#     --target is consulted. The assertion and the guard are corrected here.
+#     TakaBooks still writes `--target all` everywhere on purpose — it names the
+#     target set in the command line, so a reader of a CI log sees WHAT was
+#     built, not merely that everything was. That is a house style, not a
+#     capability of the script, and it is enforced as such below.
+#
+# ACTION VERSIONS verified 2026-09-05 from each action's releases.atom:
+#   actions/checkout@v7 (v7.0.1) · actions/setup-python@v7 (v7.0.0)
+#   actions/setup-node@v7 (v7.0.0) · actions/upload-artifact@v7 (v7.0.1)
+name: CI
+
+on:
+  push:
+    branches: ["main", "build/**"]
+  pull_request:
+  workflow_dispatch:
+
+# Deny everything at the top level; each job opts in to exactly what it needs.
+# "If you specify the access for any of these permissions, all of those that are
+# not specified are set to none." — GitHub workflow syntax reference.
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  engine:
+    name: Engine — Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Enforce the Python 3.11 floor
+        run: |
+          set -euo pipefail
+          python3 --version
+          python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 'TakaBooks requires Python 3.11+ for tomllib; found ' + sys.version)"
+
+      - name: Refuse any third-party dependency declaration (spec 4.1)
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import pathlib, sys, tomllib
+
+          problems = []
+
+          # Files whose whole purpose is to install third-party packages.
+          for name in (
+              "requirements.txt",
+              "requirements-dev.txt",
+              "requirements-test.txt",
+              "Pipfile",
+              "poetry.lock",
+              "environment.yml",
+              "conda.yaml",
+          ):
+              if pathlib.Path(name).exists():
+                  problems.append(f"{name} exists — TakaBooks installs nothing (spec 4.1)")
+
+          # pyproject.toml is allowed for tool configuration, but never for deps.
+          pyproject = pathlib.Path("pyproject.toml")
+          if pyproject.exists():
+              data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+              project = data.get("project", {})
+              if project.get("dependencies"):
+                  problems.append("pyproject.toml declares [project] dependencies")
+              for group, deps in (project.get("optional-dependencies") or {}).items():
+                  if deps:
+                      problems.append(f"pyproject.toml declares optional-dependencies.{group}")
+              poetry = data.get("tool", {}).get("poetry", {}).get("dependencies", {})
+              if set(poetry) - {"python"}:
+                  problems.append("pyproject.toml declares [tool.poetry.dependencies]")
+
+          for p in problems:
+              print(f"::error::{p}")
+          sys.exit(1 if problems else 0)
+          PY
+
+      - name: Create an empty virtualenv (no third-party package can hide in it)
+        run: |
+          set -euo pipefail
+          python3 -m venv --without-pip "$RUNNER_TEMP/clean"
+          "$RUNNER_TEMP/clean/bin/python" -c "import sys, site; print(sys.version); print('site-packages:', site.getsitepackages())"
+
+      - name: Unit tests
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/clean/bin/python" -m unittest discover tests -v
+
+      - name: Build check — every bundle must build, ChatGPT 8k cap enforced
+        env:
+          # main must always be releasable, so a missing source file fails there.
+          # Elsewhere a missing file is reported but does not block the push.
+          STRICT_FLAG: ${{ github.ref == 'refs/heads/main' && '--strict' || '' }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086  # STRICT_FLAG is either empty or exactly one flag
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --check $STRICT_FLAG
+
+      # --check writes nothing, so a real build on one matrix leg proves the
+      # write path and produces the dist/ that the next two steps consume.
+      - name: Full build (3.11 only) — write dist/ and regenerate AGENTS.md
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --target all --clean --quiet
+          for must in \
+            dist/claude-skill/bd-bookkeeping-tax/SKILL.md \
+            dist/chatgpt/instructions.md \
+            dist/gemini/gem-instructions.md \
+            dist/universal/takabooks-complete.md \
+            AGENTS.md
+          do
+            if [ ! -s "$must" ]; then
+              echo "::error::build/build.py did not produce $must"
+              exit 1
+            fi
+          done
+          # Byte-identical output on a re-run is the determinism promise (spec 5).
+          find dist -type f -exec sha256sum {} + | sort -k2 > "$RUNNER_TEMP/build-1.sha"
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --target all --quiet
+          find dist -type f -exec sha256sum {} + | sort -k2 > "$RUNNER_TEMP/build-2.sha"
+          if ! diff -q "$RUNNER_TEMP/build-1.sha" "$RUNNER_TEMP/build-2.sha" > /dev/null; then
+            echo "::error::two consecutive builds produced different dist/ bytes — build.py is not deterministic"
+            diff "$RUNNER_TEMP/build-1.sha" "$RUNNER_TEMP/build-2.sha" || true
+            exit 1
+          fi
+          echo "dist/ is byte-identical across two builds"
+
+      - name: Installer against the real build (catches layout drift between build.py and bin/takabooks.mjs)
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          node --version
+          node bin/takabooks.mjs list --dist dist --json > "$RUNNER_TEMP/list.json"
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
+            const missing = r.targets.filter(t => !t.available).map(t => t.target);
+            if (missing.length) {
+              console.error('::error::bundles the installer cannot find in dist/: ' + missing.join(', '));
+              process.exit(1);
+            }
+            console.log('installer sees every bundle: ' + r.targets.map(t => t.target).join(', '));
+          " "$RUNNER_TEMP/list.json"
+          for target in claude chatgpt gemini universal agents; do
+            node bin/takabooks.mjs install "$target" --dist dist --dest "$RUNNER_TEMP/integ/$target" --quiet
+          done
+          test -s "$RUNNER_TEMP/integ/claude/SKILL.md"
+          test -s "$RUNNER_TEMP/integ/chatgpt/instructions.md"
+          test -s "$RUNNER_TEMP/integ/gemini/gem-instructions.md"
+          test -s "$RUNNER_TEMP/integ/universal"
+          test -s "$RUNNER_TEMP/integ/agents"
+
+      - name: Upload the built bundles for review
+        if: ${{ always() && matrix.python-version == '3.11' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist-py311
+          path: dist/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  installer:
+    name: Installer CLI — ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        # Git Bash on Windows, so one script covers all three runners.
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+
+      - name: Validate package.json
+        run: |
+          set -euo pipefail
+          node -e "
+            const p = require('./package.json');
+            const must = { name: '@bemoshiur/takabooks', license: 'MIT', homepage: 'https://ticonsys.com' };
+            for (const [k, v] of Object.entries(must)) {
+              if (p[k] !== v) { throw new Error(\`package.json \${k} is '\${p[k]}', expected '\${v}'\`); }
+            }
+            if (p.bin.takabooks !== 'bin/takabooks.mjs') throw new Error('bin.takabooks moved');
+            if (!/^https:\/\/github\.com\/bemoshiur\/TakaBooks\.git$/.test(p.repository.url)) {
+              throw new Error('repository.url must be https://github.com/bemoshiur/TakaBooks.git — GitHub Packages links the package to the repo through it');
+            }
+            if (p.publishConfig.registry !== 'https://npm.pkg.github.com') throw new Error('publishConfig.registry must be https://npm.pkg.github.com');
+            const deps = Object.keys(p.dependencies || {}).length + Object.keys(p.devDependencies || {}).length;
+            if (deps) throw new Error('the installer must stay dependency-free, found ' + deps);
+            // House style, not a capability check: build.py accepts --all, but
+            // TakaBooks spells the full build '--target all' so a CI log names the
+            // target set it built. Keep package.json in step with the workflows.
+            for (const [name, script] of Object.entries(p.scripts || {})) {
+              if (/build\/build\.py(?=\s|$)/.test(script) && /(^|\s)--all(\s|$)/.test(script)) {
+                throw new Error('script ' + name + ' spells the full build --all; TakaBooks writes --target all: ' + script);
+              }
+            }
+            console.log('package.json OK');
+          "
+
+      - name: Syntax check
+        run: node --check bin/takabooks.mjs
+
+      - name: Smoke test — version, help, list, usage errors
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs --version
+          node bin/takabooks.mjs help > /dev/null
+          node bin/takabooks.mjs list --json > /dev/null
+          # No sub-command at all is a usage error, not a success.
+          if node bin/takabooks.mjs > /dev/null 2>&1; then
+            echo "::error::bare invocation should exit non-zero"
+            exit 1
+          fi
+          # Usage problems are exit 2, distinct from a failed install (exit 1).
+          set +e
+          node bin/takabooks.mjs install nosuchplatform > /dev/null 2>&1; rc=$?
+          set -e
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::unknown target should exit 2, got $rc"
+            exit 1
+          fi
+
+      - name: Build a fixture bundle tree
+        run: |
+          set -euo pipefail
+          mkdir -p fixture-dist/claude-skill/bd-bookkeeping-tax/references
+          mkdir -p fixture-dist/chatgpt/knowledge fixture-dist/universal
+          printf -- '---\nname: bd-bookkeeping-tax\ndescription: CI fixture\n---\n' \
+            > fixture-dist/claude-skill/bd-bookkeeping-tax/SKILL.md
+          printf 'fixture reference\n' \
+            > fixture-dist/claude-skill/bd-bookkeeping-tax/references/vat-mushak.md
+          printf 'fixture instructions\n' > fixture-dist/chatgpt/instructions.md
+          printf 'fixture knowledge\n' > fixture-dist/chatgpt/knowledge/income-tax.md
+          printf 'fixture complete bundle\n' > fixture-dist/universal/takabooks-complete.md
+
+      - name: Install a directory bundle
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs install claude --dist fixture-dist --dest sandbox/skills/bd-bookkeeping-tax
+          test -f sandbox/skills/bd-bookkeeping-tax/SKILL.md
+          test -f sandbox/skills/bd-bookkeeping-tax/references/vat-mushak.md
+
+      - name: Refuse to clobber, then replace with --force
+        run: |
+          set -euo pipefail
+          # Stamp the install so we can prove the refusal touched nothing.
+          printf 'LOCAL EDIT\n' > sandbox/skills/bd-bookkeeping-tax/SKILL.md
+          if node bin/takabooks.mjs install claude --dist fixture-dist --dest sandbox/skills/bd-bookkeeping-tax; then
+            echo "::error::the installer overwrote an existing install without --force"
+            exit 1
+          fi
+          if [ "$(cat sandbox/skills/bd-bookkeeping-tax/SKILL.md)" != "LOCAL EDIT" ]; then
+            echo "::error::the refused install still modified the destination"
+            exit 1
+          fi
+          node bin/takabooks.mjs install claude --dist fixture-dist --dest sandbox/skills/bd-bookkeeping-tax --force --quiet
+          grep -q "CI fixture" sandbox/skills/bd-bookkeeping-tax/SKILL.md
+
+      - name: Install a single-file bundle
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs install universal --dist fixture-dist --dest sandbox/takabooks-complete.md --quiet
+          test -s sandbox/takabooks-complete.md
+          if node bin/takabooks.mjs install universal --dist fixture-dist --dest sandbox/takabooks-complete.md --quiet; then
+            echo "::error::a single-file install was overwritten without --force"
+            exit 1
+          fi
+
+      - name: --dry-run writes nothing
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs install chatgpt --dist fixture-dist --dest sandbox/dry --dry-run
+          if [ -e sandbox/dry ]; then
+            echo "::error::--dry-run created ${PWD}/sandbox/dry"
+            exit 1
+          fi
+
+      - name: A missing bundle fails loudly
+        run: |
+          set -euo pipefail
+          mkdir -p fixture-empty
+          if node bin/takabooks.mjs install gemini --dist fixture-empty --dest sandbox/gemini; then
+            echo "::error::the installer reported success for a bundle that does not exist"
+            exit 1
+          fi
+
+      - name: npm pack --dry-run
+        if: runner.os == 'Linux'
+        run: npm pack --dry-run

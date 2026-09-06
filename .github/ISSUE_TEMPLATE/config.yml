@@ -1,0 +1,20 @@
+# .github/ISSUE_TEMPLATE/config.yml
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# Blank issues are off so every report arrives through a form that asks for the source URL,
+# the assessment year and the fake-data confirmation. Personal tax questions do not belong
+# in the tracker at all — they go to a licensed ITP/CA or to NBR.
+blank_issues_enabled: false
+contact_links:
+  - name: "Questions and discussion / প্রশ্ন ও আলোচনা"
+    url: https://github.com/bemoshiur/TakaBooks/discussions
+    about: "How do I…, is this the right account for…, which Mushak form… — ask here, not in an issue."
+  - name: "Security vulnerability / নিরাপত্তা ত্রুটি"
+    url: https://github.com/bemoshiur/TakaBooks/security/advisories/new
+    about: "Report privately. Never open a public issue for a security problem."
+  - name: "Your own tax return — NBR / জাতীয় রাজস্ব বোর্ড"
+    url: https://nbr.gov.bd/
+    about: "TakaBooks is not professional advice. For your own filing, verify with a licensed ITP/CA and with NBR."
+  - name: "Ticon Sys"
+    url: https://ticonsys.com
+    about: "The company that maintains TakaBooks."

@@ -1,0 +1,4 @@
+*.pyc
+.superpowers/
+__pycache__/
+dist/
