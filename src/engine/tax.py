@@ -331,6 +331,11 @@ class RebateWorking:
     eligible: tb.Money = tb.Money.zero()
     rebate_computed: tb.Money = tb.Money.zero()
     rebate: tb.Money = tb.Money.zero()
+    #: How the STATUTE words the same limits, quoted from the rates file.  ``income_cap_percent``
+    #: and ``absolute_cap`` are engine parameters that cap the *investment*; the law caps the
+    #: *rebate*.  Empty when the rates file does not state it — never reconstructed here.
+    statutory_formulation_en: str = ""
+    statutory_formulation_bn: str = ""
 
     @property
     def tax_after_rebate(self) -> tb.Money:
@@ -719,6 +724,10 @@ def compute_rebate(
             hint="Implemented: " + ", ".join(REBATE_FORMULAS) + ".",
         )
 
+    def _statutory(name: str) -> str:
+        value = section.get(name)
+        return value.strip() if isinstance(value, str) else ""
+
     rate = rates.percent(KEY_REBATE_RATE)
     income_cap_percent = rates.percent(KEY_REBATE_INCOME_CAP_PERCENT)
     absolute_cap = rates.money(KEY_REBATE_ABSOLUTE_CAP)
@@ -738,6 +747,8 @@ def compute_rebate(
         eligible=eligible,
         rebate_computed=rebate_computed,
         rebate=rebate,
+        statutory_formulation_en=_statutory("statutory_formulation_en"),
+        statutory_formulation_bn=_statutory("statutory_formulation_bn"),
     )
 
 
@@ -1161,6 +1172,20 @@ def render_markdown(
                 aligns=["l", "r"],
             )
         )
+        if reb.statutory_formulation_en or reb.statutory_formulation_bn:
+            lines.append("")
+            lines.append(
+                "> ⚠️ **Caps (a) and (b) above are engine parameters that limit the *investment*. "
+                "The statute states the same limits as caps on the *rebate*, and those are the "
+                "figures to quote — do not quote the two cap figures above to a taxpayer or on a "
+                "return.**"
+            )
+            if reb.statutory_formulation_en:
+                lines.append(">")
+                lines.append(f"> Statutory wording: {reb.statutory_formulation_en}")
+            if reb.statutory_formulation_bn:
+                lines.append(">")
+                lines.append(f"> আইনের ভাষায়: {reb.statutory_formulation_bn}")
         if reb.capped_by_gross_tax:
             lines.append("")
             lines.append("The computed rebate exceeded the gross tax, so it is limited to the gross tax; "
@@ -1378,6 +1403,10 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
             "rebate": reb.rebate,
             "capped_by_gross_tax": reb.capped_by_gross_tax,
             "tax_after_rebate": reb.tax_after_rebate,
+            # income_cap_percent and absolute_cap above cap the INVESTMENT; these two strings
+            # are how the statute words the same limits (as caps on the REBATE).  Quote these.
+            "statutory_formulation_en": reb.statutory_formulation_en,
+            "statutory_formulation_bn": reb.statutory_formulation_bn,
         },
         "minimum_tax": {
             "policy": mt.policy,

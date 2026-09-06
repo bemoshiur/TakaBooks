@@ -107,9 +107,10 @@
 # -----------------------------------------------------------------------------------------
 # VERIFICATION CENSUS — a snapshot, not a contract
 # -----------------------------------------------------------------------------------------
-# At assembly (2026-09-06) this file held 436 rate nodes: 365 verified from primary text,
-# 52 landed but resting on professional summaries (verified = false, each saying why in its
-# own note), and 19 still placeholders that rates.py refuses outright. Those counts go stale
+# At assembly (2026-09-06) this file held 436 rate nodes: 362 verified from primary text,
+# 53 landed but resting on professional summaries or left as an openly contested reading
+# (verified = false, each saying why in its own note), and 19 still placeholders that
+# rates.py refuses outright. Those counts go stale
 # the moment anybody edits a node, so do not trust them — recompute:
 #
 #     python3 src/engine/rates.py --assessment-year 2026-27 --all
@@ -8271,17 +8272,22 @@ DO NOT PRINT S007.20 AT 5%. If a client insists, ask them to produce the gazette
 # WHAT CHANGED FOR AY 2026-27 — read this before you copy this file forward
 #   1. ITA 2023 s.170 was WHOLLY SUBSTITUTED by the Finance Act 2026 (Act 96 of 2026) s.97,
 #      effective 1 July 2026.  The old "Tax Day + 2% per month" model is gone.
-#   2. ITA 2023 s.2(80ka) — "রিটার্ন দাখিলের নির্দিষ্ট তারিখ" / specified date for filing the
-#      return, inserted only months earlier by Act 89 of 2026 s.29(ta) — was DELETED by the
-#      Finance Act 2026 s.23(da), effective 1 July 2026.  There is therefore NO statutory
-#      30 November individual due date in force for AY 2026-27.  Guides that print one are
-#      quoting a clause that was repealed before the filing season opened.  See
-#      deadlines.income_tax_return_specified_date_status.
+#   2. UNRESOLVED — the statutory "specified date" for an individual return.  This package's
+#      research document (docs/research/bd-tax-research-2026-09-05.md §1.9, and its
+#      compliance calendar) records ITA 2023 s.2(80A), inserted by Act 89 of 2026 §29(ট), as
+#      IN FORCE and setting 30 NOVEMBER for individuals and Hindu Undivided Families.  A
+#      later, uncited reading of the consolidated text on bdlaws was taken to show the same
+#      clause (as s.2(80ka)) deleted by the Finance Act 2026.  That reading appears in no
+#      permitted source and could not be confirmed; the research itself flags the whole area
+#      as unresolved at §C10 ("I could not verify the drafting").  Do NOT tell a user that no
+#      individual due date is in force.  See
+#      deadlines.income_tax_return_specified_date_status, which is verified = false and
+#      states both readings.
 #   3. VAT Act 2012 s.64 was wholly substituted by Finance Act 2026 s.11, effective
 #      1 July 2026: the VAT return is QUARTERLY, not monthly.
 #
 # HOW TO UPDATE AFTER THE NEXT FINANCE ACT
-#   Open the section on bdlaws (the URLs below are section-level and stable), read the
+#   Open the section on bdlaws (the bdlaws URLs below are section-level and were not independently re-verified), read the
 #   amendment footnotes at the foot of the page — they name the amending Act and its
 #   effective date — then rewrite value, source, as_of and note together.  Never move
 #   as_of forward without re-reading the section: a stale as_of on a changed figure is the
@@ -8375,12 +8381,20 @@ is Tk 25,000 (s.170(2), serial 3).  That is surprising but it is what both sub-s
   label_bn = "প্রথমবার রিটার্ন দাখিলকারী স্বাভাবিক ব্যক্তির সময়সীমা"
   value = "30 June following the end of the income year. For income year ended 30 June 2026: 30 June 2027. Tax is payable at the rate applicable to the assessment year."
   unit = "date"
-  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-52000.html"
-  as_of = "2026-07-01"
-  verified = true
+  source = "https://github.com/bemoshiur/TakaBooks/blob/main/docs/research/bd-tax-research-2026-09-05.md"
+  as_of = "2026-09-05"
+  verified = false
   placeholder = false
   note = """
-ITA 2023 s.170(1)(kha): a natural person who has never filed a return before may file by the
+⚠️ UNVERIFIED. The SUBSTANCE — a first-time individual filer may file by the 30 June
+following the end of the income year — comes from the research document, which records it
+from PwC Worldwide Tax Summaries and flags it as unconfirmed at §C11. The SUB-CLAUSE
+LETTERING below was asserted by a later content pass from a direct bdlaws reading that no
+permitted source cites; the research places this material in its s.2(80A) discussion, not in
+s.170. Both the date and the citation need confirming with an ITP or CA before you rely on
+them. Retained rather than deleted because the substance is research-supported.
+
+Claimed, not confirmed — ITA 2023 s.170(1)(kha): a natural person who has never filed a return before may file by the
 30 June following the end of the income year, paying income tax at the rate applicable for
 the relevant assessment year.  The clause is drafted as a permission and states no
 additional tax of its own; whether the s.170(1)(ka) ladder also bites on such a filer is not
@@ -8393,37 +8407,66 @@ first-time filer to wait.
   label_bn = "বিদেশে অবস্থানরত স্বাভাবিক ব্যক্তির রিটার্ন দাখিলের সময়সীমা"
   value = "Within the 90th day from the day the taxpayer returns to Bangladesh."
   unit = "date"
-  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-52000.html"
-  as_of = "2026-07-01"
-  verified = true
+  source = "https://github.com/bemoshiur/TakaBooks/blob/main/docs/research/bd-tax-research-2026-09-05.md"
+  as_of = "2026-09-05"
+  verified = false
   placeholder = false
   note = """
-ITA 2023 s.170(1)(ga).  Applies to a natural person who is outside Bangladesh either (i) on
+⚠️ UNVERIFIED — same defect class as the first-time-filer node above. The sub-clause
+lettering was asserted from a direct bdlaws reading that no permitted source cites. Confirm
+with an ITP or CA before relying on the 90-day window.
+
+Claimed, not confirmed — ITA 2023 s.170(1)(ga).  Applies to a natural person who is outside Bangladesh either (i) on
 leave for higher education or posted on deputation or lien for employment, or (ii) holding a
 valid visa and work permit for the purpose of earning.  It does not cover every taxpayer who
 happens to be abroad.
 """
 
   [deadlines.income_tax_return_specified_date_status]
-  label_en = "Statutory \"specified date\" / \"Tax Day\" — status for AY 2026-27"
-  label_bn = "রিটার্ন দাখিলের নির্দিষ্ট তারিখ / করদিবস — বর্তমান অবস্থা"
-  value = "REPEALED. ITA 2023 s.2(80ka), which defined রিটার্ন দাখিলের নির্দিষ্ট তারিখ (specified date for filing the return) and set 30 November for individuals, was deleted with effect from 1 July 2026. No statutory individual due date is in force for AY 2026-27. \"করদিবস\" now means only the ceremonial National Tax Day under s.2(22ka)."
+  label_en = "Statutory \"specified date\" / \"Tax Day\" — UNRESOLVED, confirm before filing"
+  label_bn = "রিটার্ন দাখিলের নির্দিষ্ট তারিখ / করদিবস — অমীমাংসিত, দাখিলের পূর্বে নিশ্চিত করুন"
+  value = "UNRESOLVED — TWO READINGS, CONFIRM BEFORE THE FILING SEASON. Reading A (this package's research document, and the reading TakaBooks follows): ITA 2023 s.2(80A) — রিটার্ন দাখিলের নির্দিষ্ট তারিখ / specified date for filing the return, inserted by Act 89 of 2026 §29(ট) — is IN FORCE and sets 30 November following the end of the income year for an individual or Hindu Undivided Family; for AY 2026-27 that is 30 November 2026. Reading B (asserted in a later content pass, source not confirmed): the same clause, numbered s.2(80ka), was deleted by the Finance Act 2026 with effect from 1 July 2026, leaving no statutory individual due date. TakaBooks cannot resolve this from its permitted sources. Diarise 30 November and ask an ITP or CA to confirm."
   unit = "policy"
-  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51794.html"
-  as_of = "2026-07-01"
-  verified = true
+  source = "https://github.com/bemoshiur/TakaBooks/blob/main/docs/research/bd-tax-research-2026-09-05.md"
+  as_of = "2026-09-05"
+  verified = false
   placeholder = false
   note = """
-Read from the consolidated ITA 2023 s.2 on bdlaws on 2026-09-06.  Amendment footnote 36
-records clause (80ka) inserted by the Finance (FY2025-26) Act 2026 (Act 89 of 2026)
-s.29(ta); footnote 37 records the same clause DELETED (বিলুপ্ত) by the Finance Act 2026
-(Act 96 of 2026) s.23(da), effective 1 July 2026.  The consolidated body text confirms it:
-s.2 runs (80) "রপ্তানি" straight to (81) "লভ্যাংশ" with no (80ka).
-CONSEQUENCE FOR THE USER: professional summaries published in mid-2026 — and this project's
-own research document — describe a 30 November individual specified date and a Commissioner's
-90-day extension power in s.2(80ka)(e).  Both went with the clause.  From 1 July 2026 the
-timetable is s.170 alone, and s.170 as substituted contains no extension power at all.
-Confirm with an ITP or CA before relying on any extension.
+SOURCE IN FULL: docs/research/bd-tax-research-2026-09-05.md — §1.9 (the s.2(80A) specified-date
+table, 30 November for individuals), its §6.1 compliance calendar ("⭐ Individual / HUF specified
+date for filing return — 30 November — ITA s.2(80A)(a)"), its "what is live right now" table, and
+§C10 / §F5 for what the research itself could not settle.
+WHY THIS IS NOT VERIFIED: the two readings cannot both be right and neither can be settled
+from a permitted source.
+  READING A — the research document.  §1.9 records "Tax Day" (করদিবস) replaced by
+  রিটার্ন দাখিলের নির্দিষ্ট তারিখ, inserted as s.2(80A) by Act 89 of 2026 §29(ট), with a
+  table giving 30 November for an individual / HUF, the 15th day of the ninth month (floored
+  at 15 September) for other taxpayers, 30 June for a never-before filer, the 90th day after
+  return to Bangladesh for an individual abroad, and a Commissioner's extension of up to
+  90 days at s.2(80A)(e).  The research's own compliance calendar lists "⭐ Individual / HUF
+  specified date for filing return — 30 November — ITA s.2(80A)(a)", and its "what is live
+  right now" table says the specified date is 30 November 2026.  It warns: do not treat
+  31 December as the statutory deadline.
+  READING B — a later content pass asserted that clause (80ka) was inserted by Act 89 of 2026
+  s.29(ta) and then DELETED by the Finance Act 2026 s.23(da) effective 1 July 2026, citing
+  bdlaws amendment footnotes.  Those footnotes, that amending section and the s.2(22ka)
+  "National Tax Day" numbering appear in NO permitted source: not in the research, not in
+  NBR's Paripatra 2026-27 excerpt shipped in this repo.  The assertion has been RETRACTED
+  from this file.  It is recorded here only so that a maintainer who meets it elsewhere
+  knows it was considered and not adopted.
+  The research is itself unresolved on the surrounding drafting — §C10: a search result put
+  the replacement at s.2(80Ka) via the Finance Ordinance 2025 rather than the Finance Act
+  2026, and it introduces a ceremonial National Tax Day at s.2(22); "I could not verify the
+  drafting".  §F5 leaves the extension power unconfirmed for the same reason.
+WHAT TAKABOOKS DOES MEANWHILE: it states the research's 30 November date and labels it
+unconfirmed.  It does NOT tell a user that no individual due date exists — if Reading A is
+right, that advice makes the user miss a mandatory statutory date.
+WHAT WOULD CONFIRM IT: the consolidated s.2 of the Income Tax Act 2023 on
+bdlaws.minlaw.gov.bd read with its amendment footnotes, or NBR's own Paripatra text on the
+specified date.  Ask an ITP or CA before the November filing season.
+WHAT IS NOT IN DOUBT: the s.170 filing-window ladder in the nodes above (5% incentive to
+30 September, neutral to 31 December, 2% / Tk 3,000 from 1 January, 5% / Tk 5,000 from
+1 April).  Those bands are separate from the specified date and are unaffected by this.
 """
 
 # -----------------------------------------------------------------------------------------

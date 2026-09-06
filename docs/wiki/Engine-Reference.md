@@ -480,8 +480,8 @@ Rates source: rates-AY2026-27.toml — করবর্ষ / assessment year 2026
 
 | Rate nodes | Count |
 | :--- | ---: |
-| verified | 365 |
-| unverified | 52 |
+| verified | 362 |
+| unverified | 55 |
 | placeholder | 19 |
 | total | 436 |
 ```

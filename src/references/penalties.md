@@ -7,8 +7,11 @@
 on 2026-09-06 — আয়কর আইন, ২০২৩ / Income Tax Act 2023 (act-1429), মূল্য সংযোজন কর ও সম্পূরক শুল্ক
 আইন, ২০১২ / VAT and SD Act 2012 (act-1106), কোম্পানী আইন, ১৯৯৪ / Companies Act 1994 (act-788) —
 and RJSC's own fee page for administrative fees. Every figure below carries its section and a link.
-**Status:** POPULATED, primary-sourced. The one figure not read from a statute is the RJSC
-administrative fee schedule, which is read from RJSC's own published fee page; it is marked.
+**Status:** POPULATED, mostly primary-sourced — see **§8 Verification status**, which says block by
+block what is primary and what is not. Three things on this page are **not** primary: the RJSC
+administrative fee schedule (RJSC's own published fee page), the **s.272** concealment formula
+(this package's research document, marked ⚠️ where it appears), and the amending-section numbers
+attached to several ITA citations. Each is marked where it appears.
 
 > **Not professional advice.** Penalty exposure is stated here as the statute states it — as a
 > ceiling, a range, or a formula, with the discretion the statute gives the officer. It is not a
@@ -60,12 +63,15 @@ http://bdlaws.minlaw.gov.bd/act-1429/section-52004.html
 | Filed **suo motu** (স্বপ্রণোদিতভাবে) after the s.170 time expires | Tax under s.173, **plus 10% of the tax payable or Tk 5,000, whichever is HIGHER** |
 | Filed after the tax year has passed, in response to a notice under s.212(1) in a s.212(4)(ka) case | Tax under s.173, **plus 15% of the tax payable or Tk 10,000, whichever is HIGHER** |
 
-**s.174(4):** in a delayed return, exempt income is taxed as if the exemption did not apply — except
-income under Sixth Schedule Part 1 clauses (1), (4), (5), (6), (7), (8), (17) and (35), and exempt
-income counted in computing income from employment. **Filing late can therefore cost the exemption
-itself, not just the additional tax.** This is the most under-appreciated consequence on this page.
-
 This replaces the old 2%-per-month (maximum 24 months) charge under the pre-2026 text.
+
+> **Not stated here: any loss of exemption on a delayed return.** An earlier draft of this file
+> asserted that in a delayed return exempt income is taxed "as if the exemption did not apply",
+> with a list of excepted Sixth Schedule Part 1 clauses. **No such rule, and no such clause list,
+> appears in any source this package is permitted to rely on** — the research document covers s.174
+> and records only the two additional-tax limbs in the table above. The claim has been
+> **retracted**. If someone tells you a late return costs the exemption itself, ask an ITP or CA to
+> read s.174 to you before you act on it either way.
 
 ### 1.3 Failure to file — ITA s.266(1)
 
@@ -188,22 +194,30 @@ preceding financial years** (s.147(4), new under the Finance Act 2026).
 | **Failure to maintain accounts** in the prescribed manner (s.72(3)), no income from rent of tangible property | Up to **1.5× the tax payable**; **Tk 5,000** where total income is within the tax-free limit | **s.267(1)** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52184.html) |
 | Same, with income from rent of tangible property | **50% of the tax payable on that rental income, or Tk 5,000, whichever is HIGHER** | **s.267(2)** |
 | Using a **fake TIN, or another person's TIN**, in a return or any document requiring one | Up to **Tk 20,000** | **s.268** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52185.html) |
-| **আয় গোপন / Concealment of income** — misstating income, assets, liabilities, expenditure or any other material particular so as to evade an amount payable | **Penalty = evaded amount × 10% × N**, where N = the number of years from the assessment year in which the evasion occurred to the assessment year in which it was discovered, **inclusive**. The authority **shall** impose it. | **s.272** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52189.html) |
+| **আয় গোপন / Concealment of income** — misstating income, assets, liabilities, expenditure or any other material particular so as to evade an amount payable | ⚠️ **Penalty = A + B**, where **A = tax evaded × 15%** and **B = tax evaded × 10% × C**; **C** = the number of years from the assessment year in which the evasion occurred to the assessment year in which it was discovered. The authority **shall** impose it. | **s.272** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52189.html) |
 | **False or non-conforming audit report by a Chartered Accountant** — not certified as following IAS/IFRS and ISA, or untrue or incorrect | **Not less than Tk 50,000 and not more than Tk 200,000**, on the CA. The authority **shall** impose it. | **s.273** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52190.html) |
 | **Filing a fake audit report** — one not signed by a Chartered Accountant, or credibly untrue | **Tk 100,000** for that income year, on the taxpayer | **s.274** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52218.html) |
 | Non-compliance with a notice under **ss.167, 168, 179, 181, 183 or 212** | Up to **the tax chargeable on total income** | **s.270** — [link](http://bdlaws.minlaw.gov.bd/act-1429/section-52187.html) |
 
-> ### ⚠️ The s.272 concealment formula changed — most published tables are wrong
+> ### ⚠️ s.272 is TWO limbs — the "10% per year" shorthand understates it
 >
-> The current text imposes a **single limb**: `A = evaded amount × 10% × N`.
-> The previous text imposed **A + B**, where `A = evaded amount × 15%` and
-> `B = evaded amount × 10% × N`. That older two-limb formula was **replaced by the Finance
-> (FY2025-26) Act 2026 (Act 89 of 2026) s.123** — see amendment footnote 1 on the bdlaws page. Any
-> table still showing "15% plus 10% per year" is quoting the superseded version and **overstates**
-> the charge. Read the section before quoting a number to a client.
+> The formula is **A + B**, where `A = tax evaded × 15%` and `B = tax evaded × 10% × C`. That is the
+> statutory formula as it stands in **NBR's authentic English text** of the Income Tax Act 2023,
+> recorded in this package's research document at §6.2. Note the base: **tax evaded**, not the
+> concealed income and not the "amount payable".
 >
-> Note also that N is measured **inclusive of the year of discovery** ("সেই করবর্ষসহ"), so a
-> concealment discovered in the same assessment year gives N = 1, not 0.
+> The widely circulated rendering **"10% of tax evaded × number of years"** — a single limb, with no
+> 15% — is **ACE Advisory's simplification**. The research flags it by name. It drops limb A
+> entirely and therefore **understates a penalty the statute says the authority *shall* impose**.
+> An earlier draft of this file printed that single-limb version and claimed the 15% limb had been
+> repealed by the Finance (FY2025-26) Act 2026 (Act 89 of 2026) s.123. **That amending section
+> appears in no source this package is permitted to rely on, and the claim has been retracted.**
+>
+> ⚠️ **Not verified from the section text.** A + B comes from the research document's reading of
+> NBR's authentic English text, not from a reading of the consolidated Bangla section here, and the
+> sources do not settle exactly how **C** is counted (whether the assessment year of discovery is
+> itself included). Treat any figure you compute from this as an order of magnitude and have an ITP
+> or CA confirm the exposure.
 
 ### Transfer pricing — ITA ss.276–279
 
@@ -324,8 +338,9 @@ An appeal to the Commissioner (Appeals) is filed within 90 days; the Commissione
   http://bdlaws.minlaw.gov.bd/act-1106/section-42361.html
 - **An amended return cannot recover a missed rebate.** Rule 49(1A) of the VAT and SD Rules 2016 bars
   it, so an expired input-tax-credit window cannot be cured by amendment.
-- **The legacy-settlement window (s.137A) closes 31 December 2026** — see
-  `compliance-calendar.md` §7. It caps interest at 24 months; it does not waive the tax.
+- **The legacy VAT interest-waiver window (s.137A) closes 31 December 2026** — see
+  `compliance-calendar.md` §7 and `vat-mushak.md` §9. It waives **interest** on legacy demands; the
+  tax itself is a separate question.
 
 ---
 
@@ -382,7 +397,7 @@ company per-document fee to Tk 200.
 
 | Widely published | Correct position | Authority |
 |---|---|---|
-| s.272 concealment = **15% + 10% × years** | **10% × years**, single limb | s.272 as substituted by Act 89 of 2026 s.123 |
+| s.272 concealment = **10% of tax evaded × number of years**, a single limb (ACE Advisory's simplification) | ⚠️ **A + B** — A = tax evaded × **15%**, *plus* B = tax evaded × **10% × years**. The single-limb version understates it | s.272 in NBR's authentic English text, per the research document §6.2 — **not** re-read from the section here |
 | VAT late-return fee **Tk 5,000** or **Tk 10,000** | **Tk 2,000** | VAT Act s.85(1)(চ), reduced by Act 89 of 2026 s.16(ka) |
 | VAT interest **2% per month** | **1% per month** simple, capped at 24 months | VAT Act s.127(1) and Explanation |
 | Excess input tax credit penalty **50%–100%** | **30%–50%** | VAT Act s.85(1)(জ), reduced by Act 89 of 2026 s.16(kha) |
@@ -399,7 +414,10 @@ company per-document fee to Tk 200.
 
 | Block | Status |
 |---|---|
-| ITA 2023 ss.55, 56, 143, 162, 170, 174, 266–280, 312–319 | **Primary** — read from the consolidated Bangla text on bdlaws (act-1429) on 2026-09-06, amendment footnotes included |
+| ITA 2023 ss.55, 56, 143, 162, 170, 266–271, 273–280, 312–319 | **Primary** — read from the consolidated Bangla text on bdlaws (act-1429) on 2026-09-06, amendment footnotes included |
+| **ITA 2023 s.272** (concealment, §3) | ⚠️ **Research document only** — the A + B formula is the research's reading of NBR's authentic English text (§6.2). Not re-read from the section here, and the counting of **C** is unsettled |
+| **ITA 2023 s.174** (delayed return, §1.2) | ⚠️ **Mixed** — the two additional-tax limbs (10% / Tk 5,000 and 15% / Tk 10,000) are in the research document §1.9(c) and §6.2. The amending-section citation (Finance Act 2026 s.102) is **not** in any permitted source, and an asserted s.174(4) exemption-forfeiture rule has been **retracted** |
+| Amending-section citations elsewhere on this page (e.g. "substituted by Finance Act 2026 s.NN") | ⚠️ **Not independently sourced** — they came from a bdlaws reading that no permitted source corroborates. The **figures** they annotate are sourced; the **section numbers of the amending Acts** are not. Do not quote them to a client |
 | VAT Act 2012 ss.64, 65, 85, 121, 122, 124, 127, 137A | **Primary** — read from bdlaws (act-1106) on 2026-09-06 |
 | Companies Act 1994 ss.36, 77, 81, 82, 115, 183, 189, 190, 210, 384 | **Primary** — read from bdlaws (act-788) on 2026-09-06 |
 | NBR Paripatra 2026-27 worked example (s.56 arithmetic) | **Primary** — NBR's own circular, https://nbr.gov.bd/uploads/paripatra/আয়কর_পরিপত্র_২০২৬-২০২৭.pdf |

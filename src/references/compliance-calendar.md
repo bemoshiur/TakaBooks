@@ -22,19 +22,34 @@ plus **উৎসে কর বিধিমালা, ২০২৬ / TDS Rules 20
 - **⚠️ INFERRED** on a line means the date is a reasonable reading, not an enacted date. Confirm it
   before you rely on it. There is exactly one such item in the core calendar: the **VAT quarter
   boundaries**.
+- **⚠️ UNRESOLVED** on a line means two readings of the law are in circulation and this package
+  cannot choose between them from its permitted sources. It states both and names the one it
+  follows. There is exactly one such item: the **individual "specified date" (30 November)**.
 - **Not listed = not confirmed.** Several obligations that circulate widely are deliberately absent.
   §10 says which, and why.
 
-## The four things almost every 2026-27 calendar gets wrong
+## Four things almost every 2026-27 calendar gets wrong — and where this package is unsure
 
-1. **There is no "Tax Day" and no 30 November individual due date.** ITA 2023 **s.2(80ka)**, the
-   clause that defined রিটার্ন দাখিলের নির্দিষ্ট তারিখ / *specified date for filing the return* and
-   set 30 November for individuals, was **deleted by the Finance Act 2026 (Act 96 of 2026)
-   s.23(da) with effect from 1 July 2026** — months after Act 89 of 2026 inserted it. The
-   consolidated s.2 runs clause (80) straight to (81) with no (80ka). **করদিবস** now means only the
-   ceremonial **National Tax Day** at s.2(22ka). Anything printing a 30 November individual deadline
-   for AY 2026-27 is quoting a repealed clause.
-   *Source:* http://bdlaws.minlaw.gov.bd/act-1429/section-51794.html (amendment footnotes 36 and 37).
+1. ⚠️ **UNRESOLVED — the individual "specified date". It is not 31 December, and it is probably
+   30 November.** This package's research document records ITA 2023 **s.2(80A)** —
+   রিটার্ন দাখিলের নির্দিষ্ট তারিখ / *specified date for filing the return*, inserted by
+   **Act 89 of 2026 §29(ট)** — as **in force**, setting **30 November** following the end of the
+   income year for a **স্বাভাবিক ব্যক্তি / natural person** and a **হিন্দু অবিভক্ত পরিবার / HUF**. For
+   AY 2026-27 that is **30 November 2026**. The research warns in terms: *do not treat 31 December
+   as the statutory deadline.*
+   **The contrary reading, and why it is not stated here as fact.** A content pass in this
+   repository previously asserted that the same clause, numbered **s.2(80ka)**, was *deleted* by the
+   Finance Act 2026 with effect from 1 July 2026, so that **no** individual due date is in force.
+   That assertion rested on bdlaws amendment footnotes that appear in **no source this package is
+   permitted to rely on** — not in the research, not in NBR's Paripatra 2026-27. It has been
+   **retracted**. The research itself could not settle the surrounding drafting (§C10 —
+   *"I could not verify the drafting"*).
+   **What to do:** diarise **30 November** and have an **ITP or CA confirm it before the filing
+   season**. TakaBooks will not tell you that no individual due date exists: if that were wrong, you
+   would miss a mandatory statutory date. The **s.170 filing-window ladder in §1 is a separate
+   question and is not in doubt** — the incentive, neutral and additional-tax bands stand either way.
+   *Both readings are recorded in* `data/rates-AY2026-27.toml` *at*
+   `deadlines.income_tax_return_specified_date_status`, *which is* `verified = false`.
 2. **The VAT return is quarterly, not monthly**, from 1 July 2026 — s.64 wholly substituted by
    Finance Act 2026 s.11.
 3. **31 December is not a deadline either.** It is the last day of the band in which an individual
@@ -75,9 +90,15 @@ Two special clauses in the same sub-section:
 **s.170(3):** where any of those days is a **সরকারি ছুটির দিন / government holiday**, the obligation
 falls on the immediately following working day.
 
-**There is no extension power.** s.170 as substituted contains none, and the Commissioner's 90-day
-power went with s.2(80ka). Filing after the assessment year has ended is a **বিলম্ব রিটার্ন /
-delayed return** under **s.174** — see `penalties.md`.
+⚠️ **The extension power is unresolved.** The research records that the **NBR's** power to extend
+the return filing date by one month has been **repealed**, while **s.2(80A)(e)** — inserted by the
+same Act 89 of 2026 — gives the **কর কমিশনার / Commissioner of Taxes** power to extend an
+individual's specified date by up to **90 days** on written application made before that date for
+unavoidable reasons. Whether the Finance Act 2026 removed s.2(80A)(e) is **unconfirmed** (research
+§F5); the two powers are different office-holders and different periods, so they may simply
+coexist. **Do not plan on an extension without asking an ITP or CA first.** Filing after the
+assessment year has ended is a **বিলম্ব রিটার্ন / delayed return** under **s.174** — see
+`penalties.md`.
 
 **As at 6 September 2026 the 5% early-filing incentive window for AY 2026-27 is open and closes
 30 September 2026.**
@@ -150,7 +171,8 @@ Late deposit is charged at 2% per month under s.143 — see `penalties.md`.
 | **October** | VAT return, Jul–Sep quarter ⚠️ INFERRED quarter | **15 October** (20 Oct for the listed bodies) | VAT Act s.64(1) |
 | | **Withholding tax return, Jul–Sep quarter** | **25 October** | ITA s.177(3) |
 | | TDS deposit for September | **14 October** | TDS Rules 2026 r.9 |
-| **November** | TDS deposit for October | **14 November** | TDS Rules 2026 r.9 |
+| **November** | ⭐ **Individual / HUF "specified date for filing return"** ⚠️ UNRESOLVED — see the note above the calendar | **30 November** | ITA s.2(80A)(a) |
+| | TDS deposit for October | **14 November** | TDS Rules 2026 r.9 |
 | **December** | **AIT instalment 2 — 25%** | **15 December** | ITA s.155(2) |
 | | End of the individual neutral band — additional tax from 1 January | **31 December** | ITA s.170(1) |
 | | **VAT legacy-settlement window closes** (one-off, see §7) | **31 December 2026** | VAT Act s.137A |
@@ -301,16 +323,15 @@ Notes that matter in practice:
 
 ## 7. One-off window that closes inside AY 2026-27
 
-**VAT legacy settlement — closes 31 December 2026.** A registered person or **উৎসে মূসক
-কর্তনকারী / VDS withholder** who pays a pre-existing due under the repealed VAT Act 1991, or a
-pre-1 July 2022 due under the 2012 Act, **within six months from 1 July 2026** has the interest /
-additional tax **capped at 24 months** — 2% per month for the 1991-Act limb, the applicable rate for
-the 2012-Act limb. No interest applies to a manufacturing entity's dues from before 1 July 2010.
-**VAT Act s.137A**, inserted by Finance Act 2026 s.19 —
-http://bdlaws.minlaw.gov.bd/act-1106/section-59176.html
+**VAT legacy settlement — closes 31 December 2026.** New **VAT Act s.137A** (১৩৭ক) opens a special
+**interest-waiver scheme for legacy VAT demands** — dues under the repealed **VAT Act 1991** and
+specified periods under the **2012 Act** — for a **six-month window from 1 July 2026**. Secondary
+reporting gives the hard close as **31 December 2026**.
 
-This is a **cap on interest, not a waiver** — the tax, penalty or other due itself remains payable.
-Secondary write-ups describe it as an "interest waiver scheme"; the section does not.
+The waiver is of **interest**; the tax and any penalty are a separate question, and the mechanics of
+the scheme (which periods qualify, what has to be paid and by when) were not read from the section
+itself. If a client has an old VAT demand, **this is the last quarter to use it — take it to an ITP
+or CA now.** `vat-mushak.md` §9 states the same scheme in the same terms.
 
 ---
 
@@ -377,9 +398,12 @@ month-fixed, so neither appears in the monthly table:
 
 ## Where the machine-readable dates live
 
-`data/rates-AY2026-27.toml`, section `[deadlines]`. Each node carries `value`, `source` (the section
-URL, never a homepage), `as_of`, `verified` and `note`. The only node in that section with
-`verified = false` is `deadlines.vat_quarter_boundaries`, for the reason given in §4.
+`data/rates-AY2026-27.toml`, section `[deadlines]`. Each node carries `value`, `source`, `as_of`,
+`verified` and `note`. Two nodes in that section are `verified = false`:
+`deadlines.vat_quarter_boundaries`, for the reason given in §4, and
+`deadlines.income_tax_return_specified_date_status`, which states both readings of the individual
+specified date. Re-run `python3 src/engine/rates.py --assessment-year 2026-27 --all` rather than
+trusting that count — it goes stale the moment a node is edited.
 
 **Updating after the next Finance Act:** open each section on bdlaws using the URLs above, read the
 amendment footnotes at the foot of the page — they name the amending Act and its effective date —

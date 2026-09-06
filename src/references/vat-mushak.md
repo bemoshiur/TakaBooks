@@ -488,7 +488,9 @@ from a tenth by Finance Act 2026 §§15–17: `vat.appeals.commissioner_appeals_
 **Closing window:** the **legacy VAT interest-waiver scheme under new s.137A** (১৩৭ক), for demands
 under the repealed VAT Act 1991 and specified periods under the 2012 Act, runs for **six months
 from 1 July 2026**, with secondary reporting giving a hard close of **31 December 2026**. If a
-client has an old VAT demand, this is the last quarter to use it.
+client has an old VAT demand, this is the last quarter to use it. The waiver is of **interest**;
+the tax and any penalty are a separate question, and the mechanics of the scheme were not read
+from the section itself. `compliance-calendar.md` §7 states this in the same terms.
 
 ## 10. What `vat.py` must tie out, and what to do on a break
 

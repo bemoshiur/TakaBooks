@@ -2,7 +2,8 @@
 """TakaBooks — মূসক / VAT position from the journal (spec §4.6).
 
 Computes, for a chosen period, every figure a মূসক-registered (VAT-registered)
-business needs in order to fill its monthly return:
+business needs in order to fill its VAT return (quarterly from 1 July 2026 —
+pass ``--since/--until`` to cover a whole quarter):
 
 * **উৎপাদ কর / output VAT** — total taxable supply value and the VAT charged on it,
   broken down by the rate written on each posting.
@@ -569,7 +570,7 @@ class DeclaredRate:
 
 @dataclass(frozen=True)
 class ReturnFigure:
-    """One line of the figure set the monthly return asks for."""
+    """One line of the figure set the VAT return asks for."""
 
     key: str
     label_bn: str
@@ -734,7 +735,7 @@ class VatPosition:
     # -- derived views -------------------------------------------------------------------
 
     def return_figures(self) -> tuple[ReturnFigure, ...]:
-        """The figure set the monthly return asks for, in filing order."""
+        """The figure set the VAT return asks for, in filing order."""
         carry = self.carry_forward
         payable = self.net_payable
         return (
@@ -828,7 +829,8 @@ def resolve_period(
         if not match:
             raise tb.ConfigError(
                 f"--period {period!r} must be written YYYY-MM, e.g. 2026-07.",
-                hint="A VAT return period is one calendar month.",
+                hint="A VAT tax period is one calendar month; the quarterly return "
+                "covers three of them. Use --since/--until for a full quarter.",
             )
         year, month = int(match.group(1)), int(match.group(2))
         last_day = calendar.monthrange(year, month)[1]
@@ -2060,7 +2062,7 @@ def render_markdown(position: VatPosition) -> str:
     add("## 1. দাখিলপত্রের অঙ্ক / Return figures")
     add("")
     add(
-        "The figure set a VAT-registered business needs to complete its monthly return. "
+        "The figure set a VAT-registered business needs to complete its VAT return. "
         "The `Ref` column is a TakaBooks reference, **not** an NBR form line number."
     )
     add("")
@@ -2757,7 +2759,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--period",
         metavar="YYYY-MM",
-        help="one calendar month, e.g. 2026-07 (a monthly return period)",
+        help="one calendar month, e.g. 2026-07. A VAT tax period is a calendar month, "
+        "but the RETURN is quarterly from 1 July 2026 (s.64) — pass --since/--until to "
+        "cover a whole quarter",
     )
     parser.add_argument("--since", metavar="YYYY-MM-DD", help="inclusive start of the period")
     parser.add_argument("--until", metavar="YYYY-MM-DD", help="inclusive end of the period")

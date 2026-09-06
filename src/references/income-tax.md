@@ -502,10 +502,18 @@ window. ⚠️ **NBR's power to extend the return filing date by one month has b
 | 1 January – 31 March | Additional tax: **higher of 2% of tax payable or Tk 3,000** |
 | 1 April – 30 June | Additional tax: **higher of 5% of tax payable or Tk 5,000** |
 
-> ### ⚠️ The statutory due date and the penalty-free window are DIFFERENT DATES
+> ### ⚠️ UNRESOLVED — the statutory due date, and why it is not 31 December
+>
+> **Two readings are in circulation and TakaBooks cannot choose between them from its permitted
+> sources.** The reading below — the research document's — is the one this package follows and
+> states. The contrary reading is named at the foot of this box. `compliance-calendar.md`
+> ("Four things almost every 2026-27 calendar gets wrong", item 1) and
+> `data/rates-AY2026-27.toml` at `deadlines.income_tax_return_specified_date_status`
+> (`verified = false`) say exactly the same thing. **Confirm with an ITP or CA before the filing
+> season.**
 >
 > "Tax Day" (কর দিবস) has been replaced by **"রিটার্ন দাখিলের নির্দিষ্ট তারিখ"** — the *specified
-> date for filing return* — at **s.2(80A)**, read from bdlaws:
+> date for filing return* — at **s.2(80A)**, inserted by Act 89 of 2026 §29(ট):
 >
 > | Taxpayer | Specified date |
 > |---|---|
@@ -521,14 +529,25 @@ window. ⚠️ **NBR's power to extend the return filing date by one month has b
 > advance-tax interest uplift and "delayed return" characterisation. **Do not tell a user that
 > 31 December is the statutory deadline.**
 >
-> ⚠️ **Unresolved:** PwC says the **NBR's** one-month extension power is repealed, yet s.2(80A)(e)
-> gives the **Commissioner of Taxes** power to extend by up to **90 days** on written application
-> made before the specified date for unavoidable reasons. Whether the Finance Act 2026 removed
-> s.2(80A)(e) is unconfirmed. ⚠️ **Also unresolved:** the drafting history of the "Tax Day"
-> replacement (whether it was s.2(80A) or s.2(80Ka), and whether the Finance Ordinance 2025 or the
-> Finance Act 2026 made the change) could not be verified. The *operative effect* above is well
-> established; the section numbering is not. Note separately that the Finance Act 2026 introduces a
-> ceremonial **"National Tax Day"** at s.2(22) — an awareness observance, not a deadline.
+> ⚠️ **Unresolved — the extension power:** PwC says the **NBR's** one-month extension power is
+> repealed, yet s.2(80A)(e) gives the **Commissioner of Taxes** power to extend by up to **90 days**
+> on written application made before the specified date for unavoidable reasons. Whether the Finance
+> Act 2026 removed s.2(80A)(e) is unconfirmed. Do not plan on an extension.
+>
+> ⚠️ **Unresolved — the drafting:** whether the replacement clause is s.2(80A) or s.2(80Ka), and
+> whether the Finance Ordinance 2025 or the Finance Act 2026 made the change, could not be verified.
+> The *operative effect* above is well established; the section numbering is not. Note separately
+> that the Finance Act 2026 introduces a ceremonial **"National Tax Day"** at s.2(22) — an awareness
+> observance, not a deadline.
+>
+> ⚠️ **The contrary reading — RETRACTED, not adopted.** A content pass in this repository asserted
+> that the clause above, numbered **s.2(80ka)**, was **deleted** by the Finance Act 2026 with effect
+> from 1 July 2026, so that **no statutory individual due date is in force** for AY 2026-27. It
+> cited bdlaws amendment footnotes that appear in **no source this package is permitted to rely on**
+> — not in the research document, not in NBR's Paripatra 2026-27. That claim has been retracted from
+> every file in this package. It is recorded here so a reader who meets it elsewhere knows it was
+> considered and **not** adopted: absent beats wrong, and a user told there is no due date at all
+> would miss a mandatory one if this reading is right.
 
 **As at 6 September 2026 an individual filing for AY 2026-27 is inside the 5% early-filing rebate
 window, which closes 30 September 2026.**

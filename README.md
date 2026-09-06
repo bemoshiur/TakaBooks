@@ -34,7 +34,7 @@
 > এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত আইটিপি বা সিএ-এর সঙ্গে যাচাই করুন। Full [disclaimer](#disclaimer) below.
 
 > [!NOTE]
-> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **436 rate nodes: 365 verified, 52 unverified, 19 still placeholders.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 52 *unverified* ones rest on post-enactment professional summaries that agree with each other, because the Finance Act 2026 gazette PDF is typeset in a legacy Bijoy Bangla font that does not extract to readable text. The 19 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
+> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **436 rate nodes: 362 verified, 55 unverified, 19 still placeholders.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 55 *unverified* ones rest on post-enactment professional summaries that agree with each other, because the Finance Act 2026 gazette PDF is typeset in a legacy Bijoy Bangla font that does not extract to readable text — or, in one case, on two readings of the law that the sources do not settle, in which case the node states both and names neither as fact. The 19 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
 
 ## 📑 Contents
 
@@ -302,7 +302,7 @@ Node counts are `rates.py`'s own audit of `src/data/rates-AY2026-27.toml`, 436 r
 
 **What the three flags mean, and what each tool does about them.** Every rate node carries `verified` and `placeholder`:
 
-- **`verified = true` (365 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
+- **`verified = true` (362 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
 - **`verified = false` (52 nodes)** — a real figure, but read from post-enactment professional summaries (PwC Bangladesh, KPMG / Rahman Rahman Huq, Tuhin & Partners) that agree with one another rather than from enacted text. The reason is one specific obstacle: the **Finance Act 2026 gazette PDF is typeset in a legacy Bijoy-family Bangla font whose glyphs map to ASCII**, so its Schedules could not be text-extracted. Each such node's `note` says what is unconfirmed and what would confirm it.
 - **`placeholder = true` (19 nodes)** — nothing was landed at all. The `value` is a stand-in, not a rate. They are: the two mouza-by-mouza property-transfer tables in Rules 6 and 7 of SRO 273 (`tds.sections.125`, `.126`), three fixed-amount withholdings (`.138`, `.138A`, `.139`), the two turnover-tax gross-receipts thresholds (individual and corporate), and twelve `vat.rates.reduced.*` figures whose Third-Schedule paragraph could not be decoded or whose reinstating SRO could not be opened. `rates.py --all` lists all nineteen by key.
 
@@ -346,7 +346,7 @@ Please read this before relying on anything TakaBooks produces.
 - **Not professional advice.** TakaBooks is software plus reference text. It is not a licensed Income Tax Practitioner (ITP), Chartered Accountant (CA), lawyer or tax adviser, and nothing it outputs — a journal entry, a report, a tax computation, a deadline — is advice. **Verify every figure with a licensed ITP or CA before you file.**
 - **Not affiliated with NBR or any government body.** TakaBooks is an independent open-source project. It is not affiliated with, endorsed by, sponsored by or connected to the National Board of Revenue (জাতীয় রাজস্ব বোর্ড), the Ministry of Finance, the Registrar of Joint Stock Companies, or any other authority of the Government of Bangladesh. Form names such as *Mushak 6.3* or *Mushak 9.1* are used only to refer to the public statutory forms they name.
 - **Not an e-filing tool.** TakaBooks prepares figures and explains forms. Humans file returns.
-- **Rates change, and some are unverified.** Every Finance Act re-rates something. Every figure in `src/data/rates-AY2026-27.toml` carries a `source` URL, an `as_of` date, a `verified` flag and a `placeholder` flag, and the engine surfaces the flag on every figure it uses. As it ships today, **365 of its 436 figures are verified against primary text, 52 rest on agreeing professional summaries because the Finance Act 2026 gazette could not be text-extracted, and 19 are placeholders that were never landed.** Check the flag before you rely on a number, check the node's `note` for the conditions attached to it, and check both again after a new Finance Act. No figure in the file has been reviewed by an ITP or a CA.
+- **Rates change, and some are unverified.** Every Finance Act re-rates something. Every figure in `src/data/rates-AY2026-27.toml` carries a `source` URL, an `as_of` date, a `verified` flag and a `placeholder` flag, and the engine surfaces the flag on every figure it uses. As it ships today, **362 of its 436 figures are verified against primary text, 55 rest on agreeing professional summaries (or, in one case, on an unresolved conflict between two readings that the node states in full) because the Finance Act 2026 gazette could not be text-extracted, and 19 are placeholders that were never landed.** Check the flag before you rely on a number, check the node's `note` for the conditions attached to it, and check both again after a new Finance Act. No figure in the file has been reviewed by an ITP or a CA.
 - **The assistant can still be wrong.** TakaBooks stops the LLM from doing arithmetic and from inventing rates, but the LLM still chooses which accounts a transaction hits and which rule applies. Review every classification. You are responsible for your books and your return.
 - **No warranty.** Provided "as is" under the [MIT License](LICENSE), without warranty of any kind. The authors and Ticon Sys accept no liability for any loss arising from its use.
 
@@ -405,8 +405,8 @@ The first of those prints, today:
 ```text
 | Rate nodes | Count |
 | :--- | ---: |
-| verified | 365 |
-| unverified | 52 |
+| verified | 362 |
+| unverified | 55 |
 | placeholder | 19 |
 | total | 436 |
 ...
