@@ -107,10 +107,12 @@
 # -----------------------------------------------------------------------------------------
 # VERIFICATION CENSUS — a snapshot, not a contract
 # -----------------------------------------------------------------------------------------
-# At assembly (2026-09-06) this file held 436 rate nodes: 362 verified from primary text,
-# 53 landed but resting on professional summaries or left as an openly contested reading
-# (verified = false, each saying why in its own note), and 19 still placeholders that
-# rates.py refuses outright. Those counts go stale
+# At assembly (2026-09-06) this file held 529 rate nodes: 474 verified from primary text,
+# 52 landed but resting on professional summaries or left as an openly contested reading
+# (verified = false, each saying why in its own note), and 3 still placeholders that
+# rates.py refuses outright. The withholding block is now fully verified apart from one
+# openly contested node: Rules 6, 7 and 8 of SRO 273 were transcribed from the gazette,
+# including all 345 HS-code rows of the import schedule. Those counts go stale
 # the moment anybody edits a node, so do not trust them — recompute:
 #
 #     python3 src/engine/rates.py --assessment-year 2026-27 --all
@@ -4251,7 +4253,12 @@ and salary, both 30%).
   as_of = "2026-07-01"
   verified = true
   placeholder = false
-  note = "Ceiling only. The HS-code schedules are in Rule 8 of SRO 273 and are OUT OF SCOPE here — see [tds.out_of_scope]."
+  note = """
+Ceiling only — s.120 itself prescribes no rate. The rates are in Rule 8 of SRO 273 and are now
+transcribed: see [tds.sections.120] and the 345-row [tds.sections.120.hs_schedule].rows. Only
+সারণী-৬ (spirits and perfumes, 20%) actually reaches this ceiling; everything else sits below it,
+and most consignments take the 5% residual in Rule 8(2).
+"""
 
 # =========================================================================================
 # s.89 — SUPPLY OF GOODS, PROCUREMENT AND EXECUTION OF CONTRACT
@@ -6766,238 +6773,2015 @@ top of this charge.
     note = ""
 
 # =========================================================================================
-# WITHHOLDING ITEMS THIS FRAGMENT COULD NOT LAND — placeholders, deliberately visible
+# WITHHOLDING ITEMS LANDED FROM SRO 273 RULES 6-8 AND FROM THE ACT'S OWN SCHEDULES
 # =========================================================================================
-# These are REAL obligations. Their rates were not obtained from primary text in the research
-# pass and are NOT invented here. placeholder = true keeps them out of every calculation
-# unless the caller explicitly opts in, and makes the gap show up in `rates.py --audit`.
+# This block used to carry five placeholders (s.125, s.126, s.138, s.138A, s.139) and three
+# unverified s.120 "headline bands". All eight are now replaced by figures read from primary
+# text: Rules 6, 7 and 8 of SRO 273-Ain/Aykar-5/2026 (Bangladesh Gazette, Extraordinary,
+# 5 July 2026, pages 20684-20718), and — for ss.138, 138A and 139, which SRO 273 does NOT
+# contain — the consolidated Income Tax Act 2023 on bdlaws.
+#
+# HOW THE GAZETTE WAS READ. The SRO's Bangla text layer is typeset in a legacy ASCII-mapped
+# font (SulekhaT / ShonarBangla), so `pdftotext` returns punctuation where Bangla words and
+# digits belong. The English HS-code tables extract cleanly because they are set in
+# TimesNewRoman. Every Bangla figure recorded below was therefore ALSO read off a rendered
+# image of the gazette page, not decoded from the mangled text layer. Page numbers below are
+# the printed gazette page (২০৬৮৪-২০৭১৮), not the PDF page.
+
+# =========================================================================================
+# s.120 — COLLECTION OF TAX AT THE IMPORT STAGE
+# Rule 8 of SRO 273 · ধারা ১২০, উৎসে কর বিধিমালা ২০২৬ এর বিধি ৮ · gazette pages 20693-20718
+# =========================================================================================
 
   [tds.sections.120]
   section = "120"
   label_en = "Collection of tax at the import stage"
   label_bn = "আমদানি পর্যায়ে কর আদায়"
   applies_to = "Import of goods into Bangladesh."
-  deducted_by = "The Commissioner of Customs at the import stage."
-  condition = "The applicable band depends on the HS code of the goods and on the importer's status."
+  deducted_by = "The Commissioner of Customs, or any other appropriate officer, at the import stage."
+  condition = "The rate is chosen by the HS code of the goods against Rule 8's seven সারণী (tables), and in two cases by the importer's own status. Goods in none of the seven tables take the 5% residual in Rule 8(2)."
   source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
   as_of = "2026-07-05"
-  verified = false
+  verified = true
   placeholder = false
   note = """
-The statutory ceiling (20%, see [tds.statutory_ceilings.120]) is verified. THE HS-CODE
-SCHEDULES IN RULE 8 OF SRO 273 WERE NOT TRANSCRIBED and are out of scope for this file — see
-[tds.out_of_scope]. The three headline bands below are recorded because practitioners quote
-them constantly, but YOU CANNOT SELECT A BAND FROM THIS FILE: which band a consignment falls
-in is decided by its HS code against tables that are not here. Read Rule 8 of the SRO for any
-actual import.
+RULE 8 IS NOW TRANSCRIBED. All 345 HS-code rows of সারণী-১ through সারণী-৭ are in
+[tds.sections.120.hs_schedule].rows below, each tagged with its সারণী, its rate and the gazette
+page it was read from. The earlier warning that you "cannot select a band from this file" no
+longer holds for a listed HS code — but see the three cautions below.
+
+THE BASE. Rule 8(4): "আমদানিকৃত পণ্যের মূল্য" means the value of the imported goods determined
+under SECTION 27 OF THE CUSTOMS ACT, 2023 (Act No. 57 of 2023) — the customs assessable value,
+not the invoice, not the LC amount, not the landed cost. সারণী-৭ is the one exception: it is
+charged per TONNE of goods, not on value.
+
+HOW TO PICK A RATE, in the order Rule 8 sets it out:
+  1. Find the 8-digit HS code in [tds.sections.120.hs_schedule].rows. If it is there, its সারণী
+     gives the rate — 0%, 0% (Bhutan only), 1%, 2%, 3%, 20% or Tk 600 per tonne.
+  2. সারণী-২ applies ONLY to goods imported FROM BHUTAN. The same HS code imported from
+     anywhere else is not in সারণী-২ and falls to another table or to the residual.
+  3. সারণী-৫ applies ONLY where the importer is a MUSAK-REGISTERED MANUFACTURER HOLDING AN
+     INDUSTRIAL IRC. The same goods imported by a commercial importer are not in সারণী-৫.
+  4. If the code is in no table, Rule 8(2) charges 5%.
+
+⚠️ THREE CAUTIONS.
+
+(a) THE 4% PROVISO'S REACH IS NOT SETTLED BY THE TEXT. The proviso after সারণী-৫ reads
+    "উল্লেখ্য, সারণী-৫ এ বর্ণিত পণ্য ব্যতীত অন্য কোনো পণ্য আমদানীর ক্ষেত্রে ইন্ডাস্ট্রিয়াল আইআরসি ধারী কোনো মূসক
+    নিবন্ধিত উৎপাদক কর্তৃক আমদানিকৃত পণ্য মূল্যের উপর ৪% (চার শতাংশ) হারে উৎসে কর সংগ্রহ করিবে". Read
+    literally that is EVERY good other than সারণী-৫'s, which would override সারণী-১'s 0% and
+    সারণী-৪'s 2% for this class of importer. Read as a proviso to clause (ঙ) it only fills the
+    gap between সারণী-৫ and the 5% residual. THE GAZETTE DOES NOT SAY WHICH. TakaBooks holds
+    both the 3% and the 4% figures as read and does not choose between the readings — put the
+    question to the Commissioner of Customs before clearing on the strength of either.
+
+(b) A DRAFTING ERROR IN THE GAZETTE. Clause (ছ) at page 20718 says "নিম্নবর্ণিত সারণী-৬" but the
+    table printed immediately under it is captioned "সারণী-৭", and সারণী-৬ has already been
+    given its own rate by clause (চ) on the preceding page. The Tk 600 per tonne charge plainly
+    belongs to সারণী-৭ (iron and steel scrap, vessels for breaking up); it is recorded that way
+    here, with the error stated rather than silently corrected.
+
+(c) HS CODES MOVE. The schedule keys off the First Schedule of the Customs Act 2023. A code
+    reclassified after 5 July 2026 will not match. Check the code on the bill of entry, not
+    a code remembered from last year.
+
+Rule 8(3): on the importer's application the Board may certify collection at a nil or reduced
+rate for an income year where the import income is exempt or taxable at a reduced rate.
 """
 
-    [tds.sections.120.general_band]
-    label_en = "Import stage — general band (HS-code schedule not transcribed)"
-    label_bn = "আমদানি পর্যায় — সাধারণ হার (এইচএস কোড তফসিল অন্তর্ভুক্ত নয়)"
-    value = 5
+    [tds.sections.120.sarani_1_nil]
+    label_en = "Import stage — সারণী-১ goods, nil rate"
+    label_bn = "আমদানি পর্যায় — সারণী-১ ভুক্ত পণ্য, শূন্য হার"
+    value = 0
     unit = "percent"
     source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
     as_of = "2026-07-05"
-    verified = false
+    verified = true
     placeholder = false
     note = """
-NOT VERIFIED. The research pass confirmed that Rule 8 of SRO 273 exists and carries a general
-band at this level, but the HS-code tables themselves were NOT extracted from the gazette, so
-this figure rests on a summary description rather than on the schedule it belongs to. WHAT
-WOULD CONFIRM IT: reading Rule 8 of SRO 273 directly and finding the consignment's HS code in
-its tables. Do not apply this rate to a specific import without doing that.
+Rule 8(1)(ক), gazette pages 20693-20699. "নিম্নবর্ণিত সারণী-১ এ উল্লিখিত পণ্য আমদানির ক্ষেত্রে
+আমদানিকৃত পণ্য মূল্যের উপর ০% (শূন্য শতাংশ) হারে". 77 rows, listed in
+[tds.sections.120.hs_schedule].rows with sarani = 1. Mostly food staples, edible oils, fertiliser
+inputs, medical devices, and — serial 77, which carries no HS code at all — "Capital machinery,
+not imported for commercial purpose".
 """
 
-    [tds.sections.120.industrial_irc_band]
-    label_en = "Import stage — industrial IRC holder, VAT-registered manufacturer, goods outside the listed tables"
-    label_bn = "আমদানি পর্যায় — শিল্প আইআরসিধারী, মূসক নিবন্ধিত উৎপাদক, তালিকাবহির্ভূত পণ্য"
+    [tds.sections.120.sarani_2_bhutan_nil]
+    label_en = "Import stage — সারণী-২ goods imported FROM BHUTAN, nil rate"
+    label_bn = "আমদানি পর্যায় — ভুটান হইতে আমদানিকৃত সারণী-২ ভুক্ত পণ্য, শূন্য হার"
+    value = 0
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Rule 8(1)(খ), gazette pages 20699-20701. The clause reads "নিম্নবর্ণিত সারণী-২ এ উল্লিখিত ভুটান
+থেকে পণ্য আমদানির ক্ষেত্রে … ০% (শূন্য শতাংশ) হারে" — THE COUNTRY OF ORIGIN IS PART OF THE RULE.
+32 rows (sarani = 2). The same HS code imported from anywhere but Bhutan does not get this
+nil rate; it falls to whichever other সারণী lists it, or to the 5% residual.
+"""
+
+    [tds.sections.120.sarani_3]
+    label_en = "Import stage — সারণী-৩ goods, 1%"
+    label_bn = "আমদানি পর্যায় — সারণী-৩ ভুক্ত পণ্য, ১%"
+    value = 1
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Rule 8(1)(গ), gazette pages 20701-20704. "১% (এক শতাংশ) হারে". 42 rows (sarani = 3): industrial
+intermediates — adhesives, graphite, solder flux, plasticisers, cast polypropylene film, carded
+cotton, springs, inductors, separators, mobile-phone PCB and component sets.
+"""
+
+    [tds.sections.120.sarani_4]
+    label_en = "Import stage — সারণী-৪ goods, 2%"
+    label_bn = "আমদানি পর্যায় — সারণী-৪ ভুক্ত পণ্য, ২%"
+    value = 2
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Rule 8(1)(ঘ), gazette pages 20704-20713. "২% (দুই শতাংশ) হারে". 131 rows (sarani = 4), the
+largest table: pulses and wheat and maize, oil-cake and animal feed inputs, raw hides, wood
+pulp, computers and computer parts, transmission apparatus and monitors.
+"""
+
+    [tds.sections.120.sarani_5_industrial_irc]
+    label_en = "Import stage — সারণী-৫ goods imported by a VAT-registered manufacturer holding an industrial IRC, 3%"
+    label_bn = "আমদানি পর্যায় — ইন্ডাস্ট্রিয়াল আইআরসি-ধারী মূসক নিবন্ধিত উৎপাদক কর্তৃক আমদানিকৃত সারণী-৫ ভুক্ত পণ্য, ৩%"
+    value = 3
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Rule 8(1)(ঙ), gazette pages 20714-20717. "নিম্নবর্ণিত সারণী-৫ এ উল্লিখিত পণ্য আমদানির ক্ষেত্রে
+ইন্ডাস্ট্রিয়াল আইআরসি-ধারী কোনো মূসক নিবন্ধিত উৎপাদক কর্তৃক আমদানিকৃত পণ্য মূল্যের উপর ৩% (তিন শতাংশ)
+হারে". 48 rows (sarani = 5). ⚠️ THE IMPORTER'S STATUS IS PART OF THE RULE: a commercial importer
+bringing in exactly these goods is NOT within সারণী-৫ and does not get 3%.
+"""
+
+    [tds.sections.120.industrial_irc_goods_outside_sarani_5]
+    label_en = "Import stage — VAT-registered manufacturer with an industrial IRC, goods outside সারণী-৫, 4%"
+    label_bn = "আমদানি পর্যায় — ইন্ডাস্ট্রিয়াল আইআরসি-ধারী মূসক নিবন্ধিত উৎপাদক, সারণী-৫ বহির্ভূত পণ্য, ৪%"
     value = 4
     unit = "percent"
     source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
     as_of = "2026-07-05"
-    verified = false
+    verified = true
     placeholder = false
     note = """
-NOT VERIFIED, for the same reason as the general band: Rule 8's HS-code tables were not
-transcribed. The band is described as applying to a VAT-registered manufacturer holding an
-industrial Import Registration Certificate, on goods outside the listed tables. WHAT WOULD
-CONFIRM IT: Rule 8 of SRO 273 read directly.
+The proviso printed after সারণী-৫ at gazette page 20717: "উল্লেখ্য, সারণী-৫ এ বর্ণিত পণ্য ব্যতীত অন্য
+কোনো পণ্য আমদানীর ক্ষেত্রে ইন্ডাস্ট্রিয়াল আইআরসি ধারী কোনো মূসক নিবন্ধিত উৎপাদক কর্তৃক আমদানিকৃত পণ্য
+মূল্যের উপর ৪% (চার শতাংশ) হারে উৎসে কর সংগ্রহ করিবে".
+
+THE FIGURE IS VERIFIED; ITS REACH IS NOT. Read literally the proviso covers every good except
+সারণী-৫'s, which would displace সারণী-১'s 0% and সারণী-৪'s 2% for this importer. Read as a
+proviso to clause (ঙ) it only sits between সারণী-৫ and the 5% residual. The gazette settles
+neither reading and TakaBooks will not choose one. This is the node that replaced the old
+unverified `industrial_irc_band`.
 """
 
-    [tds.sections.120.luxury_schedule_band]
-    label_en = "Import stage — listed luxury schedule"
-    label_bn = "আমদানি পর্যায় — তালিকাভুক্ত বিলাস পণ্য তফসিল"
+    [tds.sections.120.sarani_6]
+    label_en = "Import stage — সারণী-৬ goods, 20%"
+    label_bn = "আমদানি পর্যায় — সারণী-৬ ভুক্ত পণ্য, ২০%"
     value = 20
     unit = "percent"
     source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
     as_of = "2026-07-05"
-    verified = false
+    verified = true
     placeholder = false
     note = """
-NOT VERIFIED. Described as applying to a listed luxury schedule and equal to the s.120
-statutory ceiling. Reduced and nil bands also exist. The schedules were not transcribed.
-WHAT WOULD CONFIRM IT: Rule 8 of SRO 273 read directly.
+Rule 8(1)(চ), gazette pages 20717-20718. "২০% (বিশ শতাংশ) হারে". 10 rows (sarani = 6): undenatured
+and denatured ethyl alcohol, spirits, whisky, rum, gin, vodka, liqueurs, other spirituous
+beverages, and perfumes and toilet waters. This equals the s.120 statutory ceiling — see
+[tds.statutory_ceilings.120] — so nothing at import can be charged above it. Replaces the old
+unverified `luxury_schedule_band`.
 """
+
+    [tds.sections.120.sarani_7_per_tonne]
+    label_en = "Import stage — সারণী-৭ goods, Tk 600 per tonne"
+    label_bn = "আমদানি পর্যায় — সারণী-৭ ভুক্ত পণ্য, প্রতি টনে ৬০০ টাকা"
+    value = 600
+    unit = "BDT_per_tonne"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Gazette page 20718: "আমদানিকৃত পণ্যের প্রতি টনের উপর ৬০০ (ছয় শত) টাকা হারে". 5 rows (sarani = 7):
+sponge iron and direct-reduced ferrous products, ferrous waste and scrap, iron and non-alloy
+steel ingots, semi-finished products of iron or non-alloy steel, and vessels and other floating
+structures for breaking up.
+
+⚠️ THE ONLY SPECIFIC (NON-AD-VALOREM) RATE IN RULE 8 — it is charged per TONNE, so the customs
+value under s.27 of the Customs Act 2023 is NOT the base here; the weight is.
+
+⚠️ The clause introducing this table misnumbers it "সারণী-৬" while the table printed under it is
+captioned "সারণী-৭". সারণী-৬ already has its 20% from clause (চ) on the previous page, so the
+charge belongs to সারণী-৭. The error is in the gazette, not in this transcription.
+"""
+
+    [tds.sections.120.residual]
+    label_en = "Import stage — residual rate for goods in none of the seven সারণী, 5%"
+    label_bn = "আমদানি পর্যায় — সাতটি সারণীর কোনোটিতে নাই এইরূপ পণ্য, অবশিষ্ট হার ৫%"
+    value = 5
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = """
+Rule 8(2), gazette page 20718: "উপবিধি (১) এ উল্লিখিত সারণীসমূহে বর্ণিত পণ্য ব্যতীত অন্যান্য আমদানিকৃত
+পণ্যের মূল্যের উপর ৫% (পাঁচ শতাংশ) হারে কর সংগ্রহ করিতে হইবে।"
+
+This is the rate most consignments actually take, and the one practitioners mean when they say
+"the general import rate". It replaces the old unverified `general_band`, which carried the same
+5% on a secondary description; the figure is now read from the rule itself.
+"""
+
+# -----------------------------------------------------------------------------------------
+# RULE 8 HS-CODE SCHEDULE — all 345 rows of সারণী-১ … সারণী-৭, gazette pages 20693-20718.
+# Catalogue entries, NOT rate nodes: they carry no `value` key, so rates.py does not count
+# them in its census and nothing computes from them directly. `rate_node` names the
+# [tds.sections.120.*] node that holds the figure for that সারণী.
+#
+# The HS heading, the 8-digit code and the English description are reproduced as printed —
+# these columns are set in TimesNewRoman and extract exactly. `--` in serial 77 of সারণী-১ is
+# the gazette's own entry, not a missing value: that row is described only in words.
+# -----------------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------------------
+# RULE 8 HS-CODE SCHEDULE — all 345 rows of সারণী-১ … সারণী-৭, gazette pages 20693-20718.
+# A CATALOGUE, NOT RATE NODES: no row carries a `value` key, so rates.py does not count any
+# of them in its census and nothing computes from them directly. Each row names its সারণী;
+# the সারণী → rate-node map is in the per-সারণী comments below, and every node lives at
+# [tds.sections.120.<key>] above. Reach the rows at `tds.sections.120.hs_schedule.rows`.
+#
+# The HS heading, the 8-digit code and the English description are reproduced as printed:
+# those columns are set in TimesNewRoman in the gazette and extract exactly. `--` in serial
+# 77 of সারণী-১ is the gazette's own entry, not a missing value — that row is described only
+# in words ("Capital machinery, not imported for commercial purpose").
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.120.hs_schedule]
+    label_en = "Rule 8 HS-code schedule — সারণী-১ to সারণী-৭"
+    label_bn = "বিধি ৮ এর এইচ.এস. কোড তফসিল — সারণী-১ হইতে সারণী-৭"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    row_count = 345
+    rows = [
+      # সারণী-1 — 77 rows — 0% — node tds.sections.120.sarani_1_nil
+      {sarani = 1, serial = 1, hs_heading = "07.03", hs_code = "0703.10.19", description = "Onions: Other", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 2, hs_heading = "07.01", hs_code = "0701.10.90", description = "Other", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 3, hs_heading = "08.04", hs_code = "0804.10.21", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 4, hs_heading = "08.07", hs_code = "0807.19.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 5, hs_heading = "09.04", hs_code = "0904.11.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 6, hs_heading = "09.04", hs_code = "0904.11.90", description = "Other", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 7, hs_heading = "09.09", hs_code = "0909.21.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 8, hs_heading = "09.09", hs_code = "0909.21.90", description = "Other", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 9, hs_heading = "10.05", hs_code = "1005.10.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20693},
+      {sarani = 1, serial = 10, hs_heading = "10.06", hs_code = "1006.10.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 11, hs_heading = "10.06", hs_code = "1006.10.90", description = "Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 12, hs_heading = "12.07", hs_code = "1207.10.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 13, hs_heading = "12.07", hs_code = "1207.10.90", description = "Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 14, hs_heading = "12.07", hs_code = "1207.21.10", description = "Wrapped/canned upto 2.5kg", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 15, hs_heading = "12.07", hs_code = "1207.21.90", description = "Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 16, hs_heading = "12.09", hs_code = "1209.91.10", description = "Vegetable Seeds Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 17, hs_heading = "12.09", hs_code = "1209.99.90", description = "Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 18, hs_heading = "15.07", hs_code = "1507.10.00", description = "Soya-bean oil and its fractions, whether or not refined, but not chemically modified. Crude oil, whether or not degummed", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 19, hs_heading = "15.07", hs_code = "1507.90.10", description = "Soya-bean oil and its fractions, whether or not refined, but not chemically modified. Other: Refined", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 20, hs_heading = "15.07", hs_code = "1507.90.90", description = "Soya-bean oil and its fractions, whether or not refined, but not chemically modified. Other: Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 21, hs_heading = "15.11", hs_code = "1511.10.00", description = "Crude oil: Imported by VAT registered edible oil refinery industries", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 22, hs_heading = "15.11", hs_code = "1511.10.00", description = "Crude oil: Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 23, hs_heading = "15.11", hs_code = "1511.90.90", description = "Other including refined palm oil", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 24, hs_heading = "15.12", hs_code = "1512.19.00", description = "Sunflower-seed or safflower oil and fraction thereof: Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 25, hs_heading = "15.15", hs_code = "1515.29.00", description = "Maize (corn) oil and its fractions: Other", rate = "0%", gazette_page = 20694},
+      {sarani = 1, serial = 26, hs_heading = "17.01", hs_code = "1701.12.00", description = "Raw sugar not containing added flavouring or colouring matter: Beet sugar", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 27, hs_heading = "17.01", hs_code = "1701.13.00", description = "Cane sugar specified in Subheading Note 2 to Chapter 17 of FIRST SCHEDULE of the Customs Act, 2023", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 28, hs_heading = "17.01", hs_code = "1701.14.00", description = "Raw Sugar not containing added flavouring or colouring matter: Other cane sugar", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 29, hs_heading = "31.01", hs_code = "3101.00.00", description = "Animal or vegetable fertilisers, whether or not mixed together or chemically treated; fertilisers produced by the mixing or chemical treatment of animal or vegetable products", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 30, hs_heading = "31.02", hs_code = "3102.10.00", description = "Urea, whether or not in aqueous solution", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 31, hs_heading = "31.02", hs_code = "3102.29.00", description = "Ammonium sulphate; double salts and mixtures of ammonium sulphate and ammonium nitrate: Other", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 32, hs_heading = "31.02", hs_code = "3102.30.00", description = "Ammonium nitrate, whether or not in aqueous solution", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 33, hs_heading = "31.02", hs_code = "3102.40.00", description = "Mixtures of ammonium nitrate with calcium carbonate or other inorganic non-fertilising substances", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 34, hs_heading = "31.02", hs_code = "3102.50.00", description = "Sodium nitrate", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 35, hs_heading = "31.02", hs_code = "3102.60.00", description = "Double salts and mixtures of calcium nitrate and ammonium nitrate", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 36, hs_heading = "31.02", hs_code = "3102.80.00", description = "Mixtures of urea and ammonium nitrate in aqueous or ammoniacal solution", rate = "0%", gazette_page = 20695},
+      {sarani = 1, serial = 37, hs_heading = "31.02", hs_code = "3102.90.00", description = "Other including mixtures not specified in the foregoing sub- headings", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 38, hs_heading = "31.03", hs_code = "3103.11.10", description = "Superphosphates: Containing by weight 35% or more of diphosphorus pentaoxide (P2O5): Triple superphosphates", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 39, hs_heading = "31.03", hs_code = "3103.90.00", description = "Mineral or chemical fertilisers, phosphatic. -Other", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 40, hs_heading = "31.04", hs_code = "3104.20.00", description = "Potassium chloride", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 41, hs_heading = "31.05", hs_code = "3105.10.00", description = "Goods of Chapter 31 of FIRST SCHEDULE of the Customs Act, 2023 in tablets or similar forms or in packages of a gross weight not exceeding 10 kg", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 42, hs_heading = "31.05", hs_code = "3105.20.00", description = "Mineral or chemical fertilisers containing the three fertilising elements nitrogen, phosphorus and potassium", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 43, hs_heading = "31.05", hs_code = "3105.59.00", description = "Other mineral or chemical fertilisers containing the two fertilising elements nitrogen and phosphorus: Other", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 44, hs_heading = "31.05", hs_code = "3105.60.00", description = "Mineral or chemical fertilisers containing the two fertilising elements phosphorus and potassium", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 45, hs_heading = "52.01", hs_code = "5201.00.00", description = "Cotton, not carded or combed", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 46, hs_heading = "52.02", hs_code = "5202.99.90", description = "Other", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 47, hs_heading = "53.01", hs_code = "5301.21.00", description = "Broken or scotched Other:", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 48, hs_heading = "53.01", hs_code = "5301.29.10", description = "Flax fibre", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 49, hs_heading = "53.02", hs_code = "5302.10.00", description = "True hemp, raw or retted", rate = "0%", gazette_page = 20696},
+      {sarani = 1, serial = 50, hs_heading = "55.01", hs_code = "5501.30.00", description = "Acrylic or modacrylic: Imported by VAT registered synthetic staple fibre manufacturer", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 51, hs_heading = "55.03", hs_code = "5503.11.00", description = "Synthetic staple fibres, not carded, combed or otherwise processed for spinning. Of nylon or other polyamides: Of aramids", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 52, hs_heading = "55.03", hs_code = "5503.20.00", description = "Of polyesters", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 53, hs_heading = "55.03", hs_code = "5503.30.00", description = "Acrylic or modacrylic", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 54, hs_heading = "55.03", hs_code = "5503.40.00", description = "Of polypropylene", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 55, hs_heading = "55.04", hs_code = "All H.S. code", description = "Artificial staple fibres, not carded, combed or otherwise processed for spinning", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 56, hs_heading = "55.05", hs_code = "All H.S. code", description = "Waste (including noils, yarn waste and garneted stock) of man- made fibres.", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 57, hs_heading = "55.06", hs_code = "5506.10.00", description = "Of nylon or other polyamides", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 58, hs_heading = "55.06", hs_code = "5506.20.00", description = "Of polyesters", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 59, hs_heading = "55.06", hs_code = "5506.30.00", description = "Acrylic or modacrylic", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 60, hs_heading = "55.06", hs_code = "5506.90.00", description = "Other", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 61, hs_heading = "55.07", hs_code = "5507.00.00", description = "Artificial staple fibres, carded, combed or otherwise processed for spinning.", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 62, hs_heading = "84.07", hs_code = "8407.10.00", description = "Aircraft Engine", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 63, hs_heading = "84.07", hs_code = "8407.90.90", description = "Other", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 64, hs_heading = "84.08", hs_code = "8408.90.90", description = "Other", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 65, hs_heading = "84.21", hs_code = "8421.29.20", description = "Haemodialyser (Artificial Kidney)", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 66, hs_heading = "84.21", hs_code = "8421.29.30", description = "Dialysis filter", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 67, hs_heading = "85.04", hs_code = "8504.40.50", description = "Electric Charger or Charging station", rate = "0%", gazette_page = 20697},
+      {sarani = 1, serial = 68, hs_heading = "87.06", hs_code = "8706.00.25", description = "Electric Bus Chassis fitted with battery and motor", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 69, hs_heading = "87.06", hs_code = "8706.00.60", description = "Electric Truck Chassis fitted with battery and motor", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 70, hs_heading = "88.02", hs_code = "8802.20.00", description = "Aeroplanes and other aircraft, of an unladen weight not exceeding 2,000 kg", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 71, hs_heading = "88.02", hs_code = "8802.30.00", description = "Aeroplanes and other aircraft, of an unladen weight exceeding 2,000 kg but not exceeding 15,000 kg", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 72, hs_heading = "88.02", hs_code = "8802.40.00", description = "Aeroplanes and other aircraft, of an unladen weight exceeding 15,000 kg", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 73, hs_heading = "89.01", hs_code = "8901.20.30", description = "Vessels capacity exceeding 5000 DWT for registration in Bangladesh operating in Ocean for at least three consecutive years and not older than 20 years from the date of commissioning", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 74, hs_heading = "89.01", hs_code = "8901.90.30", description = "Vessels capacity exceeding 5000 DWT for registration in Bangladesh operating in Ocean for at least three consecutive years and not older than 22 years from the date of commissioning", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 75, hs_heading = "--", hs_code = "--", description = "Triple super phosphates, DAP fertilizer, MOP fertilizer and NPK fertilizer, ammonium sulfate, potassium sulfate, magnesium sulfate and solubor (boron)", rate = "0%", gazette_page = 20698},
+      {sarani = 1, serial = 76, hs_heading = "90.18", hs_code = "9018.90.20", description = "Hemo dialysis machine/Baby incubator/ Baby warmer", rate = "0%", gazette_page = 20699},
+      {sarani = 1, serial = 77, hs_heading = "--", hs_code = "--", description = "Capital machinery, not imported for commercial", rate = "0%", gazette_page = 20699},
+      # সারণী-2 — 32 rows — 0% (Bhutan origin only) — node tds.sections.120.sarani_2_bhutan_nil
+      {sarani = 2, serial = 1, hs_heading = "07.04", hs_code = "All H. S. Code", description = "Cabbages, cauliflowers, kohlrabi, kale and similar edible brassicas, fresh or chilled.", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 2, hs_heading = "07.08", hs_code = "All H. S. Code", description = "Leguminous vegetables, shelled or unshelled, fresh or chilled.", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 3, hs_heading = "07.09", hs_code = "All H. S. Code", description = "Other vegetables, fresh or chilled.", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 4, hs_heading = "08.05", hs_code = "0805.10.10", description = "Oranges: Wrapped/canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 5, hs_heading = "08.05", hs_code = "0805.10.90", description = "Oranges: Other", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 6, hs_heading = "08.08", hs_code = "All H. S. Code", description = "Apples, pears and quinces, fresh.", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 7, hs_heading = "09.04", hs_code = "0904.21.10", description = "Fruits of the genus Capsicum or of the genus Pimenta,: dried or neither crushed or ground: Wrapped/canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 8, hs_heading = "09.04", hs_code = "0904.21.90", description = "Fruits of the genus Capsicum or of the genus Pimenta,: dried or neither crushed or ground: Other", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 9, hs_heading = "09.08", hs_code = "0908.31.10", description = "Cardamoms: Neither Crushed or ground: Wrapped/ canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 10, hs_heading = "09.08", hs_code = "0908.31.90", description = "Cardamoms: Neither Crushed or ground: Other", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 11, hs_heading = "09.08", hs_code = "0908.32.10", description = "Cardamoms: Crushed or ground: Wrapped/canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20699},
+      {sarani = 2, serial = 12, hs_heading = "09.08", hs_code = "0908.32.90", description = "Cardamoms: Crushed or ground: other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 13, hs_heading = "09.10", hs_code = "0910.11.10", description = "Ginger: Neither Crushed or ground: Wrapped/ canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 14, hs_heading = "09.10", hs_code = "0910.11.90", description = "Ginger: Neither Crushed or ground: Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 15, hs_heading = "09.10", hs_code = "0910.12.10", description = "Ginger: Crushed or ground: Wrapped/canned upto 2.5 kg", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 16, hs_heading = "09.10", hs_code = "0910.12.90", description = "Ginger: Crushed or ground: Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 17, hs_heading = "13.01", hs_code = "1301.90.00", description = "Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 18, hs_heading = "20.09", hs_code = "All H. S. Code", description = "Fruit or nut juices (including grape must and coconut water) and vegetable juices, unfermented not containing added spirit, whether or not containing added sugar or other sweetening matter.", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 19, hs_heading = "25.16", hs_code = "2516.90.10", description = "Boulder stone", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 20, hs_heading = "25.18", hs_code = "2518.10.00", description = "Dolomite, not calcined or sintered", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 21, hs_heading = "25.18", hs_code = "2518.20.00", description = "Calcined or sintered dolomite", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 22, hs_heading = "25.18", hs_code = "2518.30.00", description = "Dolomite ramming mix", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 23, hs_heading = "25.20", hs_code = "2520.10.10", description = "Gypsum; anhydrite: Gypsum, imported as fertilizer", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 24, hs_heading = "25.20", hs_code = "2520.10.90", description = "Gypsum; anhydrite: Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 25, hs_heading = "25.21", hs_code = "2521.00.10", description = "Boulder limestone", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 26, hs_heading = "25.21", hs_code = "2521.00.90", description = "Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 27, hs_heading = "38.16", hs_code = "3816.00.90", description = "Other", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 28, hs_heading = "44.03", hs_code = "All H.S code", description = "Wood in the rough, whether or not stripped of bark or sapwood, or roughly squared.", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 29, hs_heading = "44.04", hs_code = "All H.S code", description = "Hoopwood; split poles; piles, pickets and stakes of wood, pointed but not sawn lengthwise; wooden sticks, roughly trimmed but not turned, bent or otherwise worked, suitable for the manufacture of walking-sticks, umbrellas, tool handles or the like; chip wood and the like", rate = "0% (Bhutan origin only)", gazette_page = 20700},
+      {sarani = 2, serial = 30, hs_heading = "44.05", hs_code = "All H.S code", description = "Wood wool; wood flour", rate = "0% (Bhutan origin only)", gazette_page = 20701},
+      {sarani = 2, serial = 31, hs_heading = "72.02", hs_code = "7202.21.00", description = "Ferro-silicon: Containing by weight more than 55% of silicon", rate = "0% (Bhutan origin only)", gazette_page = 20701},
+      {sarani = 2, serial = 32, hs_heading = "72.07", hs_code = "7207.19.00", description = "Other:", rate = "0% (Bhutan origin only)", gazette_page = 20701},
+      # সারণী-3 — 42 rows — 1% — node tds.sections.120.sarani_3
+      {sarani = 3, serial = 1, hs_heading = "35.06", hs_code = "3506.91.90", description = "Other (Adhesive Glue)", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 2, hs_heading = "38.01", hs_code = "3801.10.00", description = "Artificial graphite", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 3, hs_heading = "38.10", hs_code = "3810.90.90", description = "Other (Solder Flux)", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 4, hs_heading = "38.12", hs_code = "3812.20.00", description = "Compound plasticisers for rubber of plastics", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 5, hs_heading = "39.20", hs_code = "3920.20.20", description = "Non-Printed cast polypropylene film", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 6, hs_heading = "39.26", hs_code = "3926.90.99", description = "Other (Mobile cover-back/front/ sidecover/upper cap, lower cap)", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 7, hs_heading = "52.03", hs_code = "5203.00.00", description = "Cotton, carded or combed", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 8, hs_heading = "73.20", hs_code = "7320.90.00", description = "Other (Spring)", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 9, hs_heading = "85.04", hs_code = "8504.50.00", description = "Parts: Other inductors", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 10, hs_heading = "85.06", hs_code = "8506.90.10", description = "Separator", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 11, hs_heading = "85.16", hs_code = "8516.80.00", description = "Electric heating resistors", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 12, hs_heading = "85.17", hs_code = "8517.70.00", description = "Loaded Printed Circuit Board/PCB; Assembled/ Mother Board for Cellular Phone; Key; Keypad housing; Keypad Dome; Front Shell; Vibrator; motor; Touch Panel; Touch Panel Glass for mobile phone; Liquid Crystal Module; Camera Module; Input-Output (I/O) Port; Internal Earphone; Microphone; Antenna; Receiver", rate = "1%", gazette_page = 20701},
+      {sarani = 3, serial = 13, hs_heading = "85.17", hs_code = "8517.79.00", description = "Other (Camera Module, Finger Print Module, Antenna, Simcard Slot, Receiver, Motor, Side Key with FPC, Loaded printed circuit board/PCB, Mother board for cellular phone, SUB-PCBA)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 14, hs_heading = "85.24", hs_code = "8524.99.00", description = "Other, Proximity Cards and tags, Liquid Crystal Module", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 15, hs_heading = "85.32", hs_code = "8532.29.90", description = "Other (Capacitor)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 16, hs_heading = "85.33", hs_code = "8533.29.00", description = "Wirewound variable resistors, including rheostats and potentiometers: Other", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 17, hs_heading = "85.34", hs_code = "8534.00.00", description = "Printed circuits", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 18, hs_heading = "85.36", hs_code = "8536.50.00", description = "Lamp-holders, plugs and sockets: Other switches", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 19, hs_heading = "85.36", hs_code = "8536.90.90", description = "Connector, Terminal and Electrical apparatus.", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 20, hs_heading = "85.41", hs_code = "8541.10.00", description = "Transistors, other than photosensitive transistors: Diodes, other than photosensitive or light-emitting diodes (LED)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 21, hs_heading = "85.41", hs_code = "8541.29.00", description = "Other (Transistor)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 22, hs_heading = "85.42", hs_code = "8542.39.90", description = "Other", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 23, hs_heading = "85.44", hs_code = "8544.19.90", description = "Other (Electric cable-not excedingdiamitre 5mm, flexible printed cable)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 24, hs_heading = "85.46", hs_code = "8546.90.00", description = "Other (Shield)", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 25, hs_heading = "87.02", hs_code = "8702.90.11", description = "Built-up, Double Decker bus: Using CNG/LPG/LNG as fuel", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 26, hs_heading = "87.13", hs_code = "8713.10.00", description = "Carriages for disabled persons- Not mechanically propelled", rate = "1%", gazette_page = 20702},
+      {sarani = 3, serial = 27, hs_heading = "87.13", hs_code = "8713.90.00", description = "Wheel Chair", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 28, hs_heading = "90.18", hs_code = "9018.90.30", description = "Angiographic catheter, guide catheter, guide wire, introducer sheath, PTCA dilatation catheter, balloons, stents", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 29, hs_heading = "90.21", hs_code = "9021.29.00", description = "Artificial teeth and dental fittings: Other", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 30, hs_heading = "90.21", hs_code = "9021.31.00", description = "Other artificial parts of the body: Artificial joints", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 31, hs_heading = "90.21", hs_code = "9021.39.00", description = "Other artificial parts of the body: Other", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 32, hs_heading = "90.21", hs_code = "9021.40.00", description = "Hearing aids, excluding parts and accessories", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 33, hs_heading = "91.01", hs_code = "9101.19.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 34, hs_heading = "91.01", hs_code = "9101.29.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 35, hs_heading = "91.01", hs_code = "9101.91.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 36, hs_heading = "91.01", hs_code = "9101.99.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 37, hs_heading = "91.02", hs_code = "9102.11.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 38, hs_heading = "91.02", hs_code = "9102.19.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 39, hs_heading = "91.02", hs_code = "9102.21.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 40, hs_heading = "91.02", hs_code = "9102.29.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20703},
+      {sarani = 3, serial = 41, hs_heading = "91.02", hs_code = "9102.91.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20704},
+      {sarani = 3, serial = 42, hs_heading = "91.02", hs_code = "9102.99.10", description = "Specially designed for the use of the blind", rate = "1%", gazette_page = 20704},
+      # সারণী-4 — 131 rows — 2% — node tds.sections.120.sarani_4
+      {sarani = 4, serial = 1, hs_heading = "07.03", hs_code = "0703.20.90", description = "Garlic: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 2, hs_heading = "07.13", hs_code = "0713.10.90", description = "Peas (Pisum sativum): Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 3, hs_heading = "07.13", hs_code = "0713.20.90", description = "Chickpeas (garbanzos): Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 4, hs_heading = "07.13", hs_code = "0713.40.90", description = "Lentils: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 5, hs_heading = "10.01", hs_code = "1001.11.90", description = "Durum wheat Seed: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 6, hs_heading = "10.01", hs_code = "1001.19.10", description = "Durum wheat Other: Wrapped/canned upto 2.5 kg", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 7, hs_heading = "10.01", hs_code = "1001.19.90", description = "Durum wheat Other: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 8, hs_heading = "10.01", hs_code = "1001.91.90", description = "Other Wheat Seed: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 9, hs_heading = "10.01", hs_code = "1001.99.90", description = "Other Wheat: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 10, hs_heading = "10.05", hs_code = "1005.10.10", description = "Maize (corn). Seed: Wrapped/canned upto 2.5 kg", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 11, hs_heading = "10.05", hs_code = "1005.10.90", description = "Maize (corn). Seed: Other", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 12, hs_heading = "10.05", hs_code = "1005.90.90", description = "Other Maize, Excluding wrapped/ canned upto 2.5 kg", rate = "2%", gazette_page = 20704},
+      {sarani = 4, serial = 13, hs_heading = "10.06", hs_code = "1006.30.99", description = "Boiled Rice (except aromatic rice)", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 14, hs_heading = "10.16", hs_code = "8517.70.00", description = "Non-Boiled Atap Rice (except aromatic rice)", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 15, hs_heading = "12.01", hs_code = "1201.10.90", description = "Soya beans, whether or not broken. Seed: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 16, hs_heading = "12.01", hs_code = "1201.90.90", description = "Soya beans, whether or not broken. Other: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 17, hs_heading = "12.04", hs_code = "1204.00.90", description = "Linseed, whether or not broken Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 18, hs_heading = "12.05", hs_code = "1205.10.90", description = "Low erucic acid rape or colza seeds: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 19, hs_heading = "12.06", hs_code = "1206.00.90", description = "Sunflower seeds, whether or not broken Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 20, hs_heading = "12.07", hs_code = "1207.40.90", description = "Sesamum seeds: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 21, hs_heading = "12.07", hs_code = "1207.50.90", description = "Mustard seeds: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 22, hs_heading = "12.09", hs_code = "1209.10.00", description = "Sugar beet seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 23, hs_heading = "12.09", hs_code = "1209.21.00", description = "Seeds of forage plants: Lucerne (alfalfa) seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 24, hs_heading = "12.09", hs_code = "1209.23.00", description = "Seeds of forage plants: Fescue seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 25, hs_heading = "12.09", hs_code = "1209.24.00", description = "Seeds of forage plants: Kentucky blue grass (poa pratensis L.) seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 26, hs_heading = "12.09", hs_code = "1209.25.00", description = "Seeds of forage plants: Rye grass (Lolium multiflorum Lam., Lolium perenne L.) seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 27, hs_heading = "12.09", hs_code = "1209.29.00", description = "Seeds of forage plants: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 28, hs_heading = "12.09", hs_code = "1209.30.00", description = "Seeds of herbaceous plants cultivated principally for their flowers", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 29, hs_heading = "12.09", hs_code = "1209.91.00", description = "Seeds, fruit and spores, of a kind used for sowing. Other: Vegetable seeds", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 30, hs_heading = "12.09", hs_code = "1209.99.90", description = "Seeds, fruit and spores, of a kind used for sowing. Other: Other", rate = "2%", gazette_page = 20705},
+      {sarani = 4, serial = 31, hs_heading = "23.02", hs_code = "2302.10.00", description = "Bran, sharps and other residues, whether or not in the form of pellets, derived from the sifting, milling or other working of cereals or of leguminous plants. Of maize (corn)", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 32, hs_heading = "23.02", hs_code = "2302.30.00", description = "Bran, sharps and other residues, whether or not in the form of pellets, derived from the sifting, milling or other working of cereals or of leguminous plants. Of wheat", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 33, hs_heading = "23.02", hs_code = "2302.40.10", description = "Bran, sharps and other residues, whether or not in the form of pellets, derived from the sifting, milling or other working of cereals or of leguminous plants. Of other cereals: Rice bran", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 34, hs_heading = "23.02", hs_code = "2302.40.90", description = "Bran, sharps and other residues, whether or not in the form of pellets, derived from the sifting, milling or other working of cereals or of leguminous plants. Of other cereals: Other", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 35, hs_heading = "23.02", hs_code = "2302.50.00", description = "Bran, sharps and other residues, whether or not in the form of pellets, derived from the sifting, milling or other working of cereals or of leguminous plants. Of leguminous plants", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 36, hs_heading = "23.03", hs_code = "2303.10.00", description = "Residues of starch manufacture and similar residues", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 37, hs_heading = "23.03", hs_code = "2303.20.00", description = "Beet-pulp, bagasse and other waste of sugar manufacture", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 38, hs_heading = "23.05", hs_code = "2305.00.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of ground-nut oil", rate = "2%", gazette_page = 20706},
+      {sarani = 4, serial = 39, hs_heading = "23.06", hs_code = "2306.10.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of cotton seeds", rate = "2%", gazette_page = 20707},
+      {sarani = 4, serial = 40, hs_heading = "23.06", hs_code = "2306.20.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of linseed", rate = "2%", gazette_page = 20707},
+      {sarani = 4, serial = 41, hs_heading = "23.06", hs_code = "2306.30.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of sunflower seeds", rate = "2%", gazette_page = 20707},
+      {sarani = 4, serial = 42, hs_heading = "23.06", hs_code = "2306.41.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of rape or colza seeds: Of low erucic acid rape or colza", rate = "2%", gazette_page = 20707},
+      {sarani = 4, serial = 43, hs_heading = "23.06", hs_code = "2306.49.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of rape or colza seeds: Other", rate = "2%", gazette_page = 20707},
+      {sarani = 4, serial = 44, hs_heading = "23.06", hs_code = "2306.50.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of coconut or copra", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 45, hs_heading = "23.06", hs_code = "2306.60.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Of palm nuts or kernels", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 46, hs_heading = "23.06", hs_code = "2306.90.00", description = "Oil-cake and other solid residues, whether or not ground or in the form of pellets, resulting from the extraction of vegetable fats or oils, other than those of heading 23.04 or 23.05 of FIRST SCHEDULE of the Customs Act, 2023 Other", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 47, hs_heading = "23.08", hs_code = "2308.00.00", description = "Vegetable materials and vegetable waste, vegetable residues and by- products, whether or not in the form of pellets, of a kind used in animal feeding, not elsewhere specified or included.", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 48, hs_heading = "23.09", hs_code = "2309.90.11", description = "Vitamin or mineral or amino acid or combination of both (feed grade)", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 49, hs_heading = "23.09", hs_code = "2309.90.12", description = "Vitamin premix or mineral or amino acid premix or combination of both (feed grade)", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 50, hs_heading = "23.09", hs_code = "2309.90.13", description = "Probiotics or Prebiotics or combination of both (feed grade)", rate = "2%", gazette_page = 20708},
+      {sarani = 4, serial = 51, hs_heading = "23.09", hs_code = "2309.90.14", description = "Essential oil or combination of essential oils (feed grade)", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 52, hs_heading = "23.09", hs_code = "2309.90.19", description = "Other", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 53, hs_heading = "23.09", hs_code = "2309.90.90", description = "Preparations of a kind used in animal feeding other: other", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 54, hs_heading = "25.23", hs_code = "2523.10.00", description = "Cement clinkers, imported by vat registered manufacturers of cement", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 55, hs_heading = "26.01", hs_code = "2601.11.00", description = "Iron ores and concentrates, other than roasted iron pyrites: Non- agglomerated", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 56, hs_heading = "26.01", hs_code = "2601.12.00", description = "Iron ores and concentrates, other than roasted iron pyrites: Agglomerated", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 57, hs_heading = "26.01", hs_code = "2601.20.00", description = "Iron ores and concentrates, other than roasted iron pyrites: Roasted iron pyrite", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 58, hs_heading = "26.02", hs_code = "2602.00.00", description = "Manganese ores/concentrates, including ferruginous manganese ores and concentrates with a manganese content of 20% or more calculated on the dry weight", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 59, hs_heading = "27.09", hs_code = "2709.00.00", description = "Petroleum oils and oils obtained from bituminous minerals, crude", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 60, hs_heading = "27.10", hs_code = "2710.12.11", description = "Motor spirit of H.B.O.C Type", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 61, hs_heading = "27.10", hs_code = "2710.12.19", description = "Other motor spirits, including aviation spirts", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 62, hs_heading = "27.10", hs_code = "2710.12.20", description = "spirit type jet fuel", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 63, hs_heading = "27.10", hs_code = "2710.12.31", description = "White spirit", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 64, hs_heading = "27.10", hs_code = "2710.12.32", description = "Naphtha", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 65, hs_heading = "27.10", hs_code = "2710.12.39", description = "Other", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 66, hs_heading = "27.10", hs_code = "2710.12.41", description = "J.P.1 kerosene type jet fuels", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 67, hs_heading = "27.10", hs_code = "2710.12.42", description = "J.P.4 kerosene type jet fuels", rate = "2%", gazette_page = 20709},
+      {sarani = 4, serial = 68, hs_heading = "27.10", hs_code = "2710.12.43", description = "Other kerosene type jet fuels", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 69, hs_heading = "27.10", hs_code = "2710.12.49", description = "Other kerosene", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 70, hs_heading = "27.10", hs_code = "2710.12.50", description = "Other medium oils and preparations", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 71, hs_heading = "27.10", hs_code = "2710.12.61", description = "Light diesel oils", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 72, hs_heading = "27.10", hs_code = "2710.12.62", description = "High speed diesel oils", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 73, hs_heading = "27.10", hs_code = "2710.12.69", description = "Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 74, hs_heading = "27.10", hs_code = "2710.19.11", description = "Furnace oil", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 75, hs_heading = "27.10", hs_code = "2710.19.19", description = "Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 76, hs_heading = "27.11", hs_code = "2711.11.00", description = "Natural gas", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 77, hs_heading = "27.11", hs_code = "2711.12.00", description = "Propane", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 78, hs_heading = "27.11", hs_code = "2711.13.00", description = "Butanes", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 79, hs_heading = "27.13", hs_code = "2713.20.10", description = "Petroleum bitumen-In Drum", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 80, hs_heading = "27.13", hs_code = "2713.20.90", description = "Petroleum bitumen-Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 81, hs_heading = "28.21", hs_code = "2821.10.00", description = "Iron oxides and hydroxides", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 82, hs_heading = "28.33", hs_code = "2833.21.00", description = "Other sulphates: Of magnesium", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 83, hs_heading = "28.33", hs_code = "2833.29.10", description = "Zinc sulphate", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 84, hs_heading = "28.4", hs_code = "2840.19.00", description = "Disodium tetraborate (refined borax): Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 85, hs_heading = "30.02", hs_code = "3002.41.00", description = "Vaccines for human medicine", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 86, hs_heading = "30.06", hs_code = "3006.60.00", description = "Chemical contraceptive preparations based on hormones on other products of heading 29.37 or on spermicides:", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 87, hs_heading = "31.05", hs_code = "3105.90.00", description = "Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 88, hs_heading = "39.07", hs_code = "3907.61.00", description = "Poly (ethylene terephthalate): Having a viscosity number of 78 ml/g or higher-Imported by VAT registered textile yarn manufacturer", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 89, hs_heading = "39.07", hs_code = "3907.61.00", description = "Poly (ethylene terephthalate): Having a viscosity number of 78 ml/g or higher-Other", rate = "2%", gazette_page = 20710},
+      {sarani = 4, serial = 90, hs_heading = "39.07", hs_code = "3907.69.00", description = "Poly (ethylene terephthalate): Other- Imported by VAT registered textile yarn manufacturer", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 91, hs_heading = "41.02", hs_code = "4102.10.00", description = "Raw skins of sheep or lambs-With wool on", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 92, hs_heading = "41.02", hs_code = "4102.21.00", description = "Raw skins of sheep or lambs-Without wool on: Pickled", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 93, hs_heading = "41.02", hs_code = "4102.29.00", description = "Raw skins of sheep or lambs-Without wool on: Other", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 94, hs_heading = "41.03", hs_code = "4103.20.00", description = "Other raw hides and skins-of reptiles", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 95, hs_heading = "41.03", hs_code = "4103.90.00", description = "Other raw hides and skins Other", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 96, hs_heading = "Chapter 47 of the First Schedule of the Customs Act, 2023", hs_code = "All H.S. code", description = "Pulp of wood or of other fibrous cellulosic material; recovered (waste and scrap) paper or paperboard", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 97, hs_heading = "49.02", hs_code = "All H.S. code", description = "Newspapers, journals and periodicals, whether or not illustrated or containing advertising material.", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 98, hs_heading = "71.02", hs_code = "7102.21.00", description = "Unworked or simply sawn, cleaved or bruted", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 99, hs_heading = "71.08", hs_code = "7108.12.10", description = "Gold dores imported by Industrial IRC holder VAT compliant gold refinery", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 100, hs_heading = "71.08", hs_code = "7108.12.90", description = "Other", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 101, hs_heading = "71.08", hs_code = "7108.13.00", description = "Other semi-manufactured forms]", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 102, hs_heading = "72.13", hs_code = "All H.S. Code", description = "Bars and rods, hot-rolled, in irregularly woun coils, of iron or non-alloy steel", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 103, hs_heading = "72.14", hs_code = "All H.S. Code", description = "Other bars and rods of iron or non- alloy steel, not further worked than forged, hot-rolled, hot- drawn or hot- extruded, but including those twisted after rolling", rate = "2%", gazette_page = 20711},
+      {sarani = 4, serial = 104, hs_heading = "72.15", hs_code = "All H.S. Code", description = "Other bars and rods of iron or non- alloy steel.", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 105, hs_heading = "72.16", hs_code = "All H.S. Code", description = "Angles, shapes and sections of iron or non- alloy steel", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 106, hs_heading = "84.08", hs_code = "8408.90.10", description = "Engines of capacity 3 to 45 HP", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 107, hs_heading = "84.08", hs_code = "8408.90.90", description = "Other", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 108, hs_heading = "84.13", hs_code = "8413.70.00", description = "Other centrifugal pumps; Other pumps; liquid elevators", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 109, hs_heading = "84.37", hs_code = "8437.10.00", description = "Machines for cleaning, sorting or grading seed, grain or dried leguminous vegetable; Other machinery", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 110, hs_heading = "84.43", hs_code = "8443.32.10", description = "Computer printer", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 111, hs_heading = "84.43", hs_code = "8443.99.10", description = "Toner cartridge/Inkjet cartridge for Computer Printer", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 112, hs_heading = "84.43", hs_code = "8443.99.20", description = "Other parts for Computer Printer", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 113, hs_heading = "84.67", hs_code = "8467.29.00", description = "Other, Other tools", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 114, hs_heading = "84.71", hs_code = "8471.30.00", description = "Portable automatic data processing machines, weighing not more than 10 kg, consisting of at least a central processing unit,a keyboard and a display", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 115, hs_heading = "84.71", hs_code = "8471.41.00", description = "Comprising in the same housing at least a central processing unit and an input and output unit,whether or not combined", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 116, hs_heading = "84.71", hs_code = "8471.49.10", description = "Personal Desktop Computer", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 117, hs_heading = "8471", hs_code = "8471.50.10", description = "Processing Unit for Personal Desktop", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 118, hs_heading = "84.73", hs_code = "8473.30.00", description = "Parts and accessories of the machines of heading No.84.71 of FIRST SCHEDULE of the Customs Act, 2023", rate = "2%", gazette_page = 20712},
+      {sarani = 4, serial = 119, hs_heading = "85.17", hs_code = "8517.62.10", description = "Transmitting and receiving apparatus", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 120, hs_heading = "85.17", hs_code = "8517.62.20", description = "Telephonic or telegraphic switching apparatus", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 121, hs_heading = "85.17", hs_code = "8517.62.30", description = "Modem; Ethernet interface card; network switch; hub; router", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 122, hs_heading = "85.23", hs_code = "8523.29.12", description = "Database; operating systems; development tools; productivity; communication or collaboration software", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 123, hs_heading = "85.23", hs_code = "8523.29.90", description = "Other", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 124, hs_heading = "85.23", hs_code = "8523.49.21", description = "Database; operating systems; development tools; productivity; communication or collaboration software", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 125, hs_heading = "85.23", hs_code = "8523.49.90", description = "Other", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 126, hs_heading = "85.23", hs_code = "8523.51.10", description = "Flash memory card or similar media", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 127, hs_heading = "85.23", hs_code = "8523.59.10", description = "Proximity Cards and tags", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 128, hs_heading = "85.25", hs_code = "8525.50.90", description = "Transmission apparatus: Other", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 129, hs_heading = "85.25", hs_code = "8525.60.90", description = "Transmission apparatus incorporating reception apparatus: Other", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 130, hs_heading = "85.28", hs_code = "8528.42.00", description = "Cathode-ray tube monitors: Capable of directly connecting to and designed for use with an automatic data processing machine of heading 84.71", rate = "2%", gazette_page = 20713},
+      {sarani = 4, serial = 131, hs_heading = "85.28", hs_code = "8528.52.10", description = "Computer monitor size not exceeding 30 inch", rate = "2%", gazette_page = 20713},
+      # সারণী-5 — 48 rows — 3% (industrial-IRC manufacturer only) — node tds.sections.120.sarani_5_industrial_irc
+      {sarani = 5, serial = 1, hs_heading = "04.02", hs_code = "0402.10.90", description = "Milk and cream, concentrated or containing added sugar or other sweetening matter, in powder, granules or other solid forms, of a fat content, by weight, not exceeding 1.5%- other", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 2, hs_heading = "04.02", hs_code = "0402.21.90", description = "In powder, granules or other solid forms, of a fat content, by weight, exceeding1.5%, not containing added sugar or other sweetening matter", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 3, hs_heading = "10.06", hs_code = "1006.10.90", description = "Rice in the husk (paddy or rough) Excl. wrapped/canned upto 2.5 kg", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 4, hs_heading = "19.01", hs_code = "1901.90.11", description = "Filled Milk powder imported by VAT registered milk products manufacturing industries", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 5, hs_heading = "25.06", hs_code = "2506.10.00", description = "Quartz", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 6, hs_heading = "25.06", hs_code = "2506.20.00", description = "Quartzite", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 7, hs_heading = "25.07", hs_code = "2507.00.10", description = "China clays", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 8, hs_heading = "25.08", hs_code = "2508.40.10", description = "Ball clays", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 9, hs_heading = "25.08", hs_code = "2508.30.00", description = "Fire clay", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 10, hs_heading = "25.17", hs_code = "2517.10.10", description = "Pebbles, gravel, broken or crushed stone, of a kind commonly used for concrete aggregates, for road metalling or for railway or other ballast, shingle and flint, whether or not heat-treated", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 11, hs_heading = "25.18", hs_code = "2518.10.00", description = "Dolomite not calcined or sintered", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20714},
+      {sarani = 5, serial = 12, hs_heading = "25.20", hs_code = "2520.20.00", description = "Plasters", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 13, hs_heading = "25.21", hs_code = "2521.00.90", description = "Limestone only used for cement manufacturing", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 14, hs_heading = "25.26", hs_code = "2526.20.10", description = "Talc", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 15, hs_heading = "25.29", hs_code = "2529.10.00", description = "Feldspar", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 16, hs_heading = "26.18", hs_code = "2618.00.00", description = "Slag only used for cement manufacturing", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 17, hs_heading = "26.20", hs_code = "2620.99.10", description = "Fly Ash only used for cement manufacturing", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 18, hs_heading = "27.04", hs_code = "2704.00.00", description = "Coke and semi-coke of coal, of lignite or of peat; retort carbon", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 19, hs_heading = "27.07", hs_code = "2707.50.90", description = "Other Aromatic Hydrocarbon Mixtures of Which >=65% Distils At 250°c", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 20, hs_heading = "28.18", hs_code = "2818.20.00", description = "Aluminium oxide, other than artificial corundum", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 21, hs_heading = "28.35", hs_code = "2835.26.00", description = "Other phosphates of calcium", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 22, hs_heading = "28.39", hs_code = "2839.19.00", description = "commercial alkali metal silicates of potassium", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 23, hs_heading = "28.40", hs_code = "2840.20.10", description = "Solubo boron", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 24, hs_heading = "29.03", hs_code = "2903.99.00", description = "Other helogenated aromatic hydrocabons, EXCL. Chlorobenzene ... Hexachlorobenzene", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 25, hs_heading = "29.05", hs_code = "2905.19.90", description = "Other Saturated Monohydric Alcohols, Nes", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 26, hs_heading = "29.20", hs_code = "2920.90.90", description = "Oth.Ester Of Oth.Inorganic Acids (Exl.Of Hdrgn.Halides), Deriv. (Ex.Erythrit.", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 27, hs_heading = "29.34", hs_code = "2934.99.90", description = "OTH. HETEROCYCLIC COMPOUNDS, NES", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 28, hs_heading = "32.07", hs_code = "3207.30.00", description = "Liquid lustres and similar preparations", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20715},
+      {sarani = 5, serial = 29, hs_heading = "32.07", hs_code = "3207.40.00", description = "Glass frit and other glass, in the form of granules or flakes", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 30, hs_heading = "32.08", hs_code = "3208.20.91", description = "Cover coat/medium", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 31, hs_heading = "35.06", hs_code = "3506.91.10", description = "Elastic/construction glue", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 32, hs_heading = "38.08", hs_code = "3808.91.10", description = "Insecticides For Dairy, Poultry and Agricultural purposes", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 33, hs_heading = "38.08", hs_code = "3808.92.10", description = "Fungicides For Dairy, Poultry and Agricultural purposes", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 34, hs_heading = "38.08", hs_code = "3808.93.10", description = "Herbi., anti-sprouting prod.& plant-growth regu.:For Dairy, Poultry and Agricul", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 35, hs_heading = "48.04", hs_code = "4804.11.00", description = "Kraftline- Unbleached", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 36, hs_heading = "48.11", hs_code = "4811.90.10", description = "Melamine/Decalcomania Paper", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 37, hs_heading = "53.05", hs_code = "5305.00.10", description = "Coco substrate; coco pellet; growing media", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 38, hs_heading = "72.08", hs_code = "7208.39.00", description = "Hot rolled coil used only for CI sheet manufacturing", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 39, hs_heading = "76.01", hs_code = "7601.10.00", description = "Aluminium ingot", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 40, hs_heading = "76.06", hs_code = "7606.11.00", description = "Aluminium plates, sheets and strip, of a thickness exceeding 0.2 mm; Rectangular (including square); Of Aluminium, not alloyed", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 41, hs_heading = "76.06", hs_code = "7606.12.00", description = "Of Aluminium, alloys", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 42, hs_heading = "76.07", hs_code = "7607.11.00", description = "Aluminium foil (whether or not printed or backed with paper, paperboard, plastics or similar backing materials) of a thickness (excluding any backing) not exceeding 0.2 mm; Rolled but not further worked", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 43, hs_heading = "76.07", hs_code = "7607.19.10", description = "Aluminium foil lacquered", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20716},
+      {sarani = 5, serial = 44, hs_heading = "76.07", hs_code = "7607.20.92", description = "Co-polymer coated aluminium tape", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20717},
+      {sarani = 5, serial = 45, hs_heading = "79.01", hs_code = "7901.11.90", description = "Zink, Not Alloyed, >=99.99% Pure, Nes used only for CI sheet manufacturing", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20717},
+      {sarani = 5, serial = 46, hs_heading = "85.04", hs_code = "8504.40.10", description = "Mobile and other battery charger (less than 10 VA)", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20717},
+      {sarani = 5, serial = 47, hs_heading = "85.07", hs_code = "8507.60.00", description = "Other: Lithium-ion", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20717},
+      {sarani = 5, serial = 48, hs_heading = "85.18", hs_code = "8518.29.00", description = "Other", rate = "3% (industrial-IRC manufacturer only)", gazette_page = 20717},
+      # সারণী-6 — 10 rows — 20% — node tds.sections.120.sarani_6
+      {sarani = 6, serial = 1, hs_heading = "22.07", hs_code = "2207.10.00", description = "Undenatured Ethyl Alcohol, Of Alcoholic Strength >=80% By Vol.", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 2, hs_heading = "22.07", hs_code = "2207.20.00", description = "Ethyl Alcohol and Other Denatured Spirits Of Any Strength", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 3, hs_heading = "22.08", hs_code = "2208.20.00", description = "Spirits From Distilled Grape Wine or Grape Marc", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 4, hs_heading = "22.08", hs_code = "2208.30.00", description = "Whiskeys", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 5, hs_heading = "22.08", hs_code = "2208.40.00", description = "Rum And Tafia", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 6, hs_heading = "22.08", hs_code = "2208.50.00", description = "Gin And Geneva", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 7, hs_heading = "22.08", hs_code = "2208.60.00", description = "Vodka", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 8, hs_heading = "22.08", hs_code = "2208.70.00", description = "Liqueurs And Cordials", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 9, hs_heading = "22.08", hs_code = "2208.90.00", description = "Other Spirituous Beverages, Nes", rate = "20%", gazette_page = 20717},
+      {sarani = 6, serial = 10, hs_heading = "33.08", hs_code = "3303.00.00", description = "Perfumes And Toilet Waters", rate = "20%", gazette_page = 20717},
+      # সারণী-7 — 5 rows — BDT 600 per tonne — node tds.sections.120.sarani_7_per_tonne
+      {sarani = 7, serial = 1, hs_heading = "72.03", hs_code = "All H.S Code", description = "Ferrous products obtained by direct reduction of iron ore and other spongy ferrous products, in lumps, pellets or similar forms; iron having a minimum purity by weight of 99.94%, in lumps, pellets or similar forms.", rate = "BDT 600 per tonne", gazette_page = 20718},
+      {sarani = 7, serial = 2, hs_heading = "72.04", hs_code = "All H.S Code", description = "Ferrous waste and scrap; remelting scrap ingots of iron or steel.", rate = "BDT 600 per tonne", gazette_page = 20718},
+      {sarani = 7, serial = 3, hs_heading = "72.06", hs_code = "7206.10.00", description = "Iron and non-alloy steel in ingots or other primary forms (excluding iron of heading 72.03)-Ingots", rate = "BDT 600 per tonne", gazette_page = 20718},
+      {sarani = 7, serial = 4, hs_heading = "72.07", hs_code = "All H.S code", description = "Semi-finished products of iron or non-alloy steel", rate = "BDT 600 per tonne", gazette_page = 20718},
+      {sarani = 7, serial = 5, hs_heading = "89.08", hs_code = "8908.00.00", description = "Vessels and other floating structures for breaking up:", rate = "BDT 600 per tonne", gazette_page = 20718},
+    ]
+
+# =========================================================================================
+# s.125 — COLLECTION ON TRANSFER OF PROPERTY
+# Rule 6 of SRO 273 · ধারা ১২৫, উৎসে কর বিধিমালা ২০২৬ এর বিধি ৬ · gazette pages 20684-20690
+# =========================================================================================
 
   [tds.sections.125]
   section = "125"
   label_en = "Collection on transfer of property"
-  label_bn = "সম্পত্তি হস্তান্তরে কর আদায়"
-  applies_to = "Transfer of immovable property, at registration."
-  deducted_by = "The registering officer."
-  condition = "The rate varies mouza by mouza."
+  label_bn = "সম্পত্তি হস্তান্তর হইতে কর সংগ্রহ"
+  applies_to = "Registration of a deed transferring immovable property under section 17(1)(a), (aa), (aaa), (b), (c) or (e) of the Registration Act, 1908."
+  deducted_by = "The registering officer, who must not register the deed without a pay-order proving payment."
+  condition = "Two variables decide the figure: WHICH MOUZA the land is in (সারণী-১ serials 1-7, or সারণী-২), and WHICH CLASS ক-চ the plot is (Rule 6(8)). Any structure standing on the land carries a further charge under Rule 6(2)."
   source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
   as_of = "2026-07-05"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-PLACEHOLDER — NOT LANDED. The rates sit in Rule 6 of SRO 273, which is a mouza-by-mouza table
-running to dozens of pages. Its existence and the statutory framework were confirmed; the
-rates were not extracted. TakaBooks holds NO figure for this section. Ask the registering
-office or read Rule 6 for the specific mouza.
+RULE 6 IS NOW TRANSCRIBED — this section is no longer a placeholder.
+
+HOW THE CHARGE IS BUILT. Three steps, and skipping the third is the common error.
+
+  1. LAND. Find the mouza in সারণী-১ (serials 1-7) or, failing that, in সারণী-২. That gives a
+     PERCENTAGE of the land value stated in the deed AND a FLOOR IN TAKA PER শতক (shatak /
+     decimal, 1/100 acre). The tax is WHICHEVER IS HIGHER — "যাহা অধিক". On cheap paper values
+     the per-শতক floor is what actually binds, which is the whole point of the design.
+  2. CLASS. The floor depends on the plot's class ক-চ, defined in Rule 6(8) and catalogued in
+     [tds.sections.125.plot_classes] below. Broadly: ক/খ are commercial/residential plots inside
+     a development-authority area (RAJUK, CDA, GDA, KDA, RDA, NHA, PWD, Cantonment Board, Cox's
+     Bazar DA and the like); গ/ঘ are commercial/residential plots in a developer-established area
+     OUTSIDE any such authority; ঙ is every industrial plot; চ is everything else.
+  3. STRUCTURE. Rule 6(2): if a স্থাপনা, বাড়ি, ফ্ল্যাট, অ্যাপার্টমেন্ট or ফ্লোর স্পেস stands on that
+     land, an ADDITIONAL charge applies — see [tds.sections.125.structure_surcharge].
+
+⚠️ Rule 6(3): if the deed's remarks column (মন্তব্য কলাম) does not clearly state whether the
+property is residential, commercial or industrial, the collection is DEEMED NOT TO HAVE BEEN
+MADE CORRECTLY under this rule. Get the nature written into the deed.
+
+Rule 6(4): the rule reaches transfers by statutory government authorities too.
+
+Rule 6(5): NO collection on — (ক) registration of a mortgage deed; (খ) transfer by the UN or its
+organs or a foreign embassy or mission; (গ) a no-claim (না-দাবি) deed that does not extinguish
+title; (ঘ) a partition deed (বণ্টননামা); (ঙ) a waqf or debottar gift deed; (চ) a deed carrying no
+consideration or benefit in lieu of it, such as a will, অছিয়ত, এওয়াজ or exchange.
+
+Rule 6(6): in city corporation, pourashava and cantonment board areas, PSR of BOTH the donor and
+the recipient must be produced or the registration cannot be completed.
+
+Rule 6(7): the tax must reach the treasury by a SEPARATE A-Challan BEFORE registration.
+
+⚠️ SCOPE OF WHAT WAS READ. The seven সারণী-১ serials are transcribed with their full thana
+lists. A serial that names "সকল মৌজা" of a thana covers every mouza in it, so a seller who knows
+the thana can place the land without a mouza-by-mouza list — there is no such list in Rule 6.
+Mouza-level valuation is a separate matter for the registering office and is not in this rule.
 """
 
-    [tds.sections.125.rate]
-    label_en = "Transfer of property — rate by mouza"
-    label_bn = "সম্পত্তি হস্তান্তর — মৌজাভিত্তিক হার"
-    value = 0
-    unit = "percent"
-    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
-    as_of = "2026-07-05"
-    verified = false
-    placeholder = true
-    note = "PLACEHOLDER. Zero is not the rate — it is the absence of one. Rule 6 of SRO 273 was not transcribed."
+# -----------------------------------------------------------------------------------------
+# Rule 6(1) সারণী-১ — seven mouza groups × six plot classes. Each cell of the gazette table
+# reads "দলিলে উল্লিখিত ভূমির মূল্যের X% বা শতকপ্রতি Y টাকা, যাহা অধিক" — a percentage OR a
+# per-শতক floor, WHICHEVER IS HIGHER. The percentage is uniform across the six classes within
+# a serial, so it is held once per serial; the six floors are held one node each.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.125.sarani_1.serial_1]
+    mouza_en = "Dhaka district — all mouzas within Gulshan, Banani, Motijheel and Tejgaon thanas"
+    mouza_bn = "ঢাকা জেলার গুলশান, বনানী, মতিঝিল ও তেজগাঁও থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20684
+
+      [tds.sections.125.sarani_1.serial_1.percent_of_deed_value]
+      label_en = "সারণী-১ serial 1 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 1 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 5
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, gazette page 20684. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_ka]
+      label_en = "সারণী-১ serial 1 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 1 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 900000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class ক-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_kha]
+      label_en = "সারণী-১ serial 1 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 1 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 350000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class খ-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_ga]
+      label_en = "সারণী-১ serial 1 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 1 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 900000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class গ-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_gha]
+      label_en = "সারণী-১ serial 1 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 1 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 350000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class ঘ-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_uma]
+      label_en = "সারণী-১ serial 1 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 1 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 500000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class ঙ-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_1.floor_class_cha]
+      label_en = "সারণী-১ serial 1 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 1 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 300000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 1, class চ-শ্রেণি, gazette page 20684. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_2]
+    mouza_en = "Dhaka district — all mouzas within Dhanmondi, Wari, Tejgaon Shilpanchal, Shahbagh, Ramna, Paltan, Bangshal, New Market and Kalabagan thanas"
+    mouza_bn = "ঢাকা জেলার ধানমন্ডি, ওয়ারী, তেজগাঁও শিল্পাঞ্চল থানা, শাহবাগ, রমনা, পল্টন, বংশাল, নিউমার্কেট ও কলাবাগান থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20685
+
+      [tds.sections.125.sarani_1.serial_2.percent_of_deed_value]
+      label_en = "সারণী-১ serial 2 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 2 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 5
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, gazette page 20685. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_ka]
+      label_en = "সারণী-১ serial 2 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 2 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 650000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class ক-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_kha]
+      label_en = "সারণী-১ serial 2 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 2 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 300000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class খ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_ga]
+      label_en = "সারণী-১ serial 2 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 2 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 650000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class গ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_gha]
+      label_en = "সারণী-১ serial 2 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 2 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 300000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class ঘ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_uma]
+      label_en = "সারণী-১ serial 2 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 2 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 300000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class ঙ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_2.floor_class_cha]
+      label_en = "সারণী-১ serial 2 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 2 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 200000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 2, class চ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_3]
+    mouza_en = "Dhaka district — all mouzas within Kafrul, Mohammadpur, Sutrapur, Jatrabari, Uttara Model thana, Cantonment thana, Chakbazar thana, Kotwali thana, Lalbagh thana, Khilgaon, Shyampur and Gendaria thanas"
+    mouza_bn = "ঢাকা জেলার কাফরুল, মোহাম্মদপুর, সূত্রাপুর, যাত্রাবাড়ী, উত্তরা মডেল থানা, ক্যান্টনমেন্ট থানা, চকবাজার থানা, কোতোয়ালি থানা, লালবাগ থানা, খিলগাঁও, শ্যামপুর ও গেন্ডারিয়া থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20685
+
+      [tds.sections.125.sarani_1.serial_3.percent_of_deed_value]
+      label_en = "সারণী-১ serial 3 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 3 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 5
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, gazette page 20685. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_ka]
+      label_en = "সারণী-১ serial 3 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 3 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 400000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class ক-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_kha]
+      label_en = "সারণী-১ serial 3 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 3 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 175000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class খ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_ga]
+      label_en = "সারণী-১ serial 3 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 3 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 400000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class গ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_gha]
+      label_en = "সারণী-১ serial 3 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 3 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 175000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class ঘ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_uma]
+      label_en = "সারণী-১ serial 3 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 3 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 175000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class ঙ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_3.floor_class_cha]
+      label_en = "সারণী-১ serial 3 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 3 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 85000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 3, class চ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_4]
+    mouza_en = "Dhaka district — all mouzas within Khilkhet, Biman Bandar, Uttara Paschim, Mugda, Rupnagar, Bhashantek, Badda thana, Pallabi thana, Bhatara, Shahjahanpur, Mirpur Model thana, Darus Salam thana, Dakshinkhan thana, Uttarkhan thana, Turag thana, Shah Ali thana, Sabujbagh thana, Kadamtali thana, Kamrangirchar thana, Hazaribagh, Demra and Adabor thanas; and Narayanganj district — all mouzas within Sadar thana"
+    mouza_bn = "ঢাকা জেলার খিলক্ষেত, বিমানবন্দর, উত্তরা পশ্চিম, মুগদা, রূপনগর, ভাষানটেক, বাড্ডা থানা, পল্লবী থানা, ভাটারা, শাহজাহানপুর, মিরপুর মডেল থানা, দারুস সালাম থানা, দক্ষিণখান থানা, উত্তরখান থানা, তুরাগ থানা, শাহ আলী থানা, সবুজবাগ থানা, কদমতলী থানা, কামরাঙ্গীরচর থানা, হাজারীবাগ, ডেমরা ও আদাবর থানার অন্তর্গত সকল মৌজা; এবং নারায়ণগঞ্জ জেলার সদর থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20685
+
+      [tds.sections.125.sarani_1.serial_4.percent_of_deed_value]
+      label_en = "সারণী-১ serial 4 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 4 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 5
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, gazette page 20685. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_ka]
+      label_en = "সারণী-১ serial 4 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 4 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 350000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class ক-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_kha]
+      label_en = "সারণী-১ serial 4 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 4 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 150000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class খ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_ga]
+      label_en = "সারণী-১ serial 4 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 4 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 350000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class গ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_gha]
+      label_en = "সারণী-১ serial 4 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 4 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 150000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class ঘ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_uma]
+      label_en = "সারণী-১ serial 4 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 4 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 150000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class ঙ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_4.floor_class_cha]
+      label_en = "সারণী-১ serial 4 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 4 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 75000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 4, class চ-শ্রেণি, gazette page 20685. Charged only if it exceeds 5% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_5]
+    mouza_en = "Chattogram district — all mouzas within Khulshi, Panchlaish, Pahartali, Halishahar and Kotwali thanas; Narayanganj district — all mouzas within Sonargaon, Fatullah, Siddhirganj and Bandar thanas; and Gazipur district — all mouzas within Sadar, Basan, Konabari, Gachha, Tongi Purba and Tongi Paschim thanas"
+    mouza_bn = "চট্টগ্রাম জেলার খুলশী, পাঁচলাইশ, পাহাড়তলী, হালিশহর ও কোতোয়ালী থানার অন্তর্গত সকল মৌজা; নারায়ণগঞ্জ জেলার সোনারগাঁও, ফতুল্লা, সিদ্দিরগঞ্জ, বন্দর থানার অন্তর্গত সকল মৌজা এবং গাজীপুর জেলার সদর, বাসন, কোনাবাড়ী, গাছা, টঙ্গী পূর্ব ও টঙ্গী পশ্চিম থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20686
+
+      [tds.sections.125.sarani_1.serial_5.percent_of_deed_value]
+      label_en = "সারণী-১ serial 5 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 5 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 3
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, gazette page 20686. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_ka]
+      label_en = "সারণী-১ serial 5 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 5 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 175000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class ক-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_kha]
+      label_en = "সারণী-১ serial 5 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 5 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 70000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class খ-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_ga]
+      label_en = "সারণী-১ serial 5 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 5 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 175000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class গ-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_gha]
+      label_en = "সারণী-১ serial 5 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 5 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 70000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class ঘ-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_uma]
+      label_en = "সারণী-১ serial 5 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 5 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 70000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class ঙ-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_5.floor_class_cha]
+      label_en = "সারণী-১ serial 5 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 5 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 35000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 5, class চ-শ্রেণি, gazette page 20686. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_6]
+    mouza_en = "Dhaka district — all mouzas within Dohar, Nawabganj, Keraniganj, Savar and Dhamrai thanas; Chattogram district — all mouzas within Akbar Shah, EPZ, Karnaphuli, Chakbazar, Chandgaon, Double Mooring, Patenga, Panchlaish, Bandar, Bakalia, Bayezid Bostami and Sadarghat thanas; Gazipur district — all mouzas within Joydebpur and Kaliganj thanas; and Narayanganj district — all mouzas within Rupganj and Araihazar thanas"
+    mouza_bn = "ঢাকা জেলার দোহার, নবাবগঞ্জ, কেরাণীগঞ্জ, সাভার ও ধামরাই থানার অন্তর্গত সকল মৌজা; চট্টগ্রাম জেলার আকবর শাহ, ইপিজেড, কর্ণফুলী, চকবাজার, চান্দগাঁও, ডবলমুরিং, পতেঙ্গা, পাঁচলাইশ, বন্দর, বাকলিয়া, বায়েজিদ বোস্তামি ও সদরঘাট থানার অন্তর্গত সকল মৌজা; গাজীপুর জেলার জয়দেবপুর থানা ও কালীগঞ্জ থানার অন্তর্গত সকল মৌজা; এবং নারায়ণগঞ্জ জেলার রূপগঞ্জ ও আড়াইহাজার থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20687
+
+      [tds.sections.125.sarani_1.serial_6.percent_of_deed_value]
+      label_en = "সারণী-১ serial 6 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 6 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 3
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, gazette page 20687. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_ka]
+      label_en = "সারণী-১ serial 6 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 6 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 125000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class ক-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_kha]
+      label_en = "সারণী-১ serial 6 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 6 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 60000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class খ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_ga]
+      label_en = "সারণী-১ serial 6 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 6 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 125000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class গ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_gha]
+      label_en = "সারণী-১ serial 6 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 6 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 60000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class ঘ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_uma]
+      label_en = "সারণী-১ serial 6 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 6 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 60000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class ঙ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_6.floor_class_cha]
+      label_en = "সারণী-১ serial 6 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 6 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 30000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 6, class চ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+    [tds.sections.125.sarani_1.serial_7]
+    mouza_en = "Areas not within serials 1 to 6 but lying in a city corporation other than Dhaka South, Dhaka North, Chattogram, Narayanganj and Gazipur city corporations, or under the control of any other development authority; and all mouzas of every pourashava situated at a district headquarters"
+    mouza_bn = "ক্রমিক নং ১ হতে ৬ এর অন্তর্গত নয় কিন্তু ঢাকা দক্ষিণ, ঢাকা উত্তর, চট্টগ্রাম, নারায়ণগঞ্জ ও গাজীপুর সিটি কর্পোরেশন ব্যতীত অন্যান্য সিটি কর্পোরেশন ও অন্য কোনো উন্নয়ন কর্তৃপক্ষের নিয়ন্ত্রণাধীন এবং জেলা সদরে অবস্থিত সকল পৌরসভার অন্তর্গত সকল মৌজা"
+    gazette_page = 20687
+
+      [tds.sections.125.sarani_1.serial_7.percent_of_deed_value]
+      label_en = "সারণী-১ serial 7 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-১ ক্রমিক 7 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 3
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, gazette page 20687. Compare against the per-শতক floor for the plot's class and charge WHICHEVER IS HIGHER. Same percentage for all six classes ক-চ."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_ka]
+      label_en = "সারণী-১ serial 7 — class ক floor per শতক (commercial plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 7 — ক-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 100000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class ক-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_kha]
+      label_en = "সারণী-১ serial 7 — class খ floor per শতক (residential plot inside a development-authority area)"
+      label_bn = "সারণী-১ ক্রমিক 7 — খ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 50000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class খ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_ga]
+      label_en = "সারণী-১ serial 7 — class গ floor per শতক (commercial plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 7 — গ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 100000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class গ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_gha]
+      label_en = "সারণী-১ serial 7 — class ঘ floor per শতক (residential plot in a developer-established area outside any development authority)"
+      label_bn = "সারণী-১ ক্রমিক 7 — ঘ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 50000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class ঘ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_uma]
+      label_en = "সারণী-১ serial 7 — class ঙ floor per শতক (industrial plot)"
+      label_bn = "সারণী-১ ক্রমিক 7 — ঙ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 50000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class ঙ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+      [tds.sections.125.sarani_1.serial_7.floor_class_cha]
+      label_en = "সারণী-১ serial 7 — class চ floor per শতক (any area outside classes ক-ঙ)"
+      label_bn = "সারণী-১ ক্রমিক 7 — চ-শ্রেণির শতকপ্রতি সর্বনিম্ন কর"
+      value = 25000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-১ serial 7, class চ-শ্রেণি, gazette page 20687. Charged only if it exceeds 3% of the land value stated in the deed. শতক = decimal = 1/100 acre ≈ 40.46 m²."
+
+# -----------------------------------------------------------------------------------------
+# Rule 6(1) সারণী-২ — everything সারণী-১ does not reach. No class split here: one rate and one
+# floor per serial.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.125.sarani_2.serial_1]
+    mouza_en = "All mouzas of any pourashava not covered by সারণী-১"
+    mouza_bn = "সারণী-১ এর অন্তর্গত নহে এইরূপ অন্য যেকোনো পৌরসভার অন্তর্গত সকল মৌজা"
+    gazette_page = 20688
+
+      [tds.sections.125.sarani_2.serial_1.percent_of_deed_value]
+      label_en = "সারণী-২ serial 1 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-২ ক্রমিক 1 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 2
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-২ serial 1, gazette page 20688. Or the per-শতক floor, whichever is higher."
+
+      [tds.sections.125.sarani_2.serial_1.floor_per_shatak]
+      label_en = "সারণী-২ serial 1 — floor per শতক"
+      label_bn = "সারণী-২ ক্রমিক 1 — শতকপ্রতি সর্বনিম্ন কর"
+      value = 10000
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-২ serial 1, gazette page 20688. Charged only if it exceeds 2% of the land value stated in the deed."
+
+    [tds.sections.125.sarani_2.serial_2]
+    mouza_en = "All mouzas of every upazila (excluding pourashavas) not covered by সারণী-২ serial 1 or by সারণী-১"
+    mouza_bn = "সারণী-২ এর ক্রমিক নং ১ এবং সারণী-১ এর অন্তর্গত নহে এইরূপ সকল উপজেলার (পৌরসভা ব্যতীত) অন্তর্গত সকল মৌজা"
+    gazette_page = 20688
+
+      [tds.sections.125.sarani_2.serial_2.percent_of_deed_value]
+      label_en = "সারণী-২ serial 2 — percentage of the land value stated in the deed"
+      label_bn = "সারণী-২ ক্রমিক 2 — দলিলে উল্লিখিত ভূমির মূল্যের শতকরা হার"
+      value = 2
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-২ serial 2, gazette page 20688. Or the per-শতক floor, whichever is higher."
+
+      [tds.sections.125.sarani_2.serial_2.floor_per_shatak]
+      label_en = "সারণী-২ serial 2 — floor per শতক"
+      label_bn = "সারণী-২ ক্রমিক 2 — শতকপ্রতি সর্বনিম্ন কর"
+      value = 500
+      unit = "BDT_per_shatak"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(1) সারণী-২ serial 2, gazette page 20688. Charged only if it exceeds 2% of the land value stated in the deed."
+
+# -----------------------------------------------------------------------------------------
+# Rule 6(2) — the ADDITIONAL charge where a structure stands on the land being registered.
+# Each serial is again "per square metre OR a percentage of the deed value for the structure,
+# whichever is higher", so both limbs are held.
+# NOTE: Rule 7(5) switches this surcharge OFF for a developer transfer taxed under s.126.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.125.structure_surcharge.serial_1]
+    description_en = "Structure, house, flat, apartment or floor space standing on land of class ক to ঘ"
+    description_bn = "শ্রেণি-ক হইতে শ্রেণি-ঘ এ উল্লিখিত ভূমিতে অবস্থিত স্থাপনা, বাড়ি, ফ্ল্যাট, অ্যাপার্টমেন্ট অথবা ফ্লোর স্পেস"
+    gazette_page = 20688
+
+      [tds.sections.125.structure_surcharge.serial_1.per_square_metre]
+      label_en = "Rule 6(2) serial 1 — charge per square metre"
+      label_bn = "বিধি ৬(২) ক্রমিক 1 — প্রতি বর্গমিটারে কর"
+      value = 800
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 1, gazette page 20688. Or 8% of the value the deed states for the structure — whichever is higher (যাহা অধিক)."
+
+      [tds.sections.125.structure_surcharge.serial_1.percent_of_deed_value]
+      label_en = "Rule 6(2) serial 1 — percentage of the deed value of the structure"
+      label_bn = "বিধি ৬(২) ক্রমিক 1 — স্থাপনার দলিলমূল্যের শতকরা হার"
+      value = 8
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 1, gazette page 20688. Or Tk 800 per square metre — whichever is higher."
+
+    [tds.sections.125.structure_surcharge.serial_2]
+    description_en = "Structure, house, flat, apartment or floor space standing on land of class ঙ, and on land in the mouzas at সারণী-২ serial 1"
+    description_bn = "শ্রেণি-ঙ-তে উল্লিখিত ভূমিতে অবস্থিত স্থাপনা, বাড়ি, ফ্ল্যাট, অ্যাপার্টমেন্ট অথবা ফ্লোর স্পেস এবং সারণী-২ এর ক্রমিক নং ১ এ উল্লিখিত মৌজার ভূমিতে অবস্থিত স্থাপনা, বাড়ি, ফ্ল্যাট, অ্যাপার্টমেন্ট অথবা ফ্লোর স্পেস"
+    gazette_page = 20689
+
+      [tds.sections.125.structure_surcharge.serial_2.per_square_metre]
+      label_en = "Rule 6(2) serial 2 — charge per square metre"
+      label_bn = "বিধি ৬(২) ক্রমিক 2 — প্রতি বর্গমিটারে কর"
+      value = 500
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 2, gazette page 20689. Or 6% of the value the deed states for the structure — whichever is higher (যাহা অধিক)."
+
+      [tds.sections.125.structure_surcharge.serial_2.percent_of_deed_value]
+      label_en = "Rule 6(2) serial 2 — percentage of the deed value of the structure"
+      label_bn = "বিধি ৬(২) ক্রমিক 2 — স্থাপনার দলিলমূল্যের শতকরা হার"
+      value = 6
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 2, gazette page 20689. Or Tk 500 per square metre — whichever is higher."
+
+    [tds.sections.125.structure_surcharge.serial_3]
+    description_en = "All other cases"
+    description_bn = "অন্যান্য ক্ষেত্রে"
+    gazette_page = 20689
+
+      [tds.sections.125.structure_surcharge.serial_3.per_square_metre]
+      label_en = "Rule 6(2) serial 3 — charge per square metre"
+      label_bn = "বিধি ৬(২) ক্রমিক 3 — প্রতি বর্গমিটারে কর"
+      value = 300
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 3, gazette page 20689. Or 6% of the value the deed states for the structure — whichever is higher (যাহা অধিক)."
+
+      [tds.sections.125.structure_surcharge.serial_3.percent_of_deed_value]
+      label_en = "Rule 6(2) serial 3 — percentage of the deed value of the structure"
+      label_bn = "বিধি ৬(২) ক্রমিক 3 — স্থাপনার দলিলমূল্যের শতকরা হার"
+      value = 6
+      unit = "percent"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 6(2) সারণী serial 3, gazette page 20689. Or Tk 300 per square metre — whichever is higher."
+
+# -----------------------------------------------------------------------------------------
+# Rule 6(8) — what the six plot classes mean. Catalogue entries, NOT rate nodes (no `value`).
+# The named authorities are জাতীয় গৃহায়ন কর্তৃপক্ষ, গণপূর্ত অধিদপ্তর, ক্যান্টনমেন্ট বোর্ড, রাজধানী উন্নয়ন
+# কর্তৃপক্ষ, চট্টগ্রাম উন্নয়ন কর্তৃপক্ষ, গাজীপুর উন্নয়ন কর্তৃপক্ষ, খুলনা উন্নয়ন কর্তৃপক্ষ, রাজশাহী উন্নয়ন
+# কর্তৃপক্ষ, কক্সবাজার উন্নয়ন কর্তৃপক্ষ and any similar development authority under the Ministry of
+# Housing and Public Works.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.125.plot_classes.ka]
+    class_bn = "ক-শ্রেণি"
+    definition_en = "Commercial plot in an area controlled by a listed development authority."
+    definition_bn = "জাতীয় গৃহায়ন কর্তৃপক্ষ, গণপূর্ত অধিদপ্তর, ক্যান্টনমেন্ট বোর্ড, রাজধানী উন্নয়ন কর্তৃপক্ষ, চট্টগ্রাম উন্নয়ন কর্তৃপক্ষ, গাজীপুর উন্নয়ন কর্তৃপক্ষ, খুলনা উন্নয়ন কর্তৃপক্ষ, রাজশাহী উন্নয়ন কর্তৃপক্ষ, কক্সবাজার উন্নয়ন কর্তৃপক্ষসহ গৃহায়ন ও গণপূর্ত মন্ত্রণালয়ের আওতাধীন অনুরূপ অন্য যেকোনো উন্নয়ন কর্তৃপক্ষের নিয়ন্ত্রণাধীন এলাকার বাণিজ্যিক প্লট"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+    [tds.sections.125.plot_classes.kha]
+    class_bn = "খ-শ্রেণি"
+    definition_en = "Residential plot in an area controlled by a listed development authority."
+    definition_bn = "উক্ত উন্নয়ন কর্তৃপক্ষসমূহের নিয়ন্ত্রণাধীন এলাকার আবাসিক প্লট"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+    [tds.sections.125.plot_classes.ga]
+    class_bn = "গ-শ্রেণি"
+    definition_en = "Commercial plot NOT under a listed development authority but in an area established by a developer or real estate developer."
+    definition_bn = "উক্ত উন্নয়ন কর্তৃপক্ষের নিয়ন্ত্রণাধীন নহে কিন্তু ডেভেলপার বা রিয়েল এস্টেট ডেভেলপার কর্তৃক প্রতিষ্ঠিত এলাকার বাণিজ্যিক প্লট"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+    [tds.sections.125.plot_classes.gha]
+    class_bn = "ঘ-শ্রেণি"
+    definition_en = "Residential plot NOT under a listed development authority but in an area established by a developer or real estate developer."
+    definition_bn = "উক্ত উন্নয়ন কর্তৃপক্ষের নিয়ন্ত্রণাধীন নহে কিন্তু ডেভেলপার বা রিয়েল এস্টেট ডেভেলপার কর্তৃক প্রতিষ্ঠিত এলাকার আবাসিক প্লট"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+    [tds.sections.125.plot_classes.uma]
+    class_bn = "ঙ-শ্রেণি"
+    definition_en = "Every industrial plot."
+    definition_bn = "সকল শিল্প প্লট"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+    [tds.sections.125.plot_classes.cha]
+    class_bn = "চ-শ্রেণি"
+    definition_en = "Any area other than classes ক, খ, গ, ঘ and ঙ."
+    definition_bn = "“ক-শ্রেণি”, “খ-শ্রেণি”, “গ-শ্রেণি”, “ঘ-শ্রেণি”, “ঙ-শ্রেণি” ব্যতীত অন্যান্য এলাকা"
+    source_rule = "Rule 6(8) of SRO 273"
+    gazette_page = 20690
+
+# =========================================================================================
+# s.126 — COLLECTION FROM A REAL ESTATE OR LAND DEVELOPER
+# Rule 7 of SRO 273 · ধারা ১২৬, উৎসে কর বিধিমালা ২০২৬ এর বিধি ৭ · gazette pages 20690-20693
+# =========================================================================================
 
   [tds.sections.126]
   section = "126"
   label_en = "Collection from a real estate or land developer"
-  label_bn = "রিয়েল এস্টেট বা ভূমি উন্নয়নকারী হইতে কর আদায়"
-  applies_to = "Sale or transfer of a building, apartment or land by a developer."
-  deducted_by = "The registering officer."
-  condition = "The rate varies by location and by property type."
+  label_bn = "রিয়েল এস্টেট বা ভূমি উন্নয়নকারীর নিকট হইতে কর সংগ্রহ"
+  applies_to = "Registration of a deed transferring a building or apartment built by a developer, or land developed by a developer."
+  deducted_by = "The registering officer, who must not register the deed unless the developer attaches a copy of the A-Challan proving payment."
+  condition = "Rule 7(1) charges the BUILDING or APARTMENT per square metre, by mouza group and by residential/commercial use. Rule 7(2) charges the LAND as a percentage of the deed value, by district."
   source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
   as_of = "2026-07-05"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-PLACEHOLDER — NOT LANDED. The rates sit in Rule 7 of SRO 273, another mouza-by-mouza table
-running to dozens of pages, not transcribed in the research pass. Distinct from s.115, which
-IS landed and taxes the developer's payment TO THE LAND OWNER at 15%.
+RULE 7 IS NOW TRANSCRIBED — this section is no longer a placeholder.
+
+⚠️ THE STACKING RULE IS THE THING PEOPLE GET WRONG. Rule 7(5): when collecting under this rule
+the registering officer must ALSO collect the tax payable under RULE 6(1) — the s.125 land
+charge — "তবে শর্ত থাকে যে, বিধি ৬ এর উপ-বিধি (২) অনুযায়ী উৎসে কর সংগ্রহ করা যাইবে না", that is, the
+RULE 6(2) STRUCTURE SURCHARGE IS NOT COLLECTED. So a developer sale carries: Rule 7(1) per
+square metre + Rule 7(2) on the land + Rule 6(1) on the land — and NOT Rule 6(2).
+
+Distinct from s.115, which is landed separately and taxes the developer's payment TO THE LAND
+OWNER at 15%. Different payer, different event, different rate.
+
+Rule 7(3): the rule reaches development and transfer by statutory government authorities.
+Rule 7(4): in city corporation, pourashava and cantonment board areas, PSR of both donor and
+recipient is required at registration — including for a বায়নানামা or আমমোক্তারনামা.
+Rule 7(6): the tax must reach the treasury by a separate A-Challan before registration.
 """
 
-    [tds.sections.126.rate]
-    label_en = "Developer collection — rate by location and property type"
-    label_bn = "ডেভেলপার আদায় — অবস্থান ও সম্পত্তির ধরন অনুযায়ী হার"
-    value = 0
+# -----------------------------------------------------------------------------------------
+# Rule 7(1) সারণী — tax per SQUARE METRE of the building or apartment, split residential vs
+# commercial. Not a percentage: the floor area is the base.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.126.per_square_metre.serial_1]
+    mouza_en = "Dhaka district — all mouzas within Gulshan, Banani, Motijheel and Tejgaon thanas"
+    mouza_bn = "ঢাকা জেলার গুলশান, বনানী, মতিঝিল ও তেজগাঁও থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20691
+
+      [tds.sections.126.per_square_metre.serial_1.residential]
+      label_en = "Rule 7(1) serial 1 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 1 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 1600
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 1, column (৩), gazette page 20691. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_1.commercial]
+      label_en = "Rule 7(1) serial 1 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 1 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 6500
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 1, column (৪), gazette page 20691. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+    [tds.sections.126.per_square_metre.serial_2]
+    mouza_en = "Dhaka district — all mouzas within Dhanmondi, Wari, Tejgaon Shilpanchal, Shahbagh, Ramna, Paltan, Bangshal, New Market and Kalabagan thanas"
+    mouza_bn = "ঢাকা জেলার ধানমন্ডি, ওয়ারী, তেজগাঁও শিল্পাঞ্চল থানা, শাহবাগ, রমনা, পল্টন, বংশাল, নিউমার্কেট ও কলাবাগান থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20691
+
+      [tds.sections.126.per_square_metre.serial_2.residential]
+      label_en = "Rule 7(1) serial 2 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 2 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 1500
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 2, column (৩), gazette page 20691. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_2.commercial]
+      label_en = "Rule 7(1) serial 2 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 2 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 5000
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 2, column (৪), gazette page 20691. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+    [tds.sections.126.per_square_metre.serial_3]
+    mouza_en = "Dhaka district — all mouzas within Khilkhet, Kafrul, Mohammadpur, Sutrapur, Jatrabari, Uttara Model thana, Cantonment thana, Chakbazar thana, Kotwali thana, Lalbagh thana, Khilgaon, Shyampur and Gendaria thanas"
+    mouza_bn = "ঢাকা জেলার খিলক্ষেত, কাফরুল, মোহাম্মদপুর, সূত্রাপুর, যাত্রাবাড়ী, উত্তরা মডেল থানা, ক্যান্টনমেন্ট থানা, চকবাজার থানা, কোতোয়ালি থানা, লালবাগ থানা, খিলগাঁও, শ্যামপুর, গেন্ডারিয়া থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20691
+
+      [tds.sections.126.per_square_metre.serial_3.residential]
+      label_en = "Rule 7(1) serial 3 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 3 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 1400
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 3, column (৩), gazette page 20691. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_3.commercial]
+      label_en = "Rule 7(1) serial 3 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 3 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 4000
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 3, column (৪), gazette page 20691. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+    [tds.sections.126.per_square_metre.serial_4]
+    mouza_en = "Dhaka district — all mouzas within Biman Bandar, Uttara Paschim, Mugda, Rupnagar, Bhashantek, Badda thana, Pallabi thana, Bhatara, Shahjahanpur, Mirpur Model thana, Darus Salam thana, Dakshinkhan thana, Uttarkhan thana, Turag thana, Shah Ali thana, Sabujbagh thana, Kadamtali thana, Chakbazar thana, Kamrangirchar thana, Kotwali thana, Lalbagh thana, Hazaribagh, Demra and Adabor thanas; Chattogram district — all mouzas within Khulshi, Panchlaish, Pahartali, Halishahar and Kotwali thanas; Gazipur district — all mouzas within Sadar, Basan, Konabari, Gachha, Tongi Purba, Tongi Paschim, Joydebpur and Kaliganj thanas; and Narayanganj district — all mouzas within Sadar, Fatullah, Siddhirganj, Bandar, Rupganj and Sonargaon thanas"
+    mouza_bn = "ঢাকা জেলার বিমানবন্দর, উত্তরা পশ্চিম, মুগদা, রূপনগর, ভাষানটেক, বাড্ডা থানা, পল্লবী থানা, ভাটারা, শাহজাহানপুর, মিরপুর মডেল থানা, দারুস সালাম থানা, দক্ষিণখান থানা, উত্তরখান থানা, তুরাগ থানা, শাহ আলী থানা, সবুজবাগ থানা, কদমতলী থানা, চকবাজার থানা, কামরাঙ্গীরচর থানা, কোতোয়ালী থানা, লালবাগ থানা, হাজারীবাগ, ডেমরা ও আদাবর থানার অন্তর্গত সকল মৌজা; চট্টগ্রাম জেলার খুলশী, পাঁচলাইশ, পাহাড়তলী, হালিশহর ও কোতোয়ালী থানার অন্তর্গত সকল মৌজা; গাজীপুর জেলার সদর, বাসন, কোনাবাড়ী, গাছা, টঙ্গী পূর্ব, টঙ্গী পশ্চিম থানার, জয়দেবপুর ও কালীগঞ্জ থানার অন্তর্গত সকল মৌজা এবং নারায়ণগঞ্জ জেলার সদর, ফতুল্লা, সিদ্দিরগঞ্জ, বন্দর, রূপগঞ্জ ও সোনারগাঁও থানার অন্তর্গত সকল মৌজা"
+    gazette_page = 20691
+
+      [tds.sections.126.per_square_metre.serial_4.residential]
+      label_en = "Rule 7(1) serial 4 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 4 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 1300
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 4, column (৩), gazette page 20691. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_4.commercial]
+      label_en = "Rule 7(1) serial 4 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 4 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 3500
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 4, column (৪), gazette page 20691. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+    [tds.sections.126.per_square_metre.serial_5]
+    mouza_en = "Dhaka district — all mouzas within Dohar, Nawabganj, Keraniganj, Savar and Dhamrai upazilas; Chattogram district — all mouzas within Akbar Shah, EPZ, Karnaphuli, Chakbazar, Chandgaon, Double Mooring, Patenga, Panchlaish, Bandar, Bakalia, Bayezid Bostami and Sadarghat thanas; Narayanganj district — all mouzas within Araihazar thana; and all mouzas situated in any city corporation other than Dhaka South, Dhaka North, Chattogram, Narayanganj and Gazipur city corporations"
+    mouza_bn = "ঢাকা জেলার দোহার, নবাবগঞ্জ, কেরাণীগঞ্জ, সাভার ও ধামরাই উপজেলার অন্তর্গত সকল মৌজা; চট্টগ্রাম জেলার আকবর শাহ, ইপিজেড, কর্ণফুলী, চকবাজার, চান্দগাঁও, ডবলমুরিং, পতেঙ্গা, পাঁচলাইশ, বন্দর, বাকলিয়া, বায়েজিদ বোস্তামি ও সদরঘাট থানার অন্তর্গত সকল মৌজা; নারায়ণগঞ্জ জেলার আড়াইহাজার থানার অন্তর্গত সকল মৌজা এবং ঢাকা দক্ষিণ, ঢাকা উত্তর, চট্টগ্রাম, নারায়ণগঞ্জ ও গাজীপুর সিটি কর্পোরেশন ব্যতীত অন্যান্য সিটি কর্পোরেশন এ অবস্থিত সকল মৌজা"
+    gazette_page = 20692
+
+      [tds.sections.126.per_square_metre.serial_5.residential]
+      label_en = "Rule 7(1) serial 5 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 5 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 700
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 5, column (৩), gazette page 20692. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_5.commercial]
+      label_en = "Rule 7(1) serial 5 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 5 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 2000
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 5, column (৪), gazette page 20692. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+    [tds.sections.126.per_square_metre.serial_6]
+    mouza_en = "All areas not mentioned in serials 1, 2, 3, 4 and 5"
+    mouza_bn = "ক্রমিক নং ১, ২, ৩, ৪ ও ৫ এ উল্লিখিত নহে এইরূপ সকল এলাকা"
+    gazette_page = 20692
+
+      [tds.sections.126.per_square_metre.serial_6.residential]
+      label_en = "Rule 7(1) serial 6 — residential building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 6 — আবাসিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 300
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 6, column (৩), gazette page 20692. Collected in addition to the Rule 7(2) land charge and the Rule 6(1) land charge; the Rule 6(2) surcharge is NOT collected."
+
+      [tds.sections.126.per_square_metre.serial_6.commercial]
+      label_en = "Rule 7(1) serial 6 — commercial building or apartment, per square metre"
+      label_bn = "বিধি ৭(১) ক্রমিক 6 — বাণিজ্যিক ভবন বা অ্যাপার্টমেন্ট, প্রতি বর্গমিটার"
+      value = 1000
+      unit = "BDT_per_square_metre"
+      source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+      as_of = "2026-07-05"
+      verified = true
+      placeholder = false
+      note = "Rule 7(1) সারণী serial 6, column (৪), gazette page 20692. Roughly three to four times the residential figure — the residential/commercial split must be stated in the deed."
+
+# -----------------------------------------------------------------------------------------
+# Rule 7(2) সারণী — the LAND limb, charged on the land value stated in the deed. Applies where a
+# developer transfers land attached to a building or apartment it built, or land it developed.
+# -----------------------------------------------------------------------------------------
+
+    [tds.sections.126.land.serial_1]
+    label_en = "Rule 7(2) serial 1 — developer land transfer, Dhaka, Gazipur, Narayanganj, Munshiganj, Manikganj, Narsingdi and Chattogram districts"
+    label_bn = "বিধি ৭(২) ক্রমিক 1 — ডেভেলপার কর্তৃক ভূমি হস্তান্তর, ঢাকা, গাজীপুর, নারায়ণগঞ্জ, মুন্সীগঞ্জ, মানিকগঞ্জ, নরসিংদী এবং চট্টগ্রাম জেলা"
+    value = 5
     unit = "percent"
     source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
     as_of = "2026-07-05"
-    verified = false
-    placeholder = true
-    note = "PLACEHOLDER. Zero is not the rate — it is the absence of one. Rule 7 of SRO 273 was not transcribed."
+    verified = true
+    placeholder = false
+    note = "Rule 7(2) সারণী serial 1, gazette page 20692: \"দলিলে উল্লিখিত ভূমির মূল্যের 5% \" (পাঁচ শতাংশ). Area: Dhaka, Gazipur, Narayanganj, Munshiganj, Manikganj, Narsingdi and Chattogram districts."
+
+    [tds.sections.126.land.serial_2]
+    label_en = "Rule 7(2) serial 2 — developer land transfer, Any other district"
+    label_bn = "বিধি ৭(২) ক্রমিক 2 — ডেভেলপার কর্তৃক ভূমি হস্তান্তর, অন্য যেকোনো জেলা"
+    value = 3
+    unit = "percent"
+    source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
+    as_of = "2026-07-05"
+    verified = true
+    placeholder = false
+    note = "Rule 7(2) সারণী serial 2, gazette page 20692: \"দলিলে উল্লিখিত ভূমির মূল্যের 3% \" (তিন শতাংশ). Area: Any other district."
+
+# =========================================================================================
+# s.138 / s.138A / s.139 — FIXED-AMOUNT ADVANCE TAXES
+# ⚠️ THESE ARE NOT IN SRO 273. The withholding rules do not touch them: the amounts are in the
+# Income Tax Act 2023's own সারণি inside each section. Source is bdlaws, not the SRO.
+# =========================================================================================
 
   [tds.sections.138]
   section = "138"
-  label_en = "Advance tax on commercial motor vehicles"
-  label_bn = "বাণিজ্যিক মোটরযানের উপর অগ্রিম কর"
-  applies_to = "Commercial motor vehicles, collected at registration or fitness renewal."
-  deducted_by = "The Bangladesh Road Transport Authority."
-  condition = "A fixed amount per vehicle class, not a percentage."
+  label_en = "Collection from commercially operated motor vehicles"
+  label_bn = "বাণিজ্যিকভাবে পরিচালিত মোটরযান হইতে কর সংগ্রহ"
+  applies_to = "Registration or fitness renewal of a commercially operated motor vehicle."
+  deducted_by = "The person or authority responsible for registering the vehicle or renewing its fitness — in practice the BRTA, which may not register or renew without the A-Challan."
+  condition = "A fixed amount per vehicle class, not a percentage. s.138(2): where registration or fitness is granted for more than one year, the tax for the later year or years must be collected on or before 30 June of each such year."
   source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
   as_of = "2026-07-01"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-PLACEHOLDER — NOT LANDED. What IS verified about this section is its CHARACTER: together with
-s.139 it is one of only two withholdings that remain FINAL TAX under the replaced s.163(3).
-The per-vehicle-class amounts themselves were not obtained in the research pass. See
-[tds.final_tax].
+LANDED FROM THE ACT, NOT FROM SRO 273. s.138 was SUBSTITUTED IN FULL by the Finance Act 2026
+(Act No. 96 of 2026) s.81, effective 1 July 2026 — footnote 296 on bdlaws. The fifteen amounts
+below are the সারণি inside the substituted section.
+
+⚠️ DO NOT CONFUSE s.138 WITH s.153. s.153 also taxes motor vehicles at registration and fitness
+renewal, but on ENGINE CAPACITY (cc) at Tk 25,000 to Tk 5,00,000, and s.153(8)(ক) expressly
+excludes "ধারা ১৩৮ এ উল্লিখিত কোনো মোটরযান" and motorcycles from its own definition. s.138 is the
+COMMERCIAL fleet — buses, trucks, taxis; s.153 is the private car. A commercially operated
+vehicle is charged under s.138 only.
+
+FINAL TAX. With s.139 this is one of only two withholdings that remain FINAL TAX under s.163(3)
+— see [tds.final_tax.remaining_final_tax_sections] — though where tax on the regular-source basis is higher, the higher amount
+is payable.
+
+s.138(3): a year missed under s.138(2) is not forgiven — the next year's payable amount is ক + খ,
+where ক is the unpaid tax of the earlier year or years and খ is the current year's.
+
+s.138(4): NO collection where the vehicle belongs to (ক) the government; (খ) a project, programme
+or activity under the government or a local government; (গ) a foreign diplomat, a diplomatic
+mission in Bangladesh, or the offices of the UN and its organs; (ঘ) a foreign development partner
+of Bangladesh and its attached offices; (ঙ) a taxpayer exempt from filing under s.166(2); or (চ)
+an entity holding a Board certificate that no advance tax need be paid.
 """
 
-    [tds.sections.138.amount]
-    label_en = "Commercial motor vehicle advance tax — amount per vehicle class"
-    label_bn = "বাণিজ্যিক মোটরযানের অগ্রিম কর — যানবাহন শ্রেণিভেদে অঙ্ক"
-    value = 0
+    [tds.sections.138.bus_over_52_seats]
+    label_en = "Bus with more than 52 seats (serial 1)"
+    label_bn = "৫২ (বায়ান্ন) আসনের অধিক আসন বিশিষ্ট বাস"
+    value = 25000
     unit = "BDT"
     source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
     as_of = "2026-07-01"
-    verified = false
-    placeholder = true
-    note = "PLACEHOLDER. Zero is not the amount — it is the absence of one. The vehicle-class schedule was not obtained."
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 1, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
 
-  [tds.sections.139]
-  section = "139"
-  label_en = "Advance tax on inland vessels"
-  label_bn = "অভ্যন্তরীণ নৌযানের উপর অগ্রিম কর"
-  applies_to = "Inland water vessels, collected at survey certificate issue or renewal."
-  deducted_by = "The Department of Shipping."
-  condition = "A fixed amount per vessel class, not a percentage."
-  source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
-  as_of = "2026-07-01"
-  verified = false
-  placeholder = true
-  note = """
-PLACEHOLDER — NOT LANDED. As with s.138, the CHARACTER is verified — this is one of only two
-withholdings that remain FINAL TAX under s.163(3) — but the per-vessel amounts were not
-obtained in the research pass.
-"""
-
-    [tds.sections.139.amount]
-    label_en = "Inland vessel advance tax — amount per vessel class"
-    label_bn = "অভ্যন্তরীণ নৌযানের অগ্রিম কর — নৌযান শ্রেণিভেদে অঙ্ক"
-    value = 0
+    [tds.sections.138.bus_upto_52_seats]
+    label_en = "Bus with not more than 52 seats (serial 2)"
+    label_bn = "৫২ (বায়ান্ন) আসনের অধিক আসন নহে এইরূপ বাস"
+    value = 20000
     unit = "BDT"
     source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
     as_of = "2026-07-01"
-    verified = false
-    placeholder = true
-    note = "PLACEHOLDER. Zero is not the amount — it is the absence of one. The vessel-class schedule was not obtained."
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 2, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.bus_air_conditioned]
+    label_en = "Air-conditioned bus (serial 3)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত বাস"
+    value = 50000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 3, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.double_decker_bus_non_ac]
+    label_en = "Double-decker bus (non air-conditioned) (serial 4)"
+    label_bn = "ডাবল ডেকার বাস (নন এসি)"
+    value = 25000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 4, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.double_decker_or_sleeper_bus_ac]
+    label_en = "Air-conditioned double-decker or sleeper bus (serial 5)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত ডাবল ডেকার/স্লিপার বাস"
+    value = 50000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 5, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.minibus_or_coaster_ac]
+    label_en = "Air-conditioned minibus or coaster (serial 6)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত মিনিবাস/কোস্টার"
+    value = 25000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 6, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.minibus_or_coaster_non_ac]
+    label_en = "Minibus or coaster that is not air-conditioned (serial 7)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত নহে এইরূপ মিনিবাস/কোস্টার"
+    value = 12500
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 7, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.truck_payload_above_5t_under_20t]
+    label_en = "Truck, dump truck, covered van, prime mover, lorry or tank lorry of payload capacity above 5 tonnes but under 20 tonnes (serial 8)"
+    label_bn = "৫ (পাঁচ) টনের অধিক কিন্তু ২০ (বিশ) টনের কম পেলোড ক্যাপাসিটি বিশিষ্ট ট্রাক, ডাম্পট্রাক, কাভার্ড ভ্যান, প্রাইম মুভার, লরি বা ট্যাংক লরি"
+    value = 30000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 8, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.truck_payload_20t_or_more]
+    label_en = "Truck, dump truck, covered van, prime mover, lorry or tank lorry of payload capacity 20 tonnes or more (serial 9)"
+    label_bn = "২০ টন বা তাহার অধিক পেলোড ক্যাপাসিটি বিশিষ্ট ট্রাক, ডাম্পট্রাক, কাভার্ড ভ্যান, প্রাইম মুভার, লরি বা ট্যাংক লরি"
+    value = 50000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 9, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.truck_payload_above_1_5t_upto_5t]
+    label_en = "Truck, covered van, cargo van, lorry or tank lorry of payload capacity above 1.5 tonnes but not above 5 tonnes (serial 10)"
+    label_bn = "১.৫ (দেড়) টনের অধিক, তবে ৫ (পাঁচ) টনের অধিক নহে এইরূপ পেলোড ক্যাপাসিটি বিশিষ্ট ট্রাক, কাভার্ড ভ্যান, কার্গো ভ্যান, লরি বা ট্যাংক লরি"
+    value = 15000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 10, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.truck_payload_upto_1_5t]
+    label_en = "Truck, lorry or tank lorry of payload capacity not above 1.5 tonnes (serial 11)"
+    label_bn = "১.৫ (দেড়) টনের অধিক নহে এইরূপ পেলোড ক্যাপাসিটি বিশিষ্ট ট্রাক, লরি বা ট্যাংক লরি"
+    value = 7500
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 11, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.pickup_human_hauler_tractor_maxi_autorickshaw]
+    label_en = "Pickup van, human hauler, tractor, maxi or auto rickshaw (serial 12)"
+    label_bn = "পিকআপ ভ্যান, হিউম্যান হলার, ট্রাক্টর, ম্যাক্সি বা অটো রিক্সা"
+    value = 7500
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 12, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.heavy_or_special_purpose_vehicle]
+    label_en = "All heavy motor vehicles or special purpose vehicles, including crane, excavator, dredger, roller and concrete mixer (serial 13)"
+    label_bn = "ক্রেন, এক্সকাভেটর, ড্রেজার, রোলার, কংক্রিট মিক্সচার সহ সকল হেভি মোটর ভেহিকেল বা স্পেশাল পারপাস ভেহিকেল"
+    value = 50000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 13, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.taxicab_air_conditioned]
+    label_en = "Air-conditioned taxicab (serial 14)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত ট্যাক্সিক্যাব"
+    value = 15000
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 14, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
+
+    [tds.sections.138.taxicab_non_ac]
+    label_en = "Taxicab that is not air-conditioned (serial 15)"
+    label_bn = "শীতাতপ নিয়ন্ত্রিত নহে এইরূপ ট্যাক্সিক্যাব"
+    value = 7500
+    unit = "BDT"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.138(1) সারণি serial 15, as substituted by the Finance Act 2026 s.81. Per vehicle, at registration or fitness renewal."
 
   [tds.sections.138A]
   section = "138A"
-  label_en = "Advance tax on civil helicopters — NEW"
-  label_bn = "বেসামরিক হেলিকপ্টারের উপর অগ্রিম কর — নতুন"
-  applies_to = "Civil helicopters, at registration or fitness renewal."
-  deducted_by = "The Civil Aviation Authority of Bangladesh."
-  condition = ""
+  label_en = "Advance tax collection from civil aircraft — NEW"
+  label_bn = "বেসামরিক আকাশযান হইতে অগ্রিম কর সংগ্রহ — নতুন"
+  applies_to = "Registration or fitness renewal of a civil aircraft. The section's সারণি has exactly one row, for a helicopter or chopper."
+  deducted_by = "The person or authority responsible for registering the civil aircraft or renewing its fitness."
+  condition = "A fixed amount, not a percentage. As with s.138, multi-year registration means the later years' tax is due on or before 30 June of each such year, and a missed year rolls forward as ক + খ."
   source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
   as_of = "2026-07-01"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-PLACEHOLDER — NOT LANDED. A NEW charge inserted by the Finance Act 2026. The research pass
-confirmed that the section was created and what it taxes, but obtained NO figure. Note also
-that s.138A is NOT in the s.163(3) final-tax list, which names only ss.138 and 139.
+LANDED FROM THE ACT, NOT FROM SRO 273. s.138A (ধারা ১৩৮ক) was INSERTED by the Finance Act 2026
+(Act No. 96 of 2026) s.82, effective 1 July 2026 — footnote 297 on bdlaws.
+
+The section heading is "বেসামরিক আকাশযান হইতে অগ্রিম কর সংগ্রহ" — civil AIRCRAFT, wider than the
+"helicopter" shorthand this file used to carry — but its সারণি has a single row, "হেলিকপ্টার বা
+চপার". A fixed-wing civil aircraft is therefore not priced by the table as gazetted.
+
+⚠️ s.138A is NOT in the s.163(3) final-tax list, which names only ss.138 and 139. This is an
+ordinary creditable advance tax.
+
+s.138A(4) carries an exemption list in the same shape as s.138(4).
 """
 
-    [tds.sections.138A.amount]
-    label_en = "Civil helicopter advance tax — amount"
-    label_bn = "বেসামরিক হেলিকপ্টারের অগ্রিম কর — অঙ্ক"
-    value = 0
+    [tds.sections.138A.helicopter_or_chopper]
+    label_en = "Helicopter or chopper (serial 1)"
+    label_bn = "হেলিকপ্টার বা চপার"
+    value = 1000000
     unit = "BDT"
     source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
     as_of = "2026-07-01"
-    verified = false
-    placeholder = true
-    note = "PLACEHOLDER. Zero is not the amount — it is the absence of one."
+    verified = true
+    placeholder = false
+    note = "s.138A(1) সারণি serial 1: ১০,০০,০০০ (দশ লক্ষ) টাকা. The only row in the table."
+
+  [tds.sections.139]
+  section = "139"
+  label_en = "Collection from the operation of inland vessels"
+  label_bn = "নৌযান পরিচালনা হইতে কর সংগ্রহ"
+  applies_to = "Issue or renewal of a survey certificate for an inland ship under sections 9 and 12 of the Inland Shipping Ordinance, 1976."
+  deducted_by = "The officer responsible under the Inland Shipping Ordinance, 1976, who may not issue or renew the survey certificate without the A-Challan."
+  condition = "Charged on CAPACITY, not on income or value: per passenger for a passenger vessel, per gross tonne for cargo."
+  source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+  as_of = "2026-07-01"
+  verified = true
+  placeholder = false
+  note = """
+LANDED FROM THE ACT, NOT FROM SRO 273. Unlike s.138, s.139 carries NO amendment footnote on
+bdlaws — it stands as originally enacted in 2023 and was not touched by the Finance Act 2026.
+
+FINAL TAX. With s.138 this is one of only two withholdings that remain FINAL TAX under s.163(3)
+— see [tds.final_tax.remaining_final_tax_sections].
+
+"নৌ-যান (Inland Ship)" and "অভ্যন্তরীণ নৌ-পথ (Inland Water)" carry the meanings given them in the
+Inland Shipping Ordinance, 1976 (s.139(4)).
+
+s.139(2)-(3): multi-year survey certificates and the ক + খ carry-forward work exactly as under
+s.138.
+"""
+
+    [tds.sections.139.passenger_vessel_per_passenger]
+    label_en = "Inland waterway passenger vessel — per passenger of daytime carrying capacity (serial 1)"
+    label_bn = "অভ্যন্তরীণ নৌ-পথে যাত্রী পরিবহনে নিয়োজিত নৌযান — দিবাকালীন যাত্রী পরিবহন ক্ষমতার ভিত্তিতে যাত্রীপ্রতি"
+    value = 125
+    unit = "BDT_per_passenger"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.139(1) সারণী serial 1: ১২৫ (একশত পঁচিশ) টাকা per passenger, measured on DAYTIME passenger carrying capacity — not on passengers actually carried."
+
+    [tds.sections.139.cargo_container_coaster_per_gross_tonne]
+    label_en = "Inland waterway cargo, container (multipurpose) or coaster — per gross tonne (serial 2)"
+    label_bn = "অভ্যন্তরীণ নৌ-পথে মালামাল পরিবহনে নিয়োজিত কার্গো, কন্টেইনার (মাল্টিপারপাস) বা কোস্টার — গ্রস টনেজপ্রতি"
+    value = 170
+    unit = "BDT_per_gross_tonne"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.139(1) সারণী serial 2: ১৭০ (একশত সত্তর) টাকা per gross tonne of goods-carrying capacity."
+
+    [tds.sections.139.dumb_barge_per_gross_tonne]
+    label_en = "Inland waterway dumb barge — per gross tonne (serial 3)"
+    label_bn = "অভ্যন্তরীণ নৌ-পথে মালামাল পরিবহনে নিয়োজিত ডাম্পবার্জ — গ্রস টনেজপ্রতি"
+    value = 125
+    unit = "BDT_per_gross_tonne"
+    source = "http://bdlaws.minlaw.gov.bd/act-details-1429.html"
+    as_of = "2026-07-01"
+    verified = true
+    placeholder = false
+    note = "s.139(1) সারণী serial 3: ১২৫ (একশত পঁচিশ) টাকা per gross tonne of goods-carrying capacity."
 
   [tds.out_of_scope]
-  label_en = "Parts of SRO 273 deliberately NOT transcribed into this file"
-  label_bn = "এস.আর.ও. ২৭৩ এর যে অংশগুলি ইচ্ছাকৃতভাবে এই ফাইলে আনা হয় নাই"
+  label_en = "Parts of SRO 273 still NOT transcribed into this file"
+  label_bn = "এস.আর.ও. ২৭৩ এর যে অংশগুলি এখনও এই ফাইলে আনা হয় নাই"
   source = "https://nbr.gov.bd/uploads/rules/With_holding_2026.pdf"
   as_of = "2026-07-05"
   note = """
-Recorded so that their absence is a stated fact rather than an oversight. These rules EXIST
-and BIND; TakaBooks simply holds no figure for them.
+Recorded so that any remaining absence is a stated fact rather than an oversight.
 
-  · RULE 6 — collection on transfer of property under s.125. Mouza-by-mouza schedules.
-  · RULE 7 — collection from developers under s.126. Mouza-by-mouza schedules.
-  · RULE 8 — collection at the import stage under s.120. HS-code schedules, dozens of pages.
+RULES 6, 7 AND 8 ARE NO LONGER OUT OF SCOPE. Rule 6 (s.125), Rule 7 (s.126) and Rule 8 (s.120),
+including all 345 HS-code rows of Rule 8's seven সারণী, are transcribed above from the gazette.
 
-For any of these, read the SRO itself, or ask the collecting authority (registering officer,
-Commissioner of Customs) for the applicable line. Do not accept a secondary chart for a mouza
-or an HS code.
+WHAT REMAINS UNTRANSCRIBED IN SRO 273:
+
+  · RULES 10-13 AND তফসিল-১ … তফসিল-৪ — the FORMS: the withholding-return format, the
+    certificate of deduction, the monthly and annual statements and the register a withholding
+    entity must keep. These are procedural layouts, not rates, and nothing in this file computes
+    from them. Read the SRO's তফসিল pages (gazette 20721 onward) when preparing an actual return.
+  · RULE 9's deposit-time table is landed separately — see [tds.deposit.deadline].
+
+TWO THINGS RULE 8 DOES NOT SETTLE, restated here because they change an answer:
+  · The reach of the 4% industrial-IRC proviso — see
+    [tds.sections.120.industrial_irc_goods_outside_sarani_5].
+  · The gazette's own misnumbering of সারণী-৭ as "সারণী-৬" in clause (ছ) — see
+    [tds.sections.120.sarani_7_per_tonne].
+
+Where a figure here and the collecting authority disagree — the registering officer, the
+Commissioner of Customs, the BRTA, the Department of Shipping — the authority's line governs the
+transaction. Take the SRO or the section with you rather than a secondary chart.
 """
 
 # =========================================================================================

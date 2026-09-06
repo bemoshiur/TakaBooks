@@ -34,7 +34,7 @@
 > এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত আইটিপি বা সিএ-এর সঙ্গে যাচাই করুন। Full [disclaimer](#disclaimer) below.
 
 > [!NOTE]
-> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **436 rate nodes: 362 verified, 55 unverified, 19 still placeholders.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 55 *unverified* ones rest on post-enactment professional summaries that agree with each other, because the Finance Act 2026 gazette PDF is typeset in a legacy Bijoy Bangla font that does not extract to readable text — or, in one case, on two readings of the law that the sources do not settle, in which case the node states both and names neither as fact. The 19 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
+> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **529 rate nodes: 474 verified, 52 unverified, 3 still placeholders.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 52 *unverified* ones rest on post-enactment professional summaries that agree with each other, because the Finance Act 2026 gazette PDF is typeset in a legacy Bijoy Bangla font that does not extract to readable text — or, in one case, on two readings of the law that the sources do not settle, in which case the node states both and names neither as fact. The 3 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
 
 ## 📑 Contents
 
@@ -290,7 +290,7 @@ Honesty about status matters more here than anywhere else in the README, because
 | Double-entry bookkeeping — journal, ledger, trial balance, P&L, balance sheet, 131-account BD chart | জাবেদা · খতিয়ান · রেওয়ামিল | ✅ complete | ✅ core rules shipped | n/a — needs no rates |
 | Income tax — slabs, rebate, minimum tax, surcharge; corporate schema | আয়কর | ✅ `tax.py` (individual) | ✅ landed | 🟡 88 nodes — 54 verified · 32 unverified · 2 placeholder |
 | VAT / Mushak — position, input/output reconciliation, VDS, the return figure set | মূসক · মূসক ৯.১ | ✅ `vat.py` complete | ✅ landed | 🟡 78 nodes — 51 verified · 15 unverified · 12 placeholder |
-| Withholding TDS — `tax_tag`, dedicated payable/receivable accounts, SRO 273 rate matrix | উৎসে কর কর্তন | ✅ accounts and tags | ✅ landed | 🟡 180 nodes — 171 verified · 4 unverified · 5 placeholder |
+| Withholding TDS — `tax_tag`, dedicated payable/receivable accounts, SRO 273 rate matrix | উৎসে কর কর্তন | ✅ accounts and tags | ✅ landed | 🟢 273 nodes — 272 verified · 1 unverified (the openly contested s.142 stacking question) · 0 placeholder |
 | Withholding VDS — 45 gazetted service serials | উৎসে মূসক কর্তন | ✅ accounts and tags | ✅ landed | 🟢 63 nodes — all 63 verified |
 | Compliance calendar — every recurring NBR and RJSC deadline | সম্মতি পঞ্জিকা | `vat.py` reads the VAT and VDS ones; the rest is reference text | ✅ landed | 🟢 27 nodes — 26 verified · 1 unverified |
 | Payroll — salary, provident fund, gratuity, WPPF, labour-welfare accounts | বেতন · ভবিষ্য তহবিল · গ্র্যাচুইটি | ✅ accounts | ✅ landed | salary withholding sits under `[tds]`; PF / gratuity / WPPF are text, not figures |
@@ -298,13 +298,13 @@ Honesty about status matters more here than anywhere else in the README, because
 | Bookkeeping standards — Companies Act 1994, FRA 2015, IFRS/IAS | হিসাবরক্ষণ মানদণ্ড | — | ✅ landed | n/a |
 | Glossary — Bangla ↔ English statutory and accounting terms | শব্দকোষ | — | ✅ ~240 entries in 9 sections | n/a |
 
-Node counts are `rates.py`'s own audit of `src/data/rates-AY2026-27.toml`, 436 rate nodes in total. Run it yourself — see [How the rates stay current](#rates). "Landed" describes the reference text, not a professional review: **no ITP or CA has signed off on any of it.**
+Node counts are `rates.py`'s own audit of `src/data/rates-AY2026-27.toml`, 529 rate nodes in total. Run it yourself — see [How the rates stay current](#rates). "Landed" describes the reference text, not a professional review: **no ITP or CA has signed off on any of it.**
 
 **What the three flags mean, and what each tool does about them.** Every rate node carries `verified` and `placeholder`:
 
-- **`verified = true` (362 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
+- **`verified = true` (474 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
 - **`verified = false` (52 nodes)** — a real figure, but read from post-enactment professional summaries (PwC Bangladesh, KPMG / Rahman Rahman Huq, Tuhin & Partners) that agree with one another rather than from enacted text. The reason is one specific obstacle: the **Finance Act 2026 gazette PDF is typeset in a legacy Bijoy-family Bangla font whose glyphs map to ASCII**, so its Schedules could not be text-extracted. Each such node's `note` says what is unconfirmed and what would confirm it.
-- **`placeholder = true` (19 nodes)** — nothing was landed at all. The `value` is a stand-in, not a rate. They are: the two mouza-by-mouza property-transfer tables in Rules 6 and 7 of SRO 273 (`tds.sections.125`, `.126`), three fixed-amount withholdings (`.138`, `.138A`, `.139`), the two turnover-tax gross-receipts thresholds (individual and corporate), and twelve `vat.rates.reduced.*` figures whose Third-Schedule paragraph could not be decoded or whose reinstating SRO could not be opened. `rates.py --all` lists all nineteen by key.
+- **`placeholder = true` (3 nodes)** — nothing was landed at all. The `value` is a stand-in, not a rate. They are the two turnover-tax gross-receipts thresholds (individual and corporate) under ITA 2023 s.163(6), and `vat.rates.reduced.digital_advertisement`, whose reinstating SRO could not be opened. `rates.py --all` lists all three by key. The property-transfer, developer and import schedules that used to sit here have since been transcribed from the SRO 273 gazette, and the three fixed-amount withholdings (ss.138, 138A, 139) from the Act's own tables.
 
 `tax.py` **refuses** the moment a computation needs a placeholder node, and exits `8`:
 
@@ -379,7 +379,7 @@ lakh figure that NBR's own stale VAT FAQ page still shows. Do not use either.
 """
 ```
 
-That `note` is the point of the format, not decoration: it is shown to the user, so it is where the conditions, the amending instrument and the common wrong answer all live. A node that could not be landed keeps `placeholder = true` and a `note` that says so in the first word — for example `tds.sections.125.rate` reads *"PLACEHOLDER. Zero is not the rate — it is the absence of one. Rule 6 of SRO 273 was not transcribed."*
+That `note` is the point of the format, not decoration: it is shown to the user, so it is where the conditions, the amending instrument and the common wrong answer all live. A node that could not be landed keeps `placeholder = true` and a `note` that says so in the first words — for example `income_tax.individual.minimum_tax.on_gross_receipts.applies_above` reads *"STILL A PLACEHOLDER, DELIBERATELY. The gross-receipts threshold at which turnover tax engages for an individual under ITA 2023 s.163(6) COULD NOT BE SOURCED."*
 
 The format is enforced by `rates.py`, not merely recommended: money is in whole taka or a quoted decimal string (never a TOML float — `27.5` would become a binary float and TakaBooks refuses float money arithmetic), percentages are percent and not fractions, `source` must identify the instrument (the bare `https://nbr.gov.bd/` homepage is not a source), and a `placeholder` node is refused unless the caller opts in explicitly.
 

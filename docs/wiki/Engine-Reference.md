@@ -480,10 +480,10 @@ Rates source: rates-AY2026-27.toml — করবর্ষ / assessment year 2026
 
 | Rate nodes | Count |
 | :--- | ---: |
-| verified | 362 |
-| unverified | 55 |
-| placeholder | 19 |
-| total | 436 |
+| verified | 474 |
+| unverified | 52 |
+| placeholder | 3 |
+| total | 529 |
 ```
 
 followed by the placeholder keys and the unverified keys by name, and a closing line about

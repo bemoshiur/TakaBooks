@@ -1,6 +1,6 @@
 # Withholding — উৎসে কর কর্তন (TDS) ও উৎসে মূসক কর্তন (VDS)
 
-**Current as of:** 5 September 2026 · assessment year 2026-27 (করবর্ষ ২০২৬-২৭), income year
+**Current as of:** 6 September 2026 · assessment year 2026-27 (করবর্ষ ২০২৬-২৭), income year
 1 July 2025 – 30 June 2026. Deductions being made *today* follow Finance Act 2026 and the
 উৎসে কর বিধিমালা ২০২৬ rates below.
 **Assessment year:** machine-readable figures live in `data/rates-AY2026-27.toml` under `[tds]`
@@ -19,10 +19,13 @@ computes from. **Change one and you must change the other.**
   <https://nbr.gov.bd/uploads/sros/VAT_SRO-140.pdf>
 · **[VATACT]** মূল্য সংযোজন কর ও সম্পূরক শুল্ক আইন, ২০১২ — <http://bdlaws.minlaw.gov.bd/act-1106.html>
 **Status:** POPULATED. Every TDS and VDS rate below was read from primary text — the SRO
-gazettes, NBR's own Paripatra, and the consolidated statute on bdlaws. The four figures that
-are **not** primary-verified, and the five obligations this file could **not** land, are named
-explicitly in [§13](#13-what-this-file-does-not-hold). Nothing here is inferred from a
-practitioner chart.
+gazettes, NBR's own Paripatra, and the consolidated statute on bdlaws. Rules 6, 7 and 8 of
+SRO 273 — property transfer, developers, and the import-stage HS-code schedules — were
+transcribed from the gazette page images and are no longer out of scope; the fixed amounts under
+ss.138, 138A and 139 come from the Act's own tables, because **SRO 273 does not contain them**.
+The one figure that is **not** primary-verified, and the two questions the gazette itself does not
+settle, are named explicitly in [§13](#13-what-this-file-does-not-hold). Nothing here is inferred
+from a practitioner chart.
 
 > **Not professional advice.** Verify with a licensed Income Tax Practitioner (ITP) or Chartered
 > Accountant (CA) before you deduct, deposit or file. A short deduction costs the payer 150% of
@@ -402,7 +405,7 @@ it is the agent's credit, not yours.
 | **Registered club membership** — admission, renewal, transfer or change | — | **10%** | **s.137A** (new) |
 | Cement, iron/iron products, ferro-alloy (other than MS billets) via local LC or other financing | — | **2%** | s.97(5A) (new) |
 | Freight forward / shipping agent **inward remittance** | — | **1% of gross bill**, or **10% of commission** if shown separately, **whichever is higher** | s.124 proviso (1) |
-| Civil helicopters — advance tax at registration / fitness renewal | — | new charge, **rate not held here** | **s.138A** (new) |
+| Civil aircraft — advance tax at registration / fitness renewal | — | **৳10,00,000** for a helicopter or chopper, the সারণি's only row — [§3.14](#314-ss138-138a-139--fixed-amount-advance-taxes) | **s.138A** (new) |
 | Revenue share, licence fee or any fee/charge paid by a cellular mobile phone operator or tower-sharing company | withheld | **no longer withheld** | — |
 | Compensation for compulsory acquisition of immovable property | unchanged | **6%** inside a city corporation / municipality / cantonment board area; **3%** outside | s.111 |
 | Real estate developer's payment to a land owner (signing money, subsistence money, house rent) | unchanged | **15%** | s.115 |
@@ -411,7 +414,7 @@ it is the agent's credit, not yours.
 | Share transfer in an unlisted company / sponsor-director-placement securities / stock exchange shareholders | unchanged | **15%** | ss.134, 135, 136 |
 | Stock exchange members | unchanged | **0.03%** | s.137 |
 | Participation Fund / Welfare Fund / Workers' Welfare Foundation Fund payments (WPPF) | unchanged | **10%** | s.88 |
-| Import stage collection | unchanged ceiling | **prescribed, not exceeding 20%** — HS-code tables in Rule 8, **not held here** | s.120 |
+| Import stage collection | unchanged ceiling | **0% / 1% / 2% / 3% / 4% / 5% / 20% / ৳600 per tonne** by HS code under Rule 8 — all 345 rows landed, [§3.12](#312-s120--collection-at-the-import-stage--rule-8-of-sro-273) | s.120 |
 
 ⚠️ **s.112A runs the opposite way to s.89 serial 5.** s.89 serial 5 deducts on the **supply** of
 gold and gems at 0.5%; s.112A **collects from the seller** on the **purchase** of the same goods,
@@ -420,6 +423,193 @@ also at 0.5%. A jeweller can be on both sides in one week.
 ⚠️ **s.130A at 0.2% is two tenths of one percent, not 2%.** The base is the whole supply, so it
 lands hard on high-volume, low-margin distribution. The retailer gets a **credit** and must be
 given evidence of it; a collector who absorbs it gets a **deduction**, not a disallowance.
+
+---
+
+### 3.12 s.120 — collection at the IMPORT STAGE · Rule 8 of SRO 273
+
+Rule 8 is now transcribed in full. **All 345 HS-code rows** of its seven সারণী are in
+`rates-AY2026-27.toml` at `[tds.sections.120.hs_schedule].rows`, each row carrying its সারণী, its
+rate and the gazette page it was read from. The statutory ceiling is **20%** (s.120) and সারণী-৬
+reaches it, so nothing at import may be charged above 20%.
+
+**The base — get this right before the rate.** Rule 8(4): "আমদানিকৃত পণ্যের মূল্য" is the value of
+the imported goods determined under **section 27 of the Customs Act, 2023** (Act No. 57 of 2023) —
+the customs assessable value. Not the invoice, not the LC amount, not the landed cost. সারণী-৭ is
+the single exception: it is charged **per tonne**, so weight is the base there.
+
+| সারণী | Rate | Base | Who / what it covers | Rows | Gazette pages |
+|---|---|---|---|---:|---|
+| **১** | **0%** | value | Food staples, edible oils, fertiliser inputs, medical devices; serial 77 is "Capital machinery, not imported for commercial purpose" and carries no HS code | 77 | 20693–20699 |
+| **২** | **0%** | value | **Goods imported FROM BHUTAN only** — country of origin is part of the rule | 32 | 20699–20701 |
+| **৩** | **1%** | value | Industrial intermediates — adhesives, graphite, solder flux, plasticisers, cast polypropylene film, carded cotton, springs, inductors, mobile-phone PCB and component sets | 42 | 20701–20704 |
+| **৪** | **2%** | value | Pulses, wheat, maize, oil-cake and feed inputs, raw hides, wood pulp, computers and computer parts, transmission apparatus, monitors | 131 | 20704–20713 |
+| **৫** | **3%** | value | **Only where the importer is a মূসক-registered manufacturer holding an industrial IRC** — milk powder, quartz, clays, dolomite, aluminium tape, zinc, battery chargers, lithium-ion cells | 48 | 20714–20717 |
+| *(proviso)* | **4%** | value | Same importer class — industrial-IRC মূসক-registered manufacturer — on goods **outside সারণী-৫** | — | 20717 |
+| **৬** | **20%** | value | Undenatured and denatured ethyl alcohol, spirits, whisky, rum, gin, vodka, liqueurs, other spirituous beverages, perfumes and toilet waters | 10 | 20717–20718 |
+| **৭** | **৳600 per tonne** | **weight** | Sponge iron and direct-reduced ferrous products, ferrous waste and scrap, iron and non-alloy steel ingots, semi-finished iron/steel, vessels for breaking up | 5 | 20718 |
+| *(residual)* | **5%** | value | **Rule 8(2)** — everything in none of the seven tables. This is the rate most consignments take | — | 20718 |
+
+**How to pick a rate.** Find the 8-digit HS code in the schedule. If it is there, its সারণী gives
+the rate — but check the two status conditions first: সারণী-২ needs **Bhutan origin**, সারণী-৫ needs
+an **industrial-IRC মূসক-registered manufacturer**. If the code is in no table, Rule 8(2) charges
+**5%**.
+
+Rule 8(3): on the importer's written application the Board **may certify** collection at a nil or
+reduced rate for an income year where the import income is exempt or taxable at a reduced rate.
+
+> ⚠️ **The reach of the 4% proviso is not settled by the text.** The proviso after সারণী-৫ reads
+> "সারণী-৫ এ বর্ণিত পণ্য ব্যতীত অন্য কোনো পণ্য আমদানীর ক্ষেত্রে ইন্ডাস্ট্রিয়াল আইআরসি ধারী কোনো মূসক নিবন্ধিত
+> উৎপাদক কর্তৃক আমদানিকৃত পণ্য মূল্যের উপর ৪% (চার শতাংশ) হারে উৎসে কর সংগ্রহ করিবে". Read literally that
+> is **every** good other than সারণী-৫'s, which would displace সারণী-১'s 0% and সারণী-৪'s 2% for this
+> importer. Read as a proviso to clause (ঙ) it only fills the gap between সারণী-৫ and the 5%
+> residual. **The gazette settles neither reading.** TakaBooks holds both figures as read and does
+> not choose. Put the question to the Commissioner of Customs before clearing on either.
+
+> ⚠️ **A drafting error in the gazette itself.** Clause (ছ) at page 20718 says "নিম্নবর্ণিত সারণী-৬"
+> but the table printed under it is captioned **"সারণী-৭"**, and সারণী-৬ already has its 20% from
+> clause (চ) on the previous page. The ৳600-per-tonne charge plainly belongs to **সারণী-৭**. Recorded
+> that way here, with the error stated rather than silently corrected.
+
+> ⚠️ **HS codes move.** The schedule keys off the First Schedule of the Customs Act 2023. A code
+> reclassified after 5 July 2026 will not match. Read the code off the bill of entry.
+
+Remember **Rule 3(2)**: goods taxed at import under s.120 and then supplied locally are deducted at
+**(B − A)** under s.89 — see [§3.1](#31-s89--supply-of-goods-procurement-and-execution-of-contract--rule-31-of-sro-273).
+
+---
+
+### 3.13 ss.125–126 — property transfer and developers · Rules 6 and 7 of SRO 273
+
+Both rules are now transcribed. Neither is a mouza-by-mouza list: Rule 6 groups whole **thanas**,
+so a seller who knows the thana can place the land. Mouza-level *valuation* is a separate matter
+for the registering office and is not in these rules.
+
+**s.125 · Rule 6(1) সারণী-১ — land.** Every cell reads "**দলিলে উল্লিখিত ভূমির মূল্যের X% বা শতকপ্রতি Y
+টাকা, যাহা অধিক**" — a percentage of the land value stated in the deed **OR** a floor in taka per
+**শতক** (decimal, 1/100 acre ≈ 40.46 m²), **whichever is higher**. On a low paper value the floor is
+what binds, which is the point of the design.
+
+| # | Area (all mouzas of the named thanas) | % | ক | খ | গ | ঘ | ঙ | চ |
+|---:|---|---:|---:|---:|---:|---:|---:|---:|
+| 1 | **Dhaka** — Gulshan, Banani, Motijheel, Tejgaon | 5% | 9,00,000 | 3,50,000 | 9,00,000 | 3,50,000 | 5,00,000 | 3,00,000 |
+| 2 | **Dhaka** — Dhanmondi, Wari, Tejgaon Shilpanchal, Shahbagh, Ramna, Paltan, Bangshal, New Market, Kalabagan | 5% | 6,50,000 | 3,00,000 | 6,50,000 | 3,00,000 | 3,00,000 | 2,00,000 |
+| 3 | **Dhaka** — Kafrul, Mohammadpur, Sutrapur, Jatrabari, Uttara Model, Cantonment, Chakbazar, Kotwali, Lalbagh, Khilgaon, Shyampur, Gendaria | 5% | 4,00,000 | 1,75,000 | 4,00,000 | 1,75,000 | 1,75,000 | 85,000 |
+| 4 | **Dhaka** — Khilkhet, Biman Bandar, Uttara Paschim, Mugda, Rupnagar, Bhashantek, Badda, Pallabi, Bhatara, Shahjahanpur, Mirpur Model, Darus Salam, Dakshinkhan, Uttarkhan, Turag, Shah Ali, Sabujbagh, Kadamtali, Kamrangirchar, Hazaribagh, Demra, Adabor; **Narayanganj** Sadar | 5% | 3,50,000 | 1,50,000 | 3,50,000 | 1,50,000 | 1,50,000 | 75,000 |
+| 5 | **Chattogram** — Khulshi, Panchlaish, Pahartali, Halishahar, Kotwali; **Narayanganj** — Sonargaon, Fatullah, Siddhirganj, Bandar; **Gazipur** — Sadar, Basan, Konabari, Gachha, Tongi Purba, Tongi Paschim | 3% | 1,75,000 | 70,000 | 1,75,000 | 70,000 | 70,000 | 35,000 |
+| 6 | **Dhaka** — Dohar, Nawabganj, Keraniganj, Savar, Dhamrai; **Chattogram** — Akbar Shah, EPZ, Karnaphuli, Chakbazar, Chandgaon, Double Mooring, Patenga, Panchlaish, Bandar, Bakalia, Bayezid Bostami, Sadarghat; **Gazipur** — Joydebpur, Kaliganj; **Narayanganj** — Rupganj, Araihazar | 3% | 1,25,000 | 60,000 | 1,25,000 | 60,000 | 60,000 | 30,000 |
+| 7 | Not in 1–6 but in a city corporation other than Dhaka South, Dhaka North, Chattogram, Narayanganj, Gazipur, or under any other development authority; and all mouzas of every **district-headquarters pourashava** | 3% | 1,00,000 | 50,000 | 1,00,000 | 50,000 | 50,000 | 25,000 |
+
+Floors are **taka per শতক**. **সারণী-২** catches the rest: any **other pourashava** — **2%** or
+**৳10,000** per শতক; all **upazila** areas outside pourashavas — **2%** or **৳500** per শতক.
+
+**The six plot classes — Rule 6(8).** ক and খ are **commercial** and **residential** plots inside an
+area controlled by a listed development authority (জাতীয় গৃহায়ন কর্তৃপক্ষ, গণপূর্ত অধিদপ্তর, ক্যান্টনমেন্ট
+বোর্ড, রাজউক, CDA, GDA, KDA, RDA, কক্সবাজার উন্নয়ন কর্তৃপক্ষ, or any similar authority under the Ministry
+of Housing and Public Works). গ and ঘ are **commercial** and **residential** plots **outside** any such
+authority but in an area **established by a developer**. ঙ is **every industrial plot**. চ is
+everything else.
+
+**Rule 6(2) — the structure surcharge, charged ON TOP.** If a স্থাপনা, বাড়ি, ফ্ল্যাট, অ্যাপার্টমেন্ট or
+ফ্লোর স্পেস stands on the land:
+
+| Where the land is | Per square metre | or % of the deed value of the structure | whichever |
+|---|---:|---:|---|
+| Class **ক to ঘ** | ৳800 | 8% | higher |
+| Class **ঙ**, and the mouzas at সারণী-২ serial 1 | ৳500 | 6% | higher |
+| All other cases | ৳300 | 6% | higher |
+
+**s.126 · Rule 7 — developers.** Two limbs, and Rule 7 stacks on Rule 6.
+
+| # | Area | Residential /m² | Commercial /m² |
+|---:|---|---:|---:|
+| 1 | **Dhaka** — Gulshan, Banani, Motijheel, Tejgaon | ৳1,600 | ৳6,500 |
+| 2 | **Dhaka** — Dhanmondi, Wari, Tejgaon Shilpanchal, Shahbagh, Ramna, Paltan, Bangshal, New Market, Kalabagan | ৳1,500 | ৳5,000 |
+| 3 | **Dhaka** — Khilkhet, Kafrul, Mohammadpur, Sutrapur, Jatrabari, Uttara Model, Cantonment, Chakbazar, Kotwali, Lalbagh, Khilgaon, Shyampur, Gendaria | ৳1,400 | ৳4,000 |
+| 4 | **Dhaka** — Biman Bandar, Uttara Paschim, Mugda, Rupnagar, Bhashantek, Badda, Pallabi, Bhatara, Shahjahanpur, Mirpur Model, Darus Salam, Dakshinkhan, Uttarkhan, Turag, Shah Ali, Sabujbagh, Kadamtali, Chakbazar, Kamrangirchar, Kotwali, Lalbagh, Hazaribagh, Demra, Adabor; **Chattogram** — Khulshi, Panchlaish, Pahartali, Halishahar, Kotwali; **Gazipur** — Sadar, Basan, Konabari, Gachha, Tongi Purba, Tongi Paschim, Joydebpur, Kaliganj; **Narayanganj** — Sadar, Fatullah, Siddhirganj, Bandar, Rupganj, Sonargaon | ৳1,300 | ৳3,500 |
+| 5 | **Dhaka** — Dohar, Nawabganj, Keraniganj, Savar, Dhamrai; **Chattogram** — Akbar Shah, EPZ, Karnaphuli, Chakbazar, Chandgaon, Double Mooring, Patenga, Panchlaish, Bandar, Bakalia, Bayezid Bostami, Sadarghat; **Narayanganj** — Araihazar; and all mouzas in any city corporation other than Dhaka South, Dhaka North, Chattogram, Narayanganj, Gazipur | ৳700 | ৳2,000 |
+| 6 | All areas not in 1–5 | ৳300 | ৳1,000 |
+
+Rule 7(2) charges the **land** separately: **5%** of the land value stated in the deed in **Dhaka,
+Gazipur, Narayanganj, Munshiganj, Manikganj, Narsingdi and Chattogram** districts; **3%** in any
+other district.
+
+> ⚠️ **The stacking rule people get wrong.** Rule 7(5): when collecting under Rule 7 the registering
+> officer must **also** collect the **Rule 6(1)** land charge — "তবে শর্ত থাকে যে, বিধি ৬ এর উপ-বিধি (২)
+> অনুযায়ী উৎসে কর সংগ্রহ করা যাইবে না", i.e. **the Rule 6(2) structure surcharge is NOT collected**. So a
+> developer sale carries Rule 7(1) per m² **+** Rule 7(2) on the land **+** Rule 6(1) on the land, and
+> **not** Rule 6(2).
+
+Distinct from **s.115**, which taxes the developer's payment **to the land owner** at **15%** —
+different payer, different event.
+
+**Machinery common to both rules.** The deed's **মন্তব্য কলাম must state** whether the property is
+residential, commercial or industrial; without it, Rule 6(3) deems the collection **not correctly
+made**. Both rules reach transfers by statutory government authorities. In city corporation,
+pourashava and cantonment board areas **PSR of both donor and recipient** is required — including
+for a বায়নানামা or আমমোক্তারনামা. The tax must reach the treasury by a **separate A-Challan before
+registration**.
+
+Rule 6(5) exempts: a **mortgage** deed; transfer by the **UN**, its organs, or a foreign embassy or
+mission; a **না-দাবি** deed that does not extinguish title; a **বণ্টননামা** (partition); a **waqf or
+debottar** gift; and a deed carrying no consideration — **will, অছিয়ত, এওয়াজ or exchange**.
+
+---
+
+### 3.14 ss.138, 138A, 139 — fixed-amount advance taxes
+
+> ⚠️ **These are NOT in SRO 273.** The withholding rules do not touch them. The amounts sit in the
+> **Income Tax Act 2023's own সারণি inside each section** [ACT]. Anyone looking for them in the SRO
+> will not find them.
+
+**s.138 — commercially operated motor vehicles**, collected by the BRTA at registration or fitness
+renewal. Substituted in full by **Finance Act 2026 s.81**, effective 1 July 2026.
+
+| # | Vehicle | ৳ | | # | Vehicle | ৳ |
+|---:|---|---:|---|---:|---|---:|
+| 1 | Bus, more than 52 seats | 25,000 | | 9 | Truck / dump truck / covered van / prime mover / lorry / tank lorry, payload ≥ 20 t | 50,000 |
+| 2 | Bus, not more than 52 seats | 20,000 | | 10 | Truck / covered van / cargo van / lorry / tank lorry, payload > 1.5 t ≤ 5 t | 15,000 |
+| 3 | Air-conditioned bus | 50,000 | | 11 | Truck / lorry / tank lorry, payload ≤ 1.5 t | 7,500 |
+| 4 | Double-decker bus (non-AC) | 25,000 | | 12 | Pickup van, human hauler, tractor, maxi, auto rickshaw | 7,500 |
+| 5 | AC double-decker / sleeper bus | 50,000 | | 13 | Crane, excavator, dredger, roller, concrete mixer and all heavy or special-purpose vehicles | 50,000 |
+| 6 | AC minibus / coaster | 25,000 | | 14 | Air-conditioned taxicab | 15,000 |
+| 7 | Non-AC minibus / coaster | 12,500 | | 15 | Non-AC taxicab | 7,500 |
+| 8 | Truck / dump truck / covered van / prime mover / lorry / tank lorry, payload > 5 t < 20 t | 30,000 | | | | |
+
+> ⚠️ **Do not confuse s.138 with s.153.** s.153 also taxes motor vehicles at registration and
+> fitness renewal, but on **engine capacity (cc)** at ৳25,000 to ৳5,00,000 — and s.153(8)(ক)
+> expressly excludes "ধারা ১৩৮ এ উল্লিখিত কোনো মোটরযান" and motorcycles. **s.138 is the commercial
+> fleet; s.153 is the private car.** A commercially operated vehicle is charged under s.138 only.
+
+**s.138A — civil aircraft**, *new*, inserted by **Finance Act 2026 s.82**. The section heading is
+বেসামরিক আকাশযান — civil **aircraft**, wider than "helicopter" — but its সারণি has a single row:
+
+| # | Aircraft | ৳ |
+|---:|---|---:|
+| 1 | **হেলিকপ্টার বা চপার** — helicopter or chopper | **10,00,000** |
+
+A fixed-wing civil aircraft is therefore not priced by the table as gazetted. **s.138A is not in
+the s.163(3) final-tax list** — it is an ordinary creditable advance tax.
+
+**s.139 — inland vessels**, collected by the Department of Shipping on issue or renewal of a survey
+certificate under ss.9 and 12 of the Inland Shipping Ordinance, 1976. **Unchanged** by the Finance
+Act 2026 — no amendment footnote on bdlaws. Charged on **capacity, not income**:
+
+| # | Vessel | ৳ |
+|---:|---|---:|
+| 1 | Inland passenger vessel — per passenger of **daytime** carrying capacity | 125 |
+| 2 | Cargo, container (multipurpose) or coaster — per **gross tonne** of goods capacity | 170 |
+| 3 | Dumb barge — per **gross tonne** of goods capacity | 125 |
+
+All three sections share the same machinery: where registration, fitness or the survey certificate
+is granted for **more than one year**, the later years' tax is due **on or before 30 June** of each
+such year; a missed year is not forgiven but rolls forward as **ক + খ**. ss.138 and 138A carry an
+exemption list — government; a government or local-government project; foreign diplomats,
+diplomatic missions, the UN and its organs; foreign development partners; taxpayers exempt from
+filing under s.166(2); and any entity holding a Board certificate that no advance tax is payable.
+
+**ss.138 and 139 remain FINAL TAX** under s.163(3) — see
+[§7](#7-final-tax-and-minimum-tax). s.138A does not.
 
 ---
 
@@ -931,31 +1121,47 @@ stand for both.
 
 ## 13. What this file does not hold
 
-Absent beats wrong. These are **real obligations** whose figures were **not** obtained from primary
-text and are **not** invented here. In `rates-AY2026-27.toml` they carry `placeholder = true` or
-`verified = false`, so the engine will not compute with them silently.
+Absent beats wrong. What remains here is **real obligations whose figures are not settled by the
+primary text**, plus the parts of SRO 273 that are procedure rather than rates. Nothing in this
+section is guessed at.
 
-### 13.1 Not landed at all — `placeholder = true`
+### 13.1 No longer missing — Rules 6, 7 and 8, and the fixed amounts
 
-| Obligation | Where the rates actually live | Why not here |
+The five obligations this section used to list as `placeholder = true` have been landed:
+
+| Obligation | Now at | Source read |
 |---|---|---|
-| **s.125** collection on transfer of property | **Rule 6 of SRO 273** | Mouza-by-mouza tables running to dozens of pages; not transcribed |
-| **s.126** collection from real estate / land developers | **Rule 7 of SRO 273** | Mouza-by-mouza tables; not transcribed. (s.115, the developer's payment **to the land owner** at 15%, **is** held) |
-| **s.138** advance tax on commercial motor vehicles | Vehicle-class schedule | Amounts not obtained. Its **character** is verified: one of only two remaining final taxes |
-| **s.139** advance tax on inland vessels | Vessel-class schedule | Amounts not obtained. Character verified as above |
-| **s.138A** advance tax on civil helicopters — **new** | — | The section's creation is confirmed; **no figure was obtained**. Note s.138A is **not** in the s.163(3) final-tax list |
+| **s.125** collection on transfer of property | [§3.13](#313-ss125126--property-transfer-and-developers--rules-6-and-7-of-sro-273) | Rule 6 of SRO 273, gazette pages 20684–20690 |
+| **s.126** collection from real estate / land developers | [§3.13](#313-ss125126--property-transfer-and-developers--rules-6-and-7-of-sro-273) | Rule 7 of SRO 273, gazette pages 20690–20693 |
+| **s.120** collection at the import stage | [§3.12](#312-s120--collection-at-the-import-stage--rule-8-of-sro-273) | Rule 8 of SRO 273, gazette pages 20693–20718 — all 345 HS rows |
+| **s.138** commercially operated motor vehicles | [§3.14](#314-ss138-138a-139--fixed-amount-advance-taxes) | ITA 2023 s.138 সারণি — **not in SRO 273** |
+| **s.138A** civil aircraft — **new** | [§3.14](#314-ss138-138a-139--fixed-amount-advance-taxes) | ITA 2023 s.138A সারণি — **not in SRO 273** |
+| **s.139** inland vessels | [§3.14](#314-ss138-138a-139--fixed-amount-advance-taxes) | ITA 2023 s.139 সারণী — **not in SRO 273** |
 
-For any of these, read the SRO itself or ask the collecting authority — the registering officer,
-the BRTA, the Department of Shipping. **Do not accept a secondary chart for a mouza.**
+Rules 6 and 7 turned out **not** to be mouza-by-mouza lists at all — they group whole **thanas**,
+which is why they fit on nine gazette pages rather than the "dozens" this file once assumed.
 
-### 13.2 Landed but `verified = false` — s.120 import-stage bands
+**What is still not held from SRO 273:** Rules 10–13 and তফসিল-১ … তফসিল-৪ — the withholding-return
+format, the certificate of deduction, the monthly and annual statements and the register a
+withholding entity must keep. These are **procedural layouts, not rates**, and nothing computes
+from them. Read the SRO's তফসিল pages (gazette 20721 onward) when preparing an actual return.
 
-The **statutory ceiling of 20%** is verified. The **HS-code schedules in Rule 8 of SRO 273 were not
-transcribed**, so you **cannot select a band from this file**: which band a consignment falls in is
-decided by its HS code against tables that are not here. The three headline bands — **general 5%**,
-**4%** for an industrial-IRC VAT-registered manufacturer on goods outside the listed tables, and
-**20%** on a listed luxury schedule (reduced and nil bands also exist) — rest on a summary
-description, not on the schedule they belong to. **Read Rule 8 for any actual import.**
+### 13.2 Two questions Rule 8 does not settle
+
+Both are recorded in the rates file rather than resolved, because the gazette does not resolve
+them:
+
+1. **The reach of the 4% industrial-IRC proviso.** Read literally it covers every good outside
+   সারণী-৫, displacing the 0%, 1% and 2% tables for that class of importer; read as a proviso to
+   clause (ঙ) it only fills the gap before the 5% residual. Ask the Commissioner of Customs.
+2. **The gazette misnumbers সারণী-৭ as "সারণী-৬"** in clause (ছ) while captioning the table below it
+   সারণী-৭. The ৳600-per-tonne charge belongs to সারণী-৭; the error is the gazette's.
+
+Both are set out at [§3.12](#312-s120--collection-at-the-import-stage--rule-8-of-sro-273).
+
+Where a figure here and the collecting authority disagree — the registering officer, the
+Commissioner of Customs, the BRTA, the Department of Shipping — **the authority's line governs the
+transaction**. Take the SRO or the section with you rather than a secondary chart.
 
 ### 13.3 Landed but `verified = false` — the s.142 stacking question
 
