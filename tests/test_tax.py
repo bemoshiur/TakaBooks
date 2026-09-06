@@ -52,6 +52,7 @@ if str(ENGINE_DIR) not in sys.path:
 import rates as rt  # noqa: E402
 import takabooks as tb  # noqa: E402
 import tax  # noqa: E402
+import vat  # noqa: E402  (posture symmetry is asserted against the other engine)
 
 M = tb.Money
 
@@ -720,23 +721,47 @@ class TestRatesCli(FixtureCase):
         self.assertEqual(result.returncode, 8)
         self.assertIn("no value", result.stderr)
 
-    def test_real_file_audit_says_placeholder(self):
+    def test_real_file_audit_counts_each_verification_state(self):
+        """The shipped file is MIXED — landed, unlanded and unverified nodes together."""
+        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--json", cwd=self.root)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        audit = json.loads(result.stdout)
+        self.assertGreater(audit["verified_count"], 0)
+        self.assertGreater(audit["placeholder_count"], 0)   # still figures to land
+        self.assertEqual(
+            audit["verified_count"] + audit["unverified_count"] + audit["placeholder_count"],
+            audit["total_rate_nodes"],
+        )
+        # A mixed file is not "usable" as a whole: it still has unlanded nodes in it.
+        self.assertFalse(audit["usable"])
         result = run_cli("rates.py", "--rates", str(REAL_RATES), cwd=self.root)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("PLACEHOLDER FILE", result.stdout)
         self.assertIn("NOT ready", result.stdout)
-        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--key",
-                         "income_tax.individual.thresholds.general", cwd=self.root)
-        self.assertEqual(result.returncode, 8)
-        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--key",
-                         "income_tax.individual.thresholds.general", "--allow-placeholder-rates",
-                         cwd=self.root)
+
+    def test_real_file_placeholder_node_is_still_refused_one_by_one(self):
+        """Per figure, not per file: a landed file may still hold unlanded nodes."""
+        audit = json.loads(
+            run_cli("rates.py", "--rates", str(REAL_RATES), "--json", "--all",
+                    cwd=self.root).stdout
+        )
+        self.assertTrue(audit["placeholder"], "shipped file has no placeholder node left")
+        key = audit["placeholder"][0]
+        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--key", key, cwd=self.root)
+        self.assertEqual(result.returncode, 8, result.stdout)
+        self.assertIn("placeholder", result.stderr)
+        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--key", key,
+                         "--allow-placeholder-rates", cwd=self.root)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("PLACEHOLDER", result.stdout)
+        # …while a node that HAS landed reads cleanly with no opt-in at all.
+        self.assertTrue(audit["verified"])
+        result = run_cli("rates.py", "--rates", str(REAL_RATES), "--key",
+                         audit["verified"][0], cwd=self.root)
+        self.assertEqual(result.returncode, 0, result.stderr)
 
 
 # ======================================================================================
-# The shipped rates-AY2026-27.toml — shape only; it carries no figure yet
+# The shipped rates-AY2026-27.toml — a MIXED file: some figures landed, some not
 # ======================================================================================
 
 
@@ -746,22 +771,29 @@ class TestShippedRatesFile(unittest.TestCase):
         self.rates = rt.RateSet.from_path(REAL_RATES, allow_placeholders=True)
         self.text = REAL_RATES.read_text(encoding="utf-8")
 
-    def test_header_says_it_awaits_verified_data(self):
-        self.assertIn("AWAITING VERIFIED DATA", self.text)
-        self.assertIn("NO REAL BANGLADESHI TAX FIGURE", self.text)
+    def test_header_states_how_far_the_file_is_verified(self):
         self.assertIn("ticonsys.com", self.text)
+        # The file must document its own verification vocabulary for whoever edits it.
+        for phrase in ("verified = true", "verified = false", "placeholder = true"):
+            self.assertIn(phrase, self.text, phrase)
+        self.assertIn("Absent beats wrong", self.text)
 
-    def test_states_its_assessment_year(self):
+    def test_states_its_assessment_year_and_its_own_landed_state(self):
         self.assertEqual(self.rates.assessment_year, "2026-27")
-        self.assertTrue(self.rates.file_is_placeholder)
+        # [meta] placeholder is the contract flag both engines gate on. Whatever it says,
+        # tax.py and vat.py must agree about it.
+        self.assertEqual(
+            tax.rates_file_is_placeholder(self.rates),
+            vat.rates_file_is_placeholder(self.rates),
+        )
 
-    def test_every_rate_node_is_a_marked_placeholder_with_provenance_keys(self):
+    def test_every_rate_node_carries_its_provenance_keys(self):
         audit = self.rates.audit()
         self.assertGreater(audit["total_rate_nodes"], 0)
-        self.assertEqual(audit["verified_count"], 0)
-        self.assertEqual(audit["unverified_count"], 0)
-        self.assertEqual(audit["placeholder_count"], audit["total_rate_nodes"])
-        self.assertFalse(audit["usable"])
+        self.assertEqual(
+            audit["verified_count"] + audit["unverified_count"] + audit["placeholder_count"],
+            audit["total_rate_nodes"],
+        )
 
         problems: list[str] = []
 
@@ -771,8 +803,10 @@ class TestShippedRatesFile(unittest.TestCase):
                     for key in ("source", "verified", "note", "placeholder"):
                         if key not in node:
                             problems.append(f"{prefix} lacks {key}")
-                    if node.get("verified") is not False:
-                        problems.append(f"{prefix} claims verified")
+                    if not isinstance(node.get("verified"), bool):
+                        problems.append(f"{prefix} verified is not a boolean")
+                    if node.get("verified") is True and node.get("placeholder") is True:
+                        problems.append(f"{prefix} is both verified and a placeholder")
                     if not str(node.get("source", "")).startswith("http"):
                         problems.append(f"{prefix} source is not a URL")
                     return
@@ -801,11 +835,29 @@ class TestShippedRatesFile(unittest.TestCase):
         walk(self.rates.table.raw, "")
         self.assertEqual(floats, [])
 
-    def test_refused_by_default(self):
-        with self.assertRaises(tb.RatesError):
-            rt.RateSet.from_path(REAL_RATES).require_usable()
-        with self.assertRaises(tb.RatesError):
-            rt.RateSet.from_path(REAL_RATES).rate("income_tax.individual.thresholds.general")
+    def test_unlanded_nodes_are_refused_one_by_one_without_the_opt_in(self):
+        """Per figure, not per file: this is the MIXED case the engines must handle."""
+        audit = self.rates.audit()
+        gated = rt.RateSet.from_path(REAL_RATES)
+        self.assertTrue(audit["placeholder"], "no placeholder node left to test against")
+        for key in audit["placeholder"][:5]:
+            with self.subTest(key=key):
+                with self.assertRaises(tb.RatesError) as ctx:
+                    gated.rate(key)
+                self.assertIn("placeholder", str(ctx.exception))
+                self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
+        # A landed node on the same file reads with no opt-in and is not provisional.
+        for key in audit["verified"][:5]:
+            with self.subTest(key=key):
+                entry = rt.RateSet.from_path(REAL_RATES).rate(key)
+                self.assertTrue(entry.is_verified)
+                self.assertEqual(entry.caveat(), "")
+        # A landed-but-unverified node reads too, and says so out loud.
+        for key in audit["unverified"][:5]:
+            with self.subTest(key=key):
+                entry = rt.RateSet.from_path(REAL_RATES).rate(key)
+                self.assertFalse(entry.is_verified)
+                self.assertTrue(entry.caveat().startswith("UNVERIFIED"))
 
     def test_carries_every_key_tax_py_reads(self):
         for key in (
@@ -823,7 +875,7 @@ class TestShippedRatesFile(unittest.TestCase):
             with self.subTest(section=section):
                 self.assertTrue(self.rates.has(section), section)
 
-    def test_shape_is_computable_once_figures_land(self):
+    def test_shape_satisfies_the_structural_checks(self):
         """The schema must satisfy tax.py's structural checks (slab/band ordering etc.)."""
         individual = self.rates.section(tax.KEY_INDIVIDUAL)
         category = individual["default_category"]
@@ -836,14 +888,59 @@ class TestShippedRatesFile(unittest.TestCase):
         self.assertTrue(slabs[-1].is_open_ended)
         self.assertTrue(all(not s.is_open_ended for s in slabs[:-1]))
         self.assertEqual(slabs[0].width_key, entry.key)
+
+    def test_a_working_that_needs_an_unlanded_figure_is_refused_and_names_it(self):
+        """The MIXED case end to end: the same file computes, then refuses at the node.
+
+        ``income_tax.individual.minimum_tax.on_gross_receipts.applies_above`` had not
+        landed when this was written.  If it later does, this test finds another unlanded
+        input rather than asserting a Bangladeshi figure of its own — and skips loudly if
+        the whole file has landed, which is the day this refusal stops being reachable.
+        """
+        individual = self.rates.section(tax.KEY_INDIVIDUAL)
+        category, location = individual["default_category"], individual["default_location"]
+        gated = rt.RateSet.from_path(REAL_RATES)
+
+        def inputs(**over):
+            base = dict(income=T(800000), category=category, location=location,
+                        investment=T(0), net_wealth=None, gross_receipts=None,
+                        tax_paid=T(0))
+            base.update(over)
+            return tax.TaxInputs(**base)
+
+        placeholders = set(self.rates.audit()["placeholder"])
+        if not any(key.startswith("income_tax.individual.") for key in placeholders):
+            self.skipTest("every individual income-tax figure has landed")
+
+        with self.assertRaises(tb.RatesError) as ctx:
+            tax.compute_income_tax(gated, inputs(gross_receipts=T(5000000)))
+        self.assertIn("placeholder", str(ctx.exception))
+        self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
+
+        # The very same file, opted into, computes and stamps the result unmistakably.
+        allowed = rt.RateSet.from_path(REAL_RATES, allow_placeholders=True)
+        result = tax.compute_income_tax(allowed, inputs(gross_receipts=T(5000000)))
+        self.assertTrue(result.placeholder_data_used)
+        self.assertEqual(result.data_grade, tax.GRADE_PLACEHOLDER)
+        self.assertEqual(result.filing_status, tax.STATUS_PLACEHOLDER)
+        self.assertTrue(result.placeholder_figures)
+        self.assertTrue(any(c.startswith("PLACEHOLDER") for c in result.caveats))
+
+    def test_landed_nodes_compute_without_any_opt_in(self):
+        """A mixed file must still work for a working that touches only landed figures."""
+        individual = self.rates.section(tax.KEY_INDIVIDUAL)
         result = tax.compute_income_tax(
-            self.rates,
-            tax.TaxInputs(income=T(1), category=category, location=location,
-                          investment=T(1), net_wealth=T(1), gross_receipts=T(1)),
+            rt.RateSet.from_path(REAL_RATES),
+            tax.TaxInputs(
+                income=T(800000),
+                category=individual["default_category"],
+                location=individual["default_location"],
+            ),
         )
-        self.assertTrue(result.provisional)
-        self.assertTrue(result.caveats[0].startswith("PLACEHOLDER FILE"))
-        self.assertTrue(all(e.is_placeholder for e in result.rates_used))
+        self.assertFalse(result.placeholder_data_used)
+        self.assertNotEqual(result.data_grade, tax.GRADE_PLACEHOLDER)
+        self.assertTrue(result.rates_used)
+        self.assertFalse(any(e.is_placeholder for e in result.rates_used))
 
 
 # ======================================================================================
@@ -1464,7 +1561,7 @@ class TestTaxCli(FixtureCase):
         self.assertEqual(result.returncode, 0)
         for flag in ("--income", "--investment", "--net-wealth", "--gross-receipts", "--tax-paid",
                      "--category", "--location", "--assessment-year", "--rates", "--json",
-                     "--allow-placeholder-rates", "--list-options", "--books"):
+                     "--allow-placeholder-rates", "--strict", "--list-options", "--books"):
             self.assertIn(flag, result.stdout)
         self.assertIn(tb.ATTRIBUTION, result.stdout)
         result = self.cli("--version")
@@ -1522,22 +1619,72 @@ class TestTaxCli(FixtureCase):
         self.assertEqual(payload["error"], "RatesError")
         self.assertIn("general, female", payload["hint"])
 
-    def test_shipped_placeholder_file(self):
-        result = self.cli("--rates", str(REAL_RATES), "--income", "500000")
-        self.assertEqual(result.returncode, 8)
+    def test_shipped_mixed_file_computes_from_landed_nodes(self):
+        """The shipped file is mixed, so a plain slab computation must succeed."""
+        result = self.cli("--rates", str(REAL_RATES), "--income", "500000", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        data = json.loads(result.stdout)
+        self.assertEqual(data["assessment_year"], "2026-27")
+        self.assertFalse(data["placeholder_data_used"])
+        self.assertEqual(data["placeholder_figures_used"], [])
+        self.assertNotEqual(data["data_grade"], tax.GRADE_PLACEHOLDER)
+        self.assertFalse(any(e["placeholder"] for e in data["rates_used"]))
+
+    def test_shipped_file_refuses_a_working_that_needs_an_unlanded_figure(self):
+        placeholders = [
+            key
+            for key in rt.RateSet.from_path(REAL_RATES, allow_placeholders=True)
+            .audit()["placeholder"]
+            if key.startswith("income_tax.individual.")
+        ]
+        if not placeholders:
+            self.skipTest("every individual income-tax figure has landed")
+        args = ("--rates", str(REAL_RATES), "--income", "500000",
+                "--gross-receipts", "5000000")
+        result = self.cli(*args)
+        self.assertEqual(result.returncode, 8, result.stdout)
+        self.assertEqual(result.stdout, "")
         self.assertIn("placeholder", result.stderr)
         self.assertIn("--allow-placeholder-rates", result.stderr)
-        result = self.cli("--rates", str(REAL_RATES), "--income", "500000", "--allow-placeholder-rates")
+
+        result = self.cli(*args, "--allow-placeholder-rates")
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("PROVISIONAL", result.stdout)
+        self.assertIn(tax.STATUS_PLACEHOLDER, result.stdout)
+        self.assertIn("PLACEHOLDER DATA", result.stdout)
+        self.assertIn("NOT FOR FILING", result.stdout)
         self.assertIn("2026-27", result.stdout)
-        self.assertIn("PLACEHOLDER FILE", result.stdout)
         self.assertIn(tb.DISCLAIMER_EN, result.stdout)
-        result = self.cli("--rates", str(REAL_RATES), "--income", "500000", "--allow-placeholder-rates", "--json")
+
+        result = self.cli(*args, "--allow-placeholder-rates", "--json")
         data = json.loads(result.stdout)
         self.assertTrue(data["provisional"])
-        self.assertTrue(data["caveats"][0].startswith("PLACEHOLDER FILE"))
-        self.assertTrue(all(e["placeholder"] for e in data["rates_used"]))
+        self.assertTrue(data["placeholder_data_used"])
+        self.assertEqual(data["data_grade"], tax.GRADE_PLACEHOLDER)
+        self.assertEqual(data["filing_status"], tax.STATUS_PLACEHOLDER)
+        self.assertTrue(data["placeholder_figures_used"])
+        self.assertTrue(any(c.startswith("PLACEHOLDER") for c in data["caveats"]))
+
+        # Opting in never makes the answer fileable: --strict still refuses it.
+        result = self.cli(*args, "--allow-placeholder-rates", "--strict")
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("not ready to file", result.stderr)
+
+    def test_strict_refuses_an_unverified_figure_and_passes_on_a_verified_one(self):
+        result = self.cli("--rates", str(self.path), "--income", "1000000",
+                          "--investment", "300000", "--strict")
+        self.assertEqual(result.returncode, 0, result.stderr)   # fixture is all verified
+        text = replace_marked(FIXTURE, "general_verified", "verified = false")
+        variant = self.write_fixture(text, name="unverified.toml")
+        result = self.cli("--rates", str(variant), "--income", "1000000", "--strict")
+        self.assertEqual(result.returncode, 7)
+        self.assertIn("not ready to file", result.stderr)
+        self.assertIn("UNVERIFIED", result.stderr)
+        self.assertIn("income_tax.individual.thresholds.general", result.stderr)
+        # Without --strict the same run still produces the working, marked PROVISIONAL.
+        result = self.cli("--rates", str(variant), "--income", "1000000")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("PROVISIONAL", result.stdout)
+        self.assertNotIn("PLACEHOLDER DATA", result.stdout)
 
     def test_list_options(self):
         result = self.cli("--rates", str(self.path), "--list-options")
@@ -1670,6 +1817,94 @@ class TestModuleHygiene(unittest.TestCase):
         self.assertIn("DISCLAIMER_EN", source)
         self.assertIn("DISCLAIMER_BN", source)
         self.assertIn("ATTRIBUTION", source)
+
+
+# ======================================================================================
+# Posture symmetry — the tax.py half
+#
+# tests/test_vat.py::TestEnginePostureSymmetry holds the cross-engine matrix; these are
+# the per-figure assertions that belong with tax.py's own fixture.
+# ======================================================================================
+
+
+class TestEnginePostureSymmetry(FixtureCase):
+    """A tool must not compute a Bangladeshi figure from unlanded data unasked."""
+
+    def test_shares_the_verification_vocabulary_with_vat(self):
+        for name in ("ALLOW_PLACEHOLDERS_FLAG", "GRADE_FINAL", "GRADE_UNVERIFIED",
+                     "GRADE_PLACEHOLDER", "STATUS_PLACEHOLDER", "STATUS_PROVISIONAL",
+                     "PLACEHOLDER_STATUS_TEXT"):
+            with self.subTest(constant=name):
+                self.assertEqual(getattr(tax, name), getattr(vat, name), name)
+
+    def test_placeholder_node_refused_the_moment_the_working_needs_it(self):
+        """Per figure, not per file: the file opens, the working stops at the node."""
+        text = FIXTURE.replace(
+            "verified = true  # MARK:general_verified",
+            "verified = false\nplaceholder = true",
+        )
+        rates = self.rates(text)                      # [meta] placeholder is still false
+        tax.require_landed_rates(rates)               # so the FILE is perfectly readable
+        self.assertFalse(tax.rates_file_is_placeholder(rates))
+        with self.assertRaises(tb.RatesError) as ctx:
+            self.compute(1000000, rates=rates)
+        self.assertIn("income_tax.individual.thresholds.general", str(ctx.exception))
+        self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
+
+    def test_opting_in_computes_but_stamps_the_answer_placeholder(self):
+        text = FIXTURE.replace(
+            "verified = true  # MARK:general_verified",
+            "verified = false\nplaceholder = true",
+        )
+        result = self.compute(1000000, text=text, allow_placeholders=True)
+        self.assertTrue(result.placeholder_data_used)
+        self.assertEqual(result.data_grade, tax.GRADE_PLACEHOLDER)
+        self.assertEqual(result.filing_status, tax.STATUS_PLACEHOLDER)
+        self.assertEqual(
+            result.placeholder_figures, ("income_tax.individual.thresholds.general",)
+        )
+        markdown = tax.render_markdown(result)
+        self.assertIn("PLACEHOLDER DATA / অস্থায়ী উপাত্ত — NOT FOR FILING", markdown)
+        self.assertIn("income_tax.individual.thresholds.general", markdown)
+        self.assertIn(tax.STATUS_PLACEHOLDER, markdown)
+        self.assertTrue(result.blocking_problems())
+
+    def test_unverified_computes_and_is_only_provisional(self):
+        """Unverified is a caveat, not a refusal — a landed figure is still a figure."""
+        text = replace_marked(FIXTURE, "general_verified", "verified = false")
+        result = self.compute(1000000, text=text)
+        self.assertTrue(result.provisional)
+        self.assertFalse(result.placeholder_data_used)
+        self.assertEqual(result.data_grade, tax.GRADE_UNVERIFIED)
+        self.assertEqual(result.filing_status, tax.STATUS_PROVISIONAL)
+        markdown = tax.render_markdown(result)
+        self.assertIn("PROVISIONAL / অস্থায়ী — NOT FOR FILING", markdown)
+        self.assertNotIn("PLACEHOLDER DATA", markdown)
+
+    def test_a_fully_verified_file_is_graded_final(self):
+        result = self.compute(1000000)
+        self.assertFalse(result.provisional)
+        self.assertFalse(result.placeholder_data_used)
+        self.assertEqual(result.data_grade, tax.GRADE_FINAL)
+        self.assertEqual(result.filing_status, tax.STATUS_VERIFIED)
+        self.assertEqual(result.blocking_problems(), ())
+        self.assertNotIn("PROVISIONAL", tax.render_markdown(result))
+
+    def test_file_level_gate_matches_vat_on_the_fixture_variants(self):
+        for label, text in (
+            ("landed", FIXTURE),
+            ("flagged", replace_marked(FIXTURE, "file_placeholder", "placeholder = true")),
+            ("status only", replace_marked(
+                FIXTURE, "file_placeholder", 'status = "placeholder"')),
+        ):
+            with self.subTest(shape=label):
+                path = self.write_fixture(text, name=f"{label.replace(' ', '-')}.toml")
+                rate_set = rt.RateSet.from_path(path, allow_placeholders=True)
+                self.assertEqual(
+                    tax.rates_file_is_placeholder(rate_set),
+                    vat.rates_file_is_placeholder(rate_set),
+                    label,
+                )
 
 
 if __name__ == "__main__":

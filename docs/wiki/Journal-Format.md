@@ -176,18 +176,23 @@ the tax line by the account's `role` in `accounts.toml` (`vat_output`, `vat_inpu
 `vds_payable`, `tds_payable`, `tds_receivable`) and treats every other line with the same
 tag as the taxable value.
 
-A cash sale with output VAT — three rows, one entry. The `10` is an **illustrative** number
-chosen so the arithmetic is visible; it is not a statutory rate:
+A cash sale with output VAT — three rows, one entry. The rate in the tag is whatever
+`rates.py --key vat.rates.standard` reported for the assessment year; it is not a figure this
+page asserts:
 
 ```
-2026-07-05,JE-2026-07-0002,Cash sale,1100,11000.00,0.00,Walk-in customer,INV-0001,NONE,
-2026-07-05,JE-2026-07-0002,Cash sale,4100,0.00,10000.00,Walk-in customer,INV-0001,VAT:OUT:10,
-2026-07-05,JE-2026-07-0002,Cash sale,2310,0.00,1000.00,Walk-in customer,INV-0001,VAT:OUT:10,
+2026-07-12,JE-2026-07-0002,Cash sale with output VAT,1150,345000.00,0.00,Walk-in customer,MUSHAK-6.3/RT/0007,NONE,
+2026-07-12,JE-2026-07-0002,Cash sale with output VAT,4100,0.00,300000.00,Walk-in customer,MUSHAK-6.3/RT/0007,VAT:OUT:15,
+2026-07-12,JE-2026-07-0002,Cash sale with output VAT,9200,0.00,45000.00,Walk-in customer,MUSHAK-6.3/RT/0007,VAT:OUT:15,
 ```
 
-- Row 1 (`1100` Cash) is the money that moved; it carries `NONE`.
-- Row 2 (`4100` Sales) is the taxable value; it carries the tag.
-- Row 3 (`2310` VAT Output Payable, role `vat_output`) is the tax; it carries the same tag.
+- Row 1 (`1150` Cash at Bank) is the money that moved; it carries `NONE`.
+- Row 2 (`4100` Sales — Local) is the taxable value; it carries the tag.
+- Row 3 (`9200` VAT Output Payable, role `vat_output`) is the tax; it carries the same tag.
+
+The codes are those of the chart that ships in `src/templates/accounts.toml`, where tax
+accounts live in the `9xxx` block. What matters to the engine is the `role`, not the number —
+see [Chart of Accounts](Chart-of-Accounts).
 
 `vat.py` cross-checks each entry: the tax line's amount must equal the taxable value times
 the tag's rate, rounded half-up once. A break is reported, not corrected.

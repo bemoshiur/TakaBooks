@@ -40,18 +40,23 @@ flag. The project's rule is *absent beats wrong*: a figure that could not be con
 primary source is marked `verified = false`, and the engine surfaces that caveat on every
 output that used it.
 
-**`verified = true` means that a contributor read the figure from the cited primary source on
-the stated date.** It does not mean the figure is correct for your circumstances, still in
-force on the day you file, free of conditions the note does not mention, or immune to the
+**`verified = true` means that a contributor read the figure from primary text at the cited
+URL on the stated date.** It does not mean the figure is correct for your circumstances, still
+in force on the day you file, free of conditions the note does not mention, or immune to the
 next Finance Act, SRO or circular. Tax figures in Bangladesh change every year and sometimes
 mid-year. The `as_of` date tells you how old the reading is; the `source` URL tells you where
 to check it yourself.
 
-While a rates file declares itself a placeholder schema (`[meta] placeholder = true`), the
-engine refuses to compute from it unless you explicitly opt in, and every result is then
-stamped **PROVISIONAL / অস্থায়ী — NOT FOR FILING**. A provisional output is a walkthrough of
-a method. It is not a tax liability, a VAT position or a return figure, and it must never be
-filed.
+**`verified = false` does not mean invented.** It means the figure was landed from a source
+that is not primary text — usually a professional summary — and the node's `note` says why.
+Such a figure is used, but every output that touches it carries a caveat naming the key. A
+node marked `placeholder = true` is different again: it is schema, and the engine refuses it
+outright unless you explicitly opt in.
+
+Any output stamped **PROVISIONAL / অস্থায়ী — NOT FOR FILING** is a walkthrough of a method.
+It is not a tax liability, a VAT position or a return figure, and it must never be filed. Read
+the caveats list that accompanies it: it names every soft figure the computation rested on, so
+you and your adviser can see precisely which part of the answer needs checking.
 
 ## 4. The engine's guarantees are narrow
 
@@ -107,7 +112,8 @@ under git.
 Figures, references and code in TakaBooks are contributed by volunteers who cite primary
 sources and mark what they could not confirm. The project reviews contributions but cannot
 audit every figure against every circumstance. If you find a wrong or outdated figure, please
-report it through the rate-correction issue template with the NBR source and the assessment
+report it through the **Tax rule update** issue template
+(`.github/ISSUE_TEMPLATE/tax-rule-update.yml`) with the NBR source and the assessment
 year — publicly, so others are warned — as described on the
 [Updating Tax Rates](Updating-Tax-Rates) page. A wrong number is a correctness bug, not a
 security vulnerability, and it must not be hidden behind private disclosure.

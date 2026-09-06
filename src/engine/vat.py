@@ -22,8 +22,9 @@ Where the numbers come from
    ``VAT:IN:<rate>`` and ``VDS:<rate>`` is the rate the bookkeeper recorded for that
    transaction.  TakaBooks uses it as written.
 3. **The rates TOML** (``src/data/rates-AY<year>.toml``, read through
-   :class:`takabooks.RatesTable`) for every *statutory* figure.  The dotted keys this
-   module reads, and nothing else, are:
+   :class:`rates.RateSet` — the *same* reader :mod:`tax` uses, so both engines decide
+   figure by figure, by one implementation, what has landed) for every *statutory*
+   figure.  The dotted keys this module reads, and nothing else, are:
 
    ================================================  =========  ==============================
    key                                               required   used for
@@ -43,16 +44,39 @@ Where the numbers come from
 
 **This module hardcodes no Bangladeshi rate, threshold or deadline** (spec §4.5, §6.2).
 
-* A **required** key that is absent from the rates file is a :class:`takabooks.RatesError`
-  (exit 8) naming the key and the file.  TakaBooks never fills it in.
-* An **optional** key that is absent is reported as ``not in rates file`` on every output
-  format, and never guessed.
-* A figure present but not ``verified = true`` carries a visible **UNVERIFIED** warning;
-  a figure carrying ``placeholder = true`` (schema awaiting research) is reported as
-  **PLACEHOLDER** and is never compared against the journal.
-* When the file itself is a placeholder (``[meta] placeholder = true``), or any figure
-  read is unverified or missing, or any entry fails to reconcile, the whole output is
-  stamped **PROVISIONAL / অস্থায়ী — not for filing**.
+Posture towards unlanded data — identical to :mod:`tax`
+-------------------------------------------------------
+Both TakaBooks tax engines take the *same* three-step position, with the same flags and
+the same exit codes.  ``tests/test_vat.py::TestEnginePostureSymmetry`` asserts they stay
+in step, because two engines that disagree about whether a figure has landed are two
+answers to the same question.
+
+=========================  ================================  ==============================
+state of a figure          default posture                   with ``--allow-placeholder-rates``
+=========================  ================================  ==============================
+absent (required)          refuse, exit 8, key named         refuse, exit 8, key named
+``placeholder = true``     **refuse** if the answer needs    computed / quoted, and the
+                           it (exit 8); otherwise the        output is stamped
+                           value is **withheld** and the     ``PLACEHOLDER``
+                           node reported ``PLACEHOLDER``
+``verified = false``       computed, ``UNVERIFIED`` caveat,  same
+                           output stamped ``PROVISIONAL``
+``verified = true``        computed, no caveat               same
+=========================  ================================  ==============================
+
+"The answer needs it" here means a **required** reference figure (``vat.rates.standard``,
+``deadlines.vat_return_monthly``, and ``vds.deposit.deadline`` when VDS was withheld), or
+a rates file that declares itself unlanded in ``[meta]``.  A placeholder *optional* figure
+does not stop the return being computed — but its value is never printed, because an
+unlanded figure that is shown as a number is exactly the harm the placeholder flag exists
+to prevent.  Absent beats wrong.
+
+Withholding is not a softer posture than refusing; it is the same rule — *refuse when the
+answer depends on it; withhold the value when it does not* — meeting a case ``tax.py``
+never sees, because ``tax.py`` reads only figures its working needs and so always lands on
+the refusal.  A withheld figure never becomes a number on the page, which is why it leaves
+the output ``PROVISIONAL`` rather than ``PLACEHOLDER``: reserving the strongest stamp for
+figures that were really used is what keeps the stamp worth reading.
 
 ``--strict`` turns every warning, and any reconciliation difference, into a non-zero
 exit (7) so that an unconfirmed figure set can never be mistaken for a filing-ready one.
@@ -107,6 +131,7 @@ _ENGINE_DIR = Path(__file__).resolve().parent
 if str(_ENGINE_DIR) not in sys.path:  # pragma: no cover - import plumbing
     sys.path.insert(0, str(_ENGINE_DIR))
 
+import rates as rt  # noqa: E402  (the one rates reader — see "Posture" above)
 import takabooks as tb  # noqa: E402
 
 __all__ = [
@@ -124,6 +149,13 @@ __all__ = [
     "VAT_RATE_SECTIONS",
     "VDS_RATE_SECTIONS",
     "RETURN_FORM_KEY",
+    "RatesLike",
+    "ALLOW_PLACEHOLDERS_FLAG",
+    "PLACEHOLDER_STATUS_TEXT",
+    "GRADE_FINAL",
+    "GRADE_UNVERIFIED",
+    "GRADE_PLACEHOLDER",
+    "STATUS_PLACEHOLDER",
     "STATUS_PROVISIONAL",
     "STATUS_RECONCILED",
     "AccountMovement",
@@ -139,7 +171,9 @@ __all__ = [
     "resolve_period",
     "resolve_rates_path",
     "load_rates",
+    "as_rate_set",
     "rates_file_is_placeholder",
+    "require_landed_rates",
     "reference_figures",
     "declared_rates",
     "compute_vat_position",
@@ -300,7 +334,31 @@ VDS_RATE_SECTIONS: tuple[str, ...] = ("vds.services",)
 #: any form line number of its own (content rule §6.2).
 RETURN_FORM_KEY = "vat.return_form"
 
+# ======================================================================================
+# Verification posture — the vocabulary tax.py and vat.py share
+#
+# These five strings and the three grades below are duplicated verbatim in tax.py so that
+# the two engines stamp the same words on the same situation.  They are constants, not
+# figures, so duplicating them asserts nothing about Bangladeshi law; the *decisions* that
+# use them are all taken from one reader, rates.RateSet.  Keep the twins in step —
+# tests/test_vat.py::TestEnginePostureSymmetry fails if they drift apart.
+# ======================================================================================
+
+#: The opt-in every TakaBooks calculator uses to compute from unlanded data.
+ALLOW_PLACEHOLDERS_FLAG = "--allow-placeholder-rates"
+
+#: How far the data behind an answer can be trusted.  Worst grade of any figure wins.
+GRADE_FINAL = "final"
+GRADE_UNVERIFIED = "unverified"
+GRADE_PLACEHOLDER = "placeholder"
+
+#: ``[meta] status`` text that declares a file unlanded even without ``placeholder = true``.
+PLACEHOLDER_STATUS_TEXT = "placeholder"
+
 #: Filing status stamped on every output format.
+STATUS_PLACEHOLDER = (
+    "PLACEHOLDER / অস্থায়ী — computed from unlanded data, NOT FOR FILING"
+)
 STATUS_PROVISIONAL = "PROVISIONAL / অস্থায়ী — not for filing"
 STATUS_RECONCILED = "reconciled — every figure read is verified; confirm with an ITP/CA"
 
@@ -439,6 +497,7 @@ class ReferenceFigure:
     note: str = ""
     money: tb.Money | None = None
     problem: str = ""
+    withheld: bool = False
 
     @property
     def label(self) -> str:
@@ -457,6 +516,14 @@ class ReferenceFigure:
             return "PLACEHOLDER"
         return "verified" if self.verified else "UNVERIFIED"
 
+    @property
+    def grade(self) -> str:
+        if self.placeholder:
+            return GRADE_PLACEHOLDER
+        if self.available and self.verified and not self.problem:
+            return GRADE_FINAL
+        return GRADE_UNVERIFIED
+
 
 @dataclass(frozen=True)
 class DeclaredRate:
@@ -471,6 +538,7 @@ class DeclaredRate:
     verified: bool = False
     placeholder: bool = False
     problem: str = ""
+    withheld: bool = False
 
     @property
     def label(self) -> str:
@@ -487,6 +555,12 @@ class DeclaredRate:
         if self.placeholder:
             return "PLACEHOLDER"
         return "verified" if self.verified else "UNVERIFIED"
+
+    @property
+    def grade(self) -> str:
+        if self.placeholder:
+            return GRADE_PLACEHOLDER
+        return GRADE_FINAL if (self.verified and not self.problem) else GRADE_UNVERIFIED
 
     @property
     def rate_text(self) -> str:
@@ -536,6 +610,8 @@ class VatPosition:
     rates_caveats: tuple[str, ...]
     rates_file_placeholder: bool
     rates_unverified_in_file: int
+    rates_placeholder_in_file: int
+    allow_placeholders: bool
     buckets: Mapping[str, tuple[RateBucket, ...]]
     issues: tuple[ReconciliationIssue, ...]
     controls: tuple[ControlAccount, ...]
@@ -551,12 +627,64 @@ class VatPosition:
     # -- filing status -------------------------------------------------------------------
 
     @property
+    def placeholder_figures(self) -> tuple[str, ...]:
+        """Dotted keys of every unlanded node this run met, in key order, no duplicates.
+
+        Encountering one is not the same as relying on one — see
+        :attr:`placeholder_figures_used` and :attr:`placeholder_figures_withheld`.
+        """
+        keys = [f.rates_key for f in self.references if f.placeholder and f.rates_key]
+        keys += [d.rates_key for d in self.declared if d.placeholder]
+        return tuple(sorted(dict.fromkeys(keys)))
+
+    @property
+    def placeholder_figures_withheld(self) -> tuple[str, ...]:
+        """Unlanded figures whose value was kept out of this output entirely."""
+        keys = [f.rates_key for f in self.references if f.withheld and f.rates_key]
+        keys += [d.rates_key for d in self.declared if d.withheld]
+        return tuple(sorted(dict.fromkeys(keys)))
+
+    @property
+    def placeholder_figures_used(self) -> tuple[str, ...]:
+        """Unlanded figures whose value actually reached this output.
+
+        Only these downgrade the answer to :data:`GRADE_PLACEHOLDER`.  A *withheld*
+        placeholder never touched a number on this page — that is the whole point of
+        withholding it — so it is a warning about an incomplete rates file, not a defect
+        in the figures computed.  Reserving the strongest stamp for figures that were
+        really used is what keeps the stamp worth reading.
+        """
+        withheld = set(self.placeholder_figures_withheld)
+        return tuple(key for key in self.placeholder_figures if key not in withheld)
+
+    @property
+    def placeholder_data_used(self) -> bool:
+        """True when an unlanded figure reached this output."""
+        return self.rates_file_placeholder or bool(self.placeholder_figures_used)
+
+    @property
+    def data_grade(self) -> str:
+        """The worst verification grade behind this answer (see :data:`GRADE_FINAL`)."""
+        if self.placeholder_data_used:
+            return GRADE_PLACEHOLDER
+        if self.provisional:
+            return GRADE_UNVERIFIED
+        return GRADE_FINAL
+
+    @property
     def provisional(self) -> bool:
         """True when anything stops this figure set from being filing-ready."""
-        return self.rates_file_placeholder or bool(self.warnings) or bool(self.issues)
+        return (
+            self.rates_file_placeholder
+            or bool(self.placeholder_figures)
+            or bool(self.warnings)
+            or bool(self.issues)
+        )
 
     @property
     def filing_status(self) -> str:
+        if self.placeholder_data_used:
+            return STATUS_PLACEHOLDER
         return STATUS_PROVISIONAL if self.provisional else STATUS_RECONCILED
 
     # -- totals ------------------------------------------------------------------------
@@ -794,12 +922,18 @@ def load_rates(
     books_dir: Path | str | None = None,
     data_dir: Path | str | None = None,
     allow_ay_mismatch: bool = False,
-) -> tuple[tb.RatesTable, list[str]]:
-    """Load the rates table and check its assessment year against ``config.toml``."""
+    allow_placeholders: bool = False,
+) -> tuple[rt.RateSet, list[str]]:
+    """Load the rates file and check its assessment year against ``config.toml``.
+
+    The result is a :class:`rates.RateSet` — the one reader — carrying the caller's
+    ``allow_placeholders`` posture, so a placeholder node cannot be read off it by
+    accident anywhere downstream.
+    """
     path = resolve_rates_path(
         explicit=explicit, config=config, books_dir=books_dir, data_dir=data_dir
     )
-    rates = tb.RatesTable.from_toml_path(path)
+    rates = rt.RateSet.from_path(path, allow_placeholders=allow_placeholders)
     warnings: list[str] = []
 
     config_year = config.assessment_year if config is not None else None
@@ -1021,53 +1155,139 @@ def _control_account(
     )
 
 
-def _rates_file_name(rates: tb.RatesTable) -> str:
-    return rates.source_path.name if rates.source_path else "the rates file"
+#: What every rates-reading helper here accepts: the parser object or the reader.
+RatesLike = tb.RatesTable | rt.RateSet
 
 
-def _node_table(rates: tb.RatesTable, key: str) -> Mapping[str, Any] | None:
-    """The raw TOML table at ``key`` (so ``placeholder`` and labels can be read), or None
-    when the key is absent or is a bare scalar."""
+def as_rate_set(rates: RatesLike, *, allow_placeholders: bool = False) -> rt.RateSet:
+    """Adapt whatever the caller passed into the one rates reader TakaBooks has.
+
+    ``vat.py`` used to read the TOML through :class:`takabooks.RatesTable` while
+    ``tax.py`` read it through :class:`rates.RateSet`.  Two readers meant two independent
+    answers to "has this figure landed?" — and they did not agree: ``RatesTable`` has no
+    idea what ``placeholder`` means, and calls a node with ``verified = true,
+    placeholder = true`` *verified*.  :class:`rates.RateSet` is now the only reader of
+    record for both engines; ``RatesTable`` survives beneath it as the TOML parser, which
+    is all it ever was.
+
+    A :class:`takabooks.RatesTable` is therefore accepted (that is the public signature of
+    :func:`compute_vat_position`) and wrapped, never read directly.
+    """
+    if isinstance(rates, rt.RateSet):
+        if bool(rates.allow_placeholders) == bool(allow_placeholders):
+            return rates
+        return rt.RateSet(rates.table, allow_placeholders=allow_placeholders)
+    if isinstance(rates, tb.RatesTable):
+        return rt.RateSet(rates, allow_placeholders=allow_placeholders)
+    raise tb.RatesError(
+        f"vat.py needs a rates file, not a {type(rates).__name__}.",
+        hint="Pass a takabooks.RatesTable or a rates.RateSet (see vat.load_rates).",
+    )
+
+
+def _rates_file_name(rates: RatesLike) -> str:
+    rate_set = as_rate_set(rates, allow_placeholders=True)
+    return rate_set.path.name if rate_set.path else "the rates file"
+
+
+def _node_table(rates: rt.RateSet, key: str) -> Mapping[str, Any] | None:
+    """The raw TOML table at ``key`` (so labels can be read), or None when the key is
+    absent or is a bare scalar."""
     try:
         return rates.section(key)
     except tb.RatesError:
         return None
 
 
-def _is_placeholder(table: Mapping[str, Any] | None) -> bool:
-    """``placeholder = true`` on a node: schema awaiting research, not a figure."""
-    return table is not None and table.get("placeholder") is True
+def rates_file_is_placeholder(rates: RatesLike) -> bool:
+    """True when ``[meta]`` declares the whole file to be unlanded schema.
 
+    The contract flag is ``[meta] placeholder``, and it is read by exactly one piece of
+    code — :attr:`rates.RateSet.file_is_placeholder`.  ``[meta] status = "placeholder"``
+    is honoured as well, as a belt-and-braces for a file that writes the prose key and
+    forgets the flag; that is a *widening*, never a second opinion, so the two can never
+    disagree about a file that sets the flag.
 
-def rates_file_is_placeholder(rates: tb.RatesTable) -> bool:
-    """True when ``[meta]`` declares the whole file to be unlanded schema."""
-    meta = rates.raw.get("meta")
-    if not isinstance(meta, Mapping):
-        return False
-    if meta.get("placeholder") is True:
+    ``tax.py`` carries the identical twin of this function.  The single home for it would
+    be ``rates.py``, which neither tax.py nor vat.py owns;
+    ``tests/test_vat.py::TestEnginePostureSymmetry`` asserts the twins agree over a matrix
+    of ``[meta]`` shapes so they cannot drift.
+    """
+    rate_set = as_rate_set(rates, allow_placeholders=True)
+    if rate_set.file_is_placeholder:
         return True
-    return str(meta.get("status", "")).strip().lower() == "placeholder"
+    return str(rate_set.meta.get("status", "")).strip().lower() == PLACEHOLDER_STATUS_TEXT
+
+
+def require_landed_rates(
+    rates: RatesLike, *, allow_placeholders: bool | None = None
+) -> None:
+    """Refuse a rates file that declares itself unlanded, unless the caller opted in.
+
+    The twin of :meth:`rates.RateSet.require_usable`, widened by the ``[meta] status``
+    check above and worded the same way, so ``tax.py`` and ``vat.py`` refuse the same
+    file with the same exit code (8) and offer the same remedy.
+    ``tax.require_landed_rates`` has this exact signature and behaviour, and
+    ``tests/test_vat.py::TestEnginePostureSymmetry`` calls both over one matrix.
+
+    ``allow_placeholders`` left at ``None`` reads the posture off the
+    :class:`rates.RateSet` itself, so the opt-in travels from the command line to the last
+    figure read on one object rather than being passed hand to hand.
+    """
+    if allow_placeholders is None:
+        allow_placeholders = bool(getattr(rates, "allow_placeholders", False))
+    if allow_placeholders or not rates_file_is_placeholder(rates):
+        return
+    raise tb.RatesError(
+        f"{_rates_file_name(rates)} is a schema awaiting verified data — every figure in "
+        "it is a placeholder.",
+        hint="No Bangladeshi rate has been landed for this assessment year yet. Fill the "
+        "file in (its header documents the procedure), or pass "
+        f"{ALLOW_PLACEHOLDERS_FLAG} to compute a clearly-marked PROVISIONAL result that "
+        "must never be filed.",
+    )
+
+
+def _raw_value(reader: rt.RateSet, key: str) -> Any:
+    """The raw TOML scalar at ``key``, for **diagnostics only**.
+
+    :class:`rates.RateSet` refuses a TOML float before it ever builds a
+    :class:`rates.RateEntry` — correctly, since a binary float can never hold a taka
+    amount — which would leave this module unable to say *why* the node is unreadable.
+    So the parser beneath the RateSet is consulted for the raw scalar, and only for that.
+    Whether a figure has landed is still decided in exactly one place.
+    """
+    try:
+        return reader.table.get(key)
+    except tb.RatesError:
+        return None
+
+
+def _float_problem(key: str, value: float, file_name: str) -> tuple[str, str, str]:
+    """``(display, problem, warning)`` for a node written as a TOML float (spec §4.2)."""
+    problem = (
+        "written as a TOML float, which cannot hold an exact decimal; "
+        "write it as a quoted string or an integer"
+    )
+    warning = (
+        f"UNUSABLE RATE: {key} in {file_name} is a TOML float ({value!r}). "
+        'TakaBooks refuses float money and rates — rewrite it as a string (value = "15") '
+        "or an integer."
+    )
+    return repr(value), problem, warning
 
 
 def _read_value(
-    rate: tb.Rate, kind: str, file_name: str, *, placeholder: bool
+    rate: rt.RateEntry, kind: str, file_name: str, *, placeholder: bool
 ) -> tuple[str, tb.Money | None, Decimal | None, str, str]:
-    """Render one :class:`takabooks.Rate` as ``(display, money, decimal, problem, warning)``.
+    """Render one :class:`rates.RateEntry` as ``(display, money, decimal, problem, warning)``.
 
     ``kind`` is ``"percent"``, ``"money"`` or ``"text"``.  A TOML float is refused
     outright (spec §4.2); a percentage outside 0–100 is a fraction/percent mix-up.
     """
     if isinstance(rate.value, float):
-        problem = (
-            "written as a TOML float, which cannot hold an exact decimal; "
-            "write it as a quoted string or an integer"
-        )
-        warning = (
-            f"UNUSABLE RATE: {rate.key} in {file_name} is a TOML float ({rate.value!r}). "
-            'TakaBooks refuses float money and rates — rewrite it as a string (value = "15") '
-            "or an integer."
-        )
-        return repr(rate.value), None, None, problem, warning
+        display, problem, warning = _float_problem(rate.key, rate.value, file_name)
+        return display, None, None, problem, warning
     if isinstance(rate.value, bool):
         problem = "a boolean is not a figure"
         return repr(rate.value), None, None, problem, f"UNREADABLE: {rate.key} in {file_name}: {problem}."
@@ -1122,24 +1342,33 @@ def _read_value(
 
 
 def reference_figures(
-    rates: tb.RatesTable, *, vds_present: bool = False
+    rates: RatesLike, *, vds_present: bool = False, allow_placeholders: bool = False
 ) -> tuple[tuple[ReferenceFigure, ...], list[str]]:
     """Read every :data:`REFERENCE_SPECS` figure from the rates file.
 
     Returns the figures and the warnings they raise.  A **required** figure that is absent
-    raises :class:`takabooks.RatesError` naming every missing key — after the whole file
-    has been read, so one run reports everything that is wrong with it.
+    — or present but ``placeholder = true``, which is the same thing wearing a label —
+    raises :class:`takabooks.RatesError` naming every such key, after the whole file has
+    been read, so one run reports everything that is wrong with it.
+
+    A **placeholder optional** figure does not stop the return: its value is *withheld*
+    (never rendered) and the node is reported ``PLACEHOLDER``.  ``allow_placeholders``
+    (the CLI's ``--allow-placeholder-rates``) lifts both behaviours at once — required
+    placeholders are computed with and optional ones are shown — and every such figure
+    still carries its ``PLACEHOLDER:`` caveat so the output cannot be mistaken for final.
     """
+    reader = as_rate_set(rates, allow_placeholders=True)  # inspect freely, gate below
     figures: list[ReferenceFigure] = []
     warnings: list[str] = []
     missing_required: list[ReferenceSpec] = []
-    file_name = _rates_file_name(rates)
+    unlanded_required: list[ReferenceSpec] = []
+    file_name = _rates_file_name(reader)
 
     for spec in REFERENCE_SPECS:
         needed = spec.required == REQUIRED_ALWAYS or (
             spec.required == REQUIRED_WITH_VDS and vds_present
         )
-        if not rates.has(spec.rates_key):
+        if not reader.has(spec.rates_key):
             figures.append(
                 ReferenceFigure(
                     key=spec.key,
@@ -1162,10 +1391,15 @@ def reference_figures(
                 )
             continue
 
-        table = _node_table(rates, spec.rates_key)
         try:
-            rate = rates.rate(spec.rates_key)
+            rate = reader.rate(spec.rates_key)
         except tb.RatesError as exc:
+            raw = _raw_value(reader, spec.rates_key)
+            if isinstance(raw, float):
+                display, problem, warning = _float_problem(spec.rates_key, raw, file_name)
+            else:
+                display, problem = "unreadable", exc.message
+                warning = f"UNREADABLE: {spec.rates_key} in {file_name}: {exc.message}"
             figures.append(
                 ReferenceFigure(
                     key=spec.key,
@@ -1175,17 +1409,27 @@ def reference_figures(
                     available=True,
                     rates_key=spec.rates_key,
                     required=spec.required,
-                    display="unreadable",
-                    problem=exc.message,
+                    raw_value=None,
+                    display=display,
+                    problem=problem,
                 )
             )
-            warnings.append(f"UNREADABLE: {spec.rates_key} in {file_name}: {exc.message}")
+            warnings.append(warning)
             continue
 
-        placeholder = _is_placeholder(table)
-        display, money, _dec, problem, warning = _read_value(
-            rate, spec.kind, file_name, placeholder=placeholder
-        )
+        placeholder = rate.is_placeholder
+        withheld = placeholder and not allow_placeholders
+        if withheld and needed:
+            # An unlanded required figure is an absent one with a label on it: collect it
+            # and refuse below, alongside the genuinely missing keys.
+            unlanded_required.append(spec)
+
+        if withheld:
+            display, money, problem, warning = "PLACEHOLDER — no figure landed", None, "", ""
+        else:
+            display, money, _dec, problem, warning = _read_value(
+                rate, spec.kind, file_name, placeholder=placeholder
+            )
         if warning:
             warnings.append(warning)
         figures.append(
@@ -1197,7 +1441,7 @@ def reference_figures(
                 available=True,
                 rates_key=spec.rates_key,
                 required=spec.required,
-                raw_value=rate.value,
+                raw_value=None if withheld else rate.value,
                 display=display,
                 verified=rate.is_verified,
                 placeholder=placeholder,
@@ -1206,13 +1450,21 @@ def reference_figures(
                 note=rate.note,
                 money=money,
                 problem=problem,
+                withheld=withheld,
             )
         )
         if placeholder:
+            shown = (
+                f" Its value is withheld from this output; pass {ALLOW_PLACEHOLDERS_FLAG} "
+                "to see it."
+                if withheld
+                else f" It was read anyway because {ALLOW_PLACEHOLDERS_FLAG} was given."
+            )
             warnings.append(
                 f"PLACEHOLDER: {spec.rates_key} ({spec.label}) in {file_name} is schema "
                 "awaiting research (placeholder = true), not a figure. Nothing may be filed "
                 "on it — obtain the real figure from the National Board of Revenue (NBR)."
+                + shown
             )
         elif not rate.is_verified:
             warnings.append(
@@ -1221,44 +1473,97 @@ def reference_figures(
                 "checked with the National Board of Revenue (NBR) before you file."
             )
 
-    if missing_required:
-        count = len(missing_required)
-        listing = "; ".join(
-            f"{spec.rates_key} ({spec.label}) — {spec.why}" for spec in missing_required
-        )
+    if missing_required or unlanded_required:
+        parts: list[str] = []
+        if missing_required:
+            parts.append(
+                "missing: "
+                + "; ".join(
+                    f"{spec.rates_key} ({spec.label}) — {spec.why}"
+                    for spec in missing_required
+                )
+            )
+        if unlanded_required:
+            parts.append(
+                "still a placeholder: "
+                + "; ".join(
+                    f"{spec.rates_key} ({spec.label}) — {spec.why}"
+                    for spec in unlanded_required
+                )
+            )
+        count = len(missing_required) + len(unlanded_required)
         raise tb.RatesError(
-            f"{file_name} is missing {'a figure' if count == 1 else f'{count} figures'} that "
-            f"a {tb.term('vat')} return needs: {listing}. TakaBooks will not assume a value.",
+            f"{file_name} carries no landed value for "
+            f"{'a figure' if count == 1 else f'{count} figures'} that a "
+            f"{tb.term('vat')} return needs — {' · '.join(parts)}. TakaBooks will not "
+            "assume a value.",
             hint="Add each key to the rates TOML as a table with value, source, as_of and "
             "verified (= false with a note if unconfirmed), or pass --rates <path> to a "
-            "file that carries it.",
+            f"file that carries it. {ALLOW_PLACEHOLDERS_FLAG} computes from a placeholder "
+            "and stamps the whole output PLACEHOLDER — it must never be filed.",
         )
     return tuple(figures), warnings
 
 
-def declared_rates(rates: tb.RatesTable) -> tuple[tuple[DeclaredRate, ...], list[str]]:
+def declared_rates(
+    rates: RatesLike, *, allow_placeholders: bool = False
+) -> tuple[tuple[DeclaredRate, ...], list[str]]:
     """Every VAT and VDS rate the rates file declares for its assessment year.
 
     Single nodes come from :data:`VAT_RATE_NODES`; one rate per child table under each of
     :data:`VAT_RATE_SECTIONS` and :data:`VDS_RATE_SECTIONS`.  Warnings are raised only for
     keys :func:`reference_figures` does not already report, so nothing is said twice.
+
+    A declared rate is never used to compute anything — it is the statutory table the
+    journal's own tag rates are checked against — so a placeholder here does not refuse
+    the run.  It is *withheld* instead: ``rate`` stays ``None`` unless
+    ``allow_placeholders`` is set, which keeps an unlanded percentage out of both the
+    printed table and the set of rates a tag may match.
     """
-    file_name = _rates_file_name(rates)
+    reader = as_rate_set(rates, allow_placeholders=True)
+    file_name = _rates_file_name(reader)
     already_reported = {spec.rates_key for spec in REFERENCE_SPECS}
     declared: list[DeclaredRate] = []
     warnings: list[str] = []
 
     def add(scope: str, key: str) -> None:
-        table = _node_table(rates, key)
+        table = _node_table(reader, key)
         if table is None or "value" not in table:
             return
-        rate = rates.rate(key)
-        placeholder = _is_placeholder(table)
-        _display, _money, dec, problem, warning = _read_value(
-            rate, "percent", file_name, placeholder=placeholder
-        )
         label_bn = str(table.get("label_bn", "")).strip()
         label_en = str(table.get("label_en", "")).strip()
+        label = f"{label_bn} / {label_en}".strip(" /") or key
+        try:
+            rate = reader.rate(key)
+        except tb.RatesError as exc:
+            raw = _raw_value(reader, key)
+            if isinstance(raw, float):
+                _display, problem, warning = _float_problem(key, raw, file_name)
+            else:
+                problem = exc.message
+                warning = f"UNREADABLE: {key} in {file_name}: {exc.message}"
+            declared.append(
+                DeclaredRate(
+                    scope=scope,
+                    rates_key=key,
+                    label_bn=label_bn,
+                    label_en=label_en,
+                    rate=None,
+                    placeholder=bool(table.get(rt.PLACEHOLDER_FLAG, False)),
+                    problem=problem,
+                )
+            )
+            if key not in already_reported:
+                warnings.append(warning)
+            return
+        placeholder = rate.is_placeholder
+        withheld = placeholder and not allow_placeholders
+        if withheld:
+            dec, problem, warning = None, "", ""
+        else:
+            _display, _money, dec, problem, warning = _read_value(
+                rate, "percent", file_name, placeholder=placeholder
+            )
         declared.append(
             DeclaredRate(
                 scope=scope,
@@ -1269,17 +1574,22 @@ def declared_rates(rates: tb.RatesTable) -> tuple[tuple[DeclaredRate, ...], list
                 verified=rate.is_verified,
                 placeholder=placeholder,
                 problem=problem,
+                withheld=withheld,
             )
         )
         if key in already_reported:
             return
-        label = f"{label_bn} / {label_en}".strip(" /") or key
         if warning:
             warnings.append(warning)
         if placeholder:
             warnings.append(
                 f"PLACEHOLDER: {key} ({label}) in {file_name} is schema awaiting research "
                 "(placeholder = true), not a declared rate."
+                + (
+                    f" Its percentage is withheld; pass {ALLOW_PLACEHOLDERS_FLAG} to see it."
+                    if withheld
+                    else f" It is shown because {ALLOW_PLACEHOLDERS_FLAG} was given."
+                )
             )
         elif not rate.is_verified:
             warnings.append(
@@ -1291,7 +1601,7 @@ def declared_rates(rates: tb.RatesTable) -> tuple[tuple[DeclaredRate, ...], list
         add("vat", key)
     for scope, sections in (("vat", VAT_RATE_SECTIONS), ("vds", VDS_RATE_SECTIONS)):
         for section_key in sections:
-            table = _node_table(rates, section_key)
+            table = _node_table(reader, section_key)
             if table is None:
                 continue
             for child, node in table.items():
@@ -1343,7 +1653,7 @@ def _tag_rate_warnings(
     return warnings
 
 
-def _return_form(rates: tb.RatesTable, figures: Mapping[str, ReturnFigure]) -> tuple[
+def _return_form(rates: rt.RateSet, figures: Mapping[str, ReturnFigure]) -> tuple[
     tuple[ReturnFormLine, ...], list[str]
 ]:
     """Read an optional NBR form line map from the rates file.
@@ -1381,13 +1691,29 @@ def _return_form(rates: tb.RatesTable, figures: Mapping[str, ReturnFigure]) -> t
 def compute_vat_position(
     ledger: tb.Ledger,
     *,
-    rates: tb.RatesTable,
+    rates: RatesLike,
     since: datetime.date | None = None,
     until: datetime.date | None = None,
     period_label: str = "",
     extra_warnings: Sequence[str] = (),
+    allow_placeholders: bool = False,
 ) -> VatPosition:
-    """Compute the whole VAT position for a period from a loaded, balanced ledger."""
+    """Compute the whole VAT position for a period from a loaded, balanced ledger.
+
+    ``rates`` may be a :class:`takabooks.RatesTable` or a :class:`rates.RateSet`; either
+    way it is read through :class:`rates.RateSet` (see :func:`as_rate_set`).
+
+    ``allow_placeholders`` is the ``--allow-placeholder-rates`` opt-in.  Left False — the
+    default, and the only posture that can produce a fileable figure set — a rates file
+    that declares itself unlanded, or a *required* figure that is still a placeholder,
+    raises :class:`takabooks.RatesError` (exit 8) before any figure is quoted.  This is
+    the same refusal ``tax.py`` makes on the same file.
+    """
+    # The file-level gate runs FIRST, before a single figure is read, so the refusal names
+    # the file rather than surfacing as a confusing failure on whichever key came first.
+    require_landed_rates(rates, allow_placeholders=allow_placeholders)
+    rate_set = as_rate_set(rates, allow_placeholders=True)
+
     chart = _require_chart(ledger)
     config = ledger.config
     if config is None:
@@ -1440,23 +1766,30 @@ def compute_vat_position(
         )
 
     # -- the rates file: every statutory figure, none of it asserted here -------------
-    file_name = _rates_file_name(rates)
+    file_name = _rates_file_name(rate_set)
     rate_caveats: list[str] = []
-    file_placeholder = rates_file_is_placeholder(rates)
+    file_placeholder = rates_file_is_placeholder(rate_set)
     if file_placeholder:
         rate_caveats.append(
             f"PLACEHOLDER RATES FILE: {file_name} declares itself a schema awaiting "
             "verified data ([meta] placeholder = true). Every figure quoted from it is "
-            "unlanded, and nothing computed with it may be filed with the NBR."
+            f"unlanded, and it was read only because {ALLOW_PLACEHOLDERS_FLAG} was given. "
+            "Nothing computed with it may be filed with the NBR."
         )
     references, reference_warnings = reference_figures(
-        rates, vds_present=tb.TAG_VDS in kinds_present
+        rate_set,
+        vds_present=tb.TAG_VDS in kinds_present,
+        allow_placeholders=allow_placeholders,
     )
     rate_caveats.extend(reference_warnings)
-    declared, declared_warnings = declared_rates(rates)
+    declared, declared_warnings = declared_rates(
+        rate_set, allow_placeholders=allow_placeholders
+    )
     rate_caveats.extend(declared_warnings)
     rate_caveats.extend(_tag_rate_warnings(buckets, declared, file_name))
     warnings.extend(rate_caveats)
+
+    audit = rate_set.audit()
 
     position = VatPosition(
         config=config,
@@ -1465,12 +1798,17 @@ def compute_vat_position(
         period_start=since,
         period_end=until,
         period_label=period_label or "every posting in the books",
-        rates_path=rates.source_path,
-        rates_assessment_year=rates.assessment_year,
-        rates_provenance=rates.provenance(),
+        rates_path=rate_set.path,
+        rates_assessment_year=rate_set.assessment_year,
+        rates_provenance=rate_set.provenance(),
         rates_caveats=tuple(rate_caveats),
         rates_file_placeholder=file_placeholder,
-        rates_unverified_in_file=len(rates.unverified_keys()),
+        # "unverified" here keeps its long-standing meaning — every node NOT marked
+        # verified = true, placeholders included — so the count never shrinks when a
+        # figure is downgraded.  The placeholder subset is reported separately.
+        rates_unverified_in_file=audit["unverified_count"] + audit["placeholder_count"],
+        rates_placeholder_in_file=audit["placeholder_count"],
+        allow_placeholders=bool(allow_placeholders),
         buckets=buckets,
         issues=tuple(issues),
         controls=tuple(controls),
@@ -1483,7 +1821,7 @@ def compute_vat_position(
         entry_count=len(period.entries),
         tds_posting_count=sum(1 for p in period if p.tax_tag.is_tds),
     )
-    return_form, form_notes = _return_form(rates, position.figure_map())
+    return_form, form_notes = _return_form(rate_set, position.figure_map())
     notes.extend(form_notes)
 
     if not return_form:
@@ -1660,25 +1998,49 @@ def render_markdown(position: VatPosition) -> str:
     add(f"_{tb.ATTRIBUTION}_")
     add("")
 
-    if position.provisional:
+    withheld_keys = position.placeholder_figures_withheld
+    if position.placeholder_data_used:
         if position.rates_file_placeholder:
             reason = (
-                "The rates file is a placeholder schema awaiting verified data, so every "
-                "statutory figure quoted below is unlanded."
-            )
-        elif position.issues:
-            reason = (
-                "At least one entry does not reconcile, or a figure read from the rates "
-                "file is unverified or missing — see the warnings."
+                "The rates file declares itself a placeholder schema awaiting verified "
+                "data, so every statutory figure quoted below is unlanded."
             )
         else:
+            used = position.placeholder_figures_used
             reason = (
-                "A figure read from the rates file is unverified, a placeholder, or "
-                "missing — see the warnings."
+                f"{len(used)} figure(s) quoted below have no landed value ("
+                + ", ".join(f"`{key}`" for key in used)
+                + f"); they were read only because {ALLOW_PLACEHOLDERS_FLAG} was given."
             )
         add(
-            f"> **PROVISIONAL / অস্থায়ী — NOT FOR FILING.** {reason} Confirm every flagged "
-            "item with the National Board of Revenue (NBR) before this figure set is used."
+            "> **PLACEHOLDER DATA / অস্থায়ী উপাত্ত — NOT FOR FILING.** "
+            f"{reason} A placeholder is not a figure: it is schema awaiting research. "
+            "Obtain each one from the National Board of Revenue (NBR); nothing on this "
+            "page that depends on one may be filed."
+        )
+        add("")
+    elif position.provisional:
+        reasons: list[str] = []
+        if position.issues:
+            reasons.append(
+                f"{len(position.issues)} entr"
+                + ("y does" if len(position.issues) == 1 else "ies do")
+                + " not reconcile"
+            )
+        if withheld_keys:
+            reasons.append(
+                f"{len(withheld_keys)} rate(s) the file declares are still placeholders, "
+                "so their values are withheld and the journal's tagged rates could not be "
+                "checked against them ("
+                + ", ".join(f"`{key}`" for key in withheld_keys)
+                + ")"
+            )
+        reasons.append("see the warnings below")
+        add(
+            "> **PROVISIONAL / অস্থায়ী — NOT FOR FILING.** "
+            + "; ".join(reasons).capitalize()
+            + ". Confirm every flagged item with the National Board of Revenue (NBR) "
+            "before this figure set is used."
         )
         add("")
 
@@ -2046,12 +2408,28 @@ def render_csv(position: VatPosition) -> str:
     row("meta", "entries", detail=str(position.entry_count))
     row("meta", "filing_status", detail=position.filing_status)
     row("meta", "provisional", detail="true" if position.provisional else "false")
+    row("meta", "data_grade", detail=position.data_grade)
+    row(
+        "meta",
+        "placeholder_data_used",
+        detail="true" if position.placeholder_data_used else "false",
+    )
+    row(
+        "meta",
+        "allow_placeholder_rates",
+        detail="true" if position.allow_placeholders else "false",
+    )
     row(
         "meta",
         "rates_file_placeholder",
         detail="true" if position.rates_file_placeholder else "false",
     )
     row("meta", "rates_unverified_keys_in_file", detail=str(position.rates_unverified_in_file))
+    row("meta", "rates_placeholder_keys_in_file", detail=str(position.rates_placeholder_in_file))
+    for key in position.placeholder_figures_used:
+        row("meta", "placeholder_figure_used", detail=key)
+    for key in position.placeholder_figures_withheld:
+        row("meta", "placeholder_figure_withheld", detail=key)
 
     for figure in position.return_figures():
         row("figure", figure.key, figure.label_bn, figure.label_en,
@@ -2190,13 +2568,20 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
         },
         "filing_status": position.filing_status,
         "provisional": position.provisional,
+        "data_grade": position.data_grade,
+        "placeholder_data_used": position.placeholder_data_used,
         "rates": {
             "path": str(position.rates_path) if position.rates_path else None,
             "file": position.rates_path.name if position.rates_path else None,
             "assessment_year": position.rates_assessment_year,
             "provenance": position.rates_provenance,
             "file_placeholder": position.rates_file_placeholder,
+            "allow_placeholder_rates": position.allow_placeholders,
             "unverified_keys_in_file": position.rates_unverified_in_file,
+            "placeholder_keys_in_file": position.rates_placeholder_in_file,
+            "placeholder_figures": list(position.placeholder_figures),
+            "placeholder_figures_used": list(position.placeholder_figures_used),
+            "placeholder_figures_withheld": list(position.placeholder_figures_withheld),
             "caveats": list(position.rates_caveats),
         },
         "counts": {
@@ -2277,8 +2662,10 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
                 "display": f.display,
                 "verified": f.verified,
                 "placeholder": f.placeholder,
+                "withheld": f.withheld,
                 "usable": f.usable,
                 "status": f.status,
+                "grade": f.grade,
                 "source": f.source,
                 "as_of": f.as_of,
                 "note": f.note,
@@ -2295,8 +2682,10 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
                 "rate_percent": rate_text(d.rate) if d.rate is not None else None,
                 "verified": d.verified,
                 "placeholder": d.placeholder,
+                "withheld": d.withheld,
                 "usable": d.usable,
                 "status": d.status,
+                "grade": d.grade,
                 "problem": d.problem,
             }
             for d in position.declared
@@ -2345,6 +2734,15 @@ rates
   placeholder = true nodes as PLACEHOLDER. Any of those stamps the output PROVISIONAL;
   --strict makes them fatal (exit 7).
 
+unlanded data — the same posture tax.py takes, through the same reader
+  A rates file that declares itself a placeholder in [meta], or a REQUIRED figure that
+  is still placeholder = true, exits 8 and names the key. An optional placeholder does
+  not stop the run, but its value is withheld from every output format and the node is
+  reported PLACEHOLDER. {ALLOW_PLACEHOLDERS_FLAG} lifts both: those figures are
+  then read, and the whole output is stamped
+  "{STATUS_PLACEHOLDER}".
+  --strict still refuses such a run (exit 7).
+
 {tb.ATTRIBUTION}
 """
 
@@ -2390,6 +2788,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="permit a rates file whose assessment year differs from config.toml",
     )
     parser.add_argument(
+        ALLOW_PLACEHOLDERS_FLAG,
+        dest="allow_placeholder_rates",
+        action="store_true",
+        help="compute from placeholder (unlanded) rates; the output is stamped "
+        "PLACEHOLDER and must not be filed",
+    )
+    parser.add_argument(
         "--all-caveats",
         action="store_true",
         help="list every unverified figure in the rates file, not only the ones read here",
@@ -2406,18 +2811,26 @@ def run(args: argparse.Namespace, *, stdout: Any = None) -> VatPosition:
     since, until, label = resolve_period(
         period=args.period, since=args.since, until=args.until
     )
+    allow_placeholders = bool(getattr(args, "allow_placeholder_rates", False))
     rates, rate_warnings = load_rates(
         explicit=args.rates,
         config=ledger.config,
         books_dir=ledger.books_dir,
         allow_ay_mismatch=args.allow_ay_mismatch,
+        allow_placeholders=allow_placeholders,
     )
     extra = list(rate_warnings)
     if args.all_caveats:
-        extra.extend(rates.caveats())
+        extra.extend(rates.file_caveats())
 
     position = compute_vat_position(
-        ledger, rates=rates, since=since, until=until, period_label=label, extra_warnings=extra
+        ledger,
+        rates=rates,
+        since=since,
+        until=until,
+        period_label=label,
+        extra_warnings=extra,
+        allow_placeholders=allow_placeholders,
     )
 
     text = {

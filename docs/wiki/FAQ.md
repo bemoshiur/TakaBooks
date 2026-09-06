@@ -46,24 +46,36 @@ Finance Act changes. The wiki documents mechanisms and points at the file. If yo
 figure on a wiki page, it is a bug — open an issue.
 
 **Why is my VAT output stamped PROVISIONAL?**
-Because the rates file it read is, or contains, a placeholder or unverified figure, and the
-engine will not let such a figure look final. The *amounts* from your journal are exact; the
-statutory context is what is flagged. When verified figures land, the stamp goes away.
-[Getting Started](Getting-Started), step 7.
+Because the rates file it read contains a placeholder or unverified figure among the ones it
+read, and the engine will not let such a figure look final. The *amounts* from your journal
+are exact; the statutory context is what is flagged. Read the warnings block — it names every
+key. If none of them touches your supply, the arithmetic still stands, but that judgement is
+yours or your ITP's, not the tool's. [Getting Started](Getting-Started), step 9.
 
-**`tax.py` refuses to run at all. Why?**
-The rates file declares itself a placeholder schema (`[meta] placeholder = true`), so the
-engine refuses to compute a liability from it. `--allow-placeholder-rates` produces a
-PROVISIONAL walkthrough of the method that must never be filed.
+**Does `tax.py` refuse to run?**
+Not against the AY 2026-27 file. It refuses outright (exit 8) only when a rates **file**
+declares itself a schema with `[meta] placeholder = true`, and that file no longer does — real
+figures have been landed. It does still refuse an individual node that is marked
+`placeholder = true`, and it stamps the whole output PROVISIONAL while any figure it used is
+unverified, saying in the banner how many. `--allow-placeholder-rates` opts in to placeholder
+nodes and produces a walkthrough of the method that must never be filed.
+[Updating Tax Rates](Updating-Tax-Rates).
 
 **What does `verified = true` actually promise?**
-That a contributor read that value from the cited primary source on the stated date. Not
+That a contributor read that value from primary text at the cited URL on the stated date. Not
 that it applies to your facts, is still in force today, or survived the latest SRO. Check the
 `as_of` date and the source yourself. [Disclaimer](Disclaimer), section 3.
 
+**And what does `verified = false` mean — is the figure made up?**
+No. It means the figure was landed from a source that is not primary text — typically a
+professional summary — and the node's own `note` says why. It is used, with a caveat, rather
+than refused. A `placeholder` node is the one that is refused. The distinction matters:
+absent beats wrong, but "sourced but not primary" beats absent.
+
 **A figure is wrong. Where do I report it?**
-Publicly, with the rate-correction issue template, giving the dotted key, the assessment
-year, the NBR source URL and the date you read it. A wrong figure is a correctness bug, not a
+Publicly, using the **Tax rule update** issue template
+(`.github/ISSUE_TEMPLATE/tax-rule-update.yml`), giving the dotted key, the assessment year,
+the NBR source URL and the date you read it. A wrong figure is a correctness bug, not a
 security issue. [Contributing](Contributing).
 
 **A new Finance Act passed. What changes?**
@@ -130,7 +142,7 @@ Only for `--period FY…`. TakaBooks never assumes when your income year opens; 
 **Can I run the engine from an LLM?**
 Claude Code and other Agent Skills hosts run `scripts/*.py` directly; only the output enters
 the conversation. Chat-only platforms cannot execute anything: the assistant gives you the
-exact command and asks for the output back. [Getting Started](Getting-Started), step 9.
+exact command and asks for the output back. [Getting Started](Getting-Started), step 11.
 
 **Does the engine phone home?**
 No. No network calls, no telemetry. It reads TOML and reads/appends CSV under `--books`.

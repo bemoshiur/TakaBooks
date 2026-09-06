@@ -35,8 +35,9 @@ The rule that governs this work has no exceptions:
 
 ### The evidence standard
 
-A rate-rule pull request (or a [Rate correction issue](https://github.com/bemoshiur/TakaBooks/issues/new/choose)
-if you would rather not edit TOML) must carry **all** of the following. A reviewer will
+A rate-rule pull request (or a [**Tax rule update / কর বিধি হালনাগাদ**
+issue](https://github.com/bemoshiur/TakaBooks/issues/new?template=tax-rule-update.yml) if you
+would rather not edit TOML) must carry **all** of the following. A reviewer will
 open your source and read the figure themselves before merging; make that easy.
 
 | Required | What it means | Example of what satisfies it |
@@ -327,7 +328,8 @@ into `src/references/`; cite the primary instrument in your own words.
 ## Reporting problems
 
 - **A wrong tax figure** (rate, threshold, deadline, statute reference): open a public
-  [Rate correction issue](https://github.com/bemoshiur/TakaBooks/issues/new/choose) with
+  [**Tax rule update / কর বিধি হালনাগাদ**
+  issue](https://github.com/bemoshiur/TakaBooks/issues/new?template=tax-rule-update.yml) with
   the evidence above. It is handled with the urgency of a security bug — see
   [`SECURITY.md`](SECURITY.md) for why it is deliberately public.
 - **A security vulnerability**: report privately per [`SECURITY.md`](SECURITY.md).
@@ -359,10 +361,15 @@ afternoon looking for one):
 
 - **Social preview image** — repo → Settings → General → Social preview → upload
   `assets/social-preview.png` (1280 × 640 px, under 1 MB). There is no REST, GraphQL or
-  `gh` route for this.
-- **Wiki** — the first wiki page must be created once in the web UI before the
-  `docs/` → Wiki sync can push; `<repo>.wiki.git` does not exist until then. Restrict wiki
-  editing to collaborators, since the sync overwrites manual edits.
+  `gh` route for this. The PNG is committed, so there is nothing to render first; regenerate
+  it from `assets/social-preview.svg` only when the card changes, with the command in
+  [`assets/README.md`](assets/README.md) — GitHub's uploader does not accept SVG.
+- **Wiki** — the first wiki page must be created once in the web UI before
+  [`.github/workflows/wiki-sync.yml`](.github/workflows/wiki-sync.yml) can mirror
+  `docs/wiki/` to it; `<repo>.wiki.git` does not exist until a page has been saved, and no
+  token or Action can create it. The workflow detects this and prints the click path rather
+  than failing with git's "repository not found". Restrict wiki editing to collaborators at
+  the same time, since each sync replaces the wiki's working tree and would wipe manual edits.
 - **Private vulnerability reporting** — repo → Settings → Code security → enable *Private
   vulnerability reporting*, otherwise the private route in `SECURITY.md` is not reachable.
 - **Repository description, homepage and topics** — can be set with `gh repo edit`.

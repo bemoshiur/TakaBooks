@@ -3,7 +3,9 @@
 The visual identity of TakaBooks: a ledger (খতিয়ান / ledger) carrying the Bangladeshi
 taka sign (৳). Every file in this directory is hand-written SVG — no embedded fonts,
 no external images, no scripts — so it renders identically on GitHub, npm, PyPI-style
-package pages, forks, release tarballs and offline previews.
+package pages, forks, release tarballs and offline previews. The one raster file,
+`social-preview.png`, exists only because GitHub's social-preview uploader will not take
+an SVG; it is generated from `social-preview.svg` and never edited directly.
 
 Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
 
@@ -15,7 +17,7 @@ Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
 | `logo.svg` | 524 × 128 | Horizontal lockup: mark + "TakaBooks" wordmark, for **light** backgrounds. | README header, docs, slides on white. |
 | `logo-dark.svg` | 524 × 128 | The same lockup recoloured for **dark** backgrounds. | GitHub dark theme, dark slides. |
 | `social-preview.svg` | 1280 × 640 | Source of the GitHub social card. | Edit this, then render the PNG (below). |
-| `social-preview.png` | 1280 × 640 | Rendered card, uploaded by hand to GitHub. | See *Social preview* below. |
+| `social-preview.png` | 1280 × 640 | Rendered card — **committed**, because GitHub's social-preview uploader accepts PNG/JPG/GIF and not SVG. | See *Social preview* below. |
 
 The mark and the wordmark are pure vector paths drawn on a 100-unit grid: the ৳ is a
 round-capped monoline stroke, the wordmark is a geometric monoline sans drawn by hand.
@@ -132,6 +134,19 @@ Check the result before committing it:
 python3 -c "import struct,sys;b=open('assets/social-preview.png','rb').read();print(struct.unpack('>II',b[16:24]),len(b),'bytes')"
 # expect: (1280, 640) and well under 1000000 bytes
 ```
+
+The committed `social-preview.png` was produced by exactly the macOS command above:
+1280 × 640, 8-bit RGB, no interlacing, 84,107 bytes — about 8 % of GitHub's 1 MB ceiling.
+Chrome writes only `IHDR`, `IDAT` and `IEND`, with no timestamp or colour-profile chunk,
+so re-rendering an unchanged SVG on the same machine reproduces the file byte for byte.
+Across machines the bytes will differ — the Bangla lines come from whichever font in the
+stack is installed — so re-render only when the SVG actually changes, and eyeball the
+result rather than diffing it.
+
+**`qlmanage -t` is not a substitute.** It is present on every Mac and it does render the
+card, but it fits the drawing into a *square* thumbnail: `-s 1280` yields 1280 × 1280 with
+the card letterboxed inside. GitHub would accept the file and crop it badly. Use Chrome,
+`rsvg-convert` or Inkscape, all of which honour the SVG's own 2 : 1 viewBox.
 
 Commit the PNG next to the SVG so it is versioned, reviewable, and re-uploadable
 after any accidental reset.

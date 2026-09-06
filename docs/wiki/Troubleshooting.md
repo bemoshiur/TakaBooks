@@ -84,11 +84,28 @@ writes every key with a comment listing its allowed values.
 
 ## Chart of accounts
 
-**`Account code '9999' is not in accounts.toml.`** (exit 3)
-The journal row or `--debit/--credit` names a code the chart does not have. `post.py`
-suggests near matches (`Did you mean 2310 VAT Output Payable …?`). Use an existing code or
-add the account — see [Chart of Accounts](Chart-of-Accounts). Never post to an account you
-cannot name.
+**`account code '<code>' is not in accounts.toml.`** (exit 3)
+The journal row or `--debit/--credit` names a code the chart does not have. `post.py` names
+the offending argument and suggests near matches from *your* chart:
+
+```
+error: --credit #3: account code '2310' is not in accounts.toml.
+  hint: Did you mean 2300 Loan from Directors / Proprietor (পরিচালক/মালিকের নিকট হইতে ঋণ), 2230 Lease / Hire-purchase Liability (ইজারা ও কিস্তি-ক্রয় দায়), 2220 Long-term Loan (দীর্ঘমেয়াদি ঋণ)? Add the account to accounts.toml or use an existing code; TakaBooks never posts to an account it cannot name.
+```
+
+Use an existing code or add the account — see [Chart of Accounts](Chart-of-Accounts). Never
+post to an account you cannot name.
+
+⚠️ **If you hit this on `2310`, `1310`, `2320`, `2330` or another `2xxx`/`1xxx` tax code**, you
+are following a document written against the 42-account fallback chart. The chart that ships
+puts every tax account in the `9xxx` block — output VAT is `9200`, input VAT `9100`, TDS
+payable `9320`. Read the `accounts.toml` in your own `books/` directory to see which chart you
+have.
+
+**`account <code> <name> is tagged 'inactive' in accounts.toml; posting to a retired account is refused.`** (exit 3)
+The account exists but the chart retires it with one of the tags `inactive`, `archived`,
+`closed`, `disabled` or `retired`. This is a **refusal, not a warning** — nothing is written.
+Post to its replacement, or drop the tag from `accounts.toml` if the account is in use again.
 
 **`Account <code> (<name>) is type 'asset' so its normal balance must be 'debit', not 'credit'.`** (exit 3)
 `type` and `normal` disagree. Assets and expenses are debit-normal; liabilities, equity and
@@ -200,10 +217,15 @@ An amount was entered in paisa instead of taka. The journal is in taka with two 
 ## VAT
 
 **`Filing status: PROVISIONAL / অস্থায়ী — not for filing`**
-The rates file read is, or contains, a placeholder or unverified figure. Your journal
-amounts are exact; the statutory context is what is flagged, item by item under
-*Warnings*. When verified figures land in the rates file the stamp clears.
-[Updating Tax Rates](Updating-Tax-Rates).
+At least one figure among those the run read is a placeholder or unverified. Your journal
+amounts are exact; the statutory context is what is flagged, item by item under *Warnings*.
+
+Expect to see this on the AY 2026-27 file even for a plain standard-rated sale: `vat.py`
+reads a wide set of reference figures, and several Third Schedule reduced-rate nodes are still
+placeholders because no SRO has been traced for them. **One flagged key anywhere stamps the
+whole output.** So read the warnings block rather than the stamp: if every key it names is
+irrelevant to your supply, the figures still stand — but that is a judgement for you or your
+ITP. [Updating Tax Rates](Updating-Tax-Rates).
 
 **`--strict` exits 7.**
 That is what `--strict` is for: any PLACEHOLDER, UNVERIFIED, missing or non-reconciling
@@ -229,9 +251,14 @@ exists for deliberate comparisons.
 ## Income tax
 
 **`rates-AY<year>.toml is a schema awaiting verified data — every figure in it is a placeholder.`** (exit 8)
-The file declares `[meta] placeholder = true`. Land verified figures (see
-[Updating Tax Rates](Updating-Tax-Rates)), or pass `--allow-placeholder-rates` for an
-explicitly PROVISIONAL walkthrough that must never be filed.
+The file declares `[meta] placeholder = true`, so it will not open at all. Land verified
+figures (see [Updating Tax Rates](Updating-Tax-Rates)), or pass `--allow-placeholder-rates`
+for an explicitly PROVISIONAL walkthrough that must never be filed.
+
+You should **not** see this against `rates-AY2026-27.toml`: real figures have been landed, so
+that file declares `placeholder = false` and `tax.py` computes against it. If you do see it,
+you are reading a different — probably older or hand-copied — rates file. Check the
+`Rates source:` line the output prints, and `rates.py --list`.
 
 **`<key> is a placeholder awaiting verified data.`** (exit 8)
 One node, same story, same two options.

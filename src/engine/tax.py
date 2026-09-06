@@ -24,8 +24,41 @@ arithmetic a person does with a calculator.
 
 Output is Markdown (default) or ``--json``.  Both state the assessment year, print which
 rates file was used, list every rate that touched the answer with its verification state,
-and end with the not-professional-advice disclaimer.  If any figure used is unverified or a
-placeholder, the result is stamped **PROVISIONAL / অস্থায়ী**.
+and end with the not-professional-advice disclaimer.
+
+Posture towards unlanded data — identical to :mod:`vat`
+------------------------------------------------------
+Both TakaBooks tax engines take the *same* three-step position, through the same reader
+(:class:`rates.RateSet`), with the same flags and the same exit codes.
+``tests/test_tax.py::TestEnginePostureSymmetry`` asserts they stay in step, because two
+engines that disagree about whether a figure has landed are two answers to one question.
+
+=========================  ================================  ==============================
+state of a figure          default posture                   with ``--allow-placeholder-rates``
+=========================  ================================  ==============================
+absent                     refuse, exit 8, key named         refuse, exit 8, key named
+``placeholder = true``     **refuse** the moment the         computed, and the output is
+                           computation asks for it           stamped ``PLACEHOLDER``
+                           (exit 8, key named)
+``verified = false``       computed, ``UNVERIFIED`` caveat,  same
+                           output stamped ``PROVISIONAL``
+``verified = true``        computed, no caveat               same
+=========================  ================================  ==============================
+
+The gate is **per figure, not per file**: a mixed rates file — some nodes landed and
+verified, some landed but resting on a secondary source, some still placeholders —
+computes normally right up to the moment the working needs an unlanded node, and refuses
+then, naming it.  So ``--gross-receipts`` can be refused while the same file happily
+produces a slab-and-rebate computation.
+
+The one rule both engines apply is *refuse when the answer depends on it; withhold the
+value when it does not*.  ``tax.py`` only ever reads a figure the working actually needs,
+so here that rule always comes out as a refusal.  ``vat.py`` also quotes reference figures
+the return preparer merely reads, and for those the same rule comes out as withholding the
+value while still naming the key and its state.  One rule, two domains.
+
+``--strict`` refuses anything short of fully verified (exit 7), which is how a caller asks
+for "final or nothing".
 
 TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
 """
@@ -63,6 +96,16 @@ __all__ = [
     "MINIMUM_TAX_POLICIES",
     "SURCHARGE_BASES",
     "WIDTH_SOURCE_CATEGORY_THRESHOLD",
+    "ALLOW_PLACEHOLDERS_FLAG",
+    "PLACEHOLDER_STATUS_TEXT",
+    "GRADE_FINAL",
+    "GRADE_UNVERIFIED",
+    "GRADE_PLACEHOLDER",
+    "STATUS_PLACEHOLDER",
+    "STATUS_PROVISIONAL",
+    "STATUS_VERIFIED",
+    "rates_file_is_placeholder",
+    "require_landed_rates",
     "TaxInputs",
     "SlabLine",
     "RebateWorking",
@@ -113,12 +156,91 @@ REBATE_FORMULAS: tuple[str, ...] = ("min_of_three_caps",)
 MINIMUM_TAX_POLICIES: tuple[str, ...] = ("always", "taxable_income_above_threshold", "never")
 
 #: Values the ``surcharge.base`` policy switch may take.
-SURCHARGE_BASES: tuple[str, ...] = ("tax_after_rebate", "tax_after_minimum")
+SURCHARGE_BASES: tuple[str, ...] = ("tax_before_rebate", "tax_after_rebate", "tax_after_minimum")
 
 #: The only ``width_source`` a slab may declare: its width is the category threshold.
 WIDTH_SOURCE_CATEGORY_THRESHOLD = "category_threshold"
 
 _LANGUAGES = ("en", "bn", "bn-en")
+
+
+# --------------------------------------------------------------------------------------
+# Verification posture — the vocabulary tax.py and vat.py share
+#
+# These strings and grades are duplicated verbatim in vat.py so that the two engines stamp
+# the same words on the same situation.  They are constants, not figures, so duplicating
+# them asserts nothing about Bangladeshi law; the *decisions* that use them all come from
+# one reader, rates.RateSet.  Keep the twins in step —
+# tests/test_tax.py::TestEnginePostureSymmetry fails if they drift apart.
+# --------------------------------------------------------------------------------------
+
+#: The opt-in every TakaBooks calculator uses to compute from unlanded data.
+ALLOW_PLACEHOLDERS_FLAG = "--allow-placeholder-rates"
+
+#: How far the data behind an answer can be trusted.  Worst grade of any figure wins.
+GRADE_FINAL = "final"
+GRADE_UNVERIFIED = "unverified"
+GRADE_PLACEHOLDER = "placeholder"
+
+#: ``[meta] status`` text that declares a file unlanded even without ``placeholder = true``.
+PLACEHOLDER_STATUS_TEXT = "placeholder"
+
+#: Filing status stamped on every output format.
+STATUS_PLACEHOLDER = (
+    "PLACEHOLDER / অস্থায়ী — computed from unlanded data, NOT FOR FILING"
+)
+STATUS_PROVISIONAL = "PROVISIONAL / অস্থায়ী — not for filing"
+STATUS_VERIFIED = "every rate used is verified; confirm with an ITP/CA before filing"
+
+
+def rates_file_is_placeholder(rates: rt.RateSet) -> bool:
+    """True when ``[meta]`` declares the whole file to be unlanded schema.
+
+    The contract flag is ``[meta] placeholder``, and it is read by exactly one piece of
+    code — :attr:`rates.RateSet.file_is_placeholder`.  ``[meta] status = "placeholder"``
+    is honoured as well, as a belt-and-braces for a file that writes the prose key and
+    forgets the flag; that is a *widening*, never a second opinion, so the two can never
+    disagree about a file that sets the flag.
+
+    ``vat.py`` carries the identical twin of this function.  The single home for it would
+    be ``rates.py``, which neither engine owns;
+    ``tests/test_tax.py::TestEnginePostureSymmetry`` asserts the twins agree over a matrix
+    of ``[meta]`` shapes so they cannot drift.
+    """
+    if rates.file_is_placeholder:
+        return True
+    return str(rates.meta.get("status", "")).strip().lower() == PLACEHOLDER_STATUS_TEXT
+
+
+def require_landed_rates(
+    rates: rt.RateSet, *, allow_placeholders: bool | None = None
+) -> None:
+    """Refuse a rates file that declares itself unlanded, unless the caller opted in.
+
+    :meth:`rates.RateSet.require_usable` widened by the ``[meta] status`` check above and
+    worded the same way, so ``tax.py`` and ``vat.py`` refuse the same file with the same
+    exit code (8) and offer the same remedy.  ``vat.require_landed_rates`` has this exact
+    signature and behaviour, and ``tests/test_vat.py::TestEnginePostureSymmetry`` calls
+    both over one matrix.
+
+    ``allow_placeholders`` left at ``None`` reads the posture off the ``RateSet`` itself,
+    so the opt-in travels from the command line to the last figure read on one object
+    rather than being passed hand to hand.
+    """
+    if allow_placeholders is None:
+        allow_placeholders = bool(getattr(rates, "allow_placeholders", False))
+    if not allow_placeholders:
+        rates.require_usable()
+    if allow_placeholders or not rates_file_is_placeholder(rates):
+        return
+    raise tb.RatesError(
+        f"{rates.filename} is a schema awaiting verified data — every figure in it is a "
+        "placeholder.",
+        hint="No Bangladeshi rate has been landed for this assessment year yet. Fill the "
+        "file in (its header documents the procedure), or pass "
+        f"{ALLOW_PLACEHOLDERS_FLAG} to compute a clearly-marked PROVISIONAL result that "
+        "must never be filed.",
+    )
 
 
 # --------------------------------------------------------------------------------------
@@ -298,7 +420,53 @@ class TaxComputation:
     warnings: tuple[str, ...] = ()
     business_name: str = ""
     tin: str = ""
+    rates_file_placeholder: bool = False
+    allow_placeholders: bool = False
     extra: Mapping[str, Any] = field(default_factory=dict, repr=False, compare=False)
+
+    # -- how far this answer can be trusted ----------------------------------------------
+
+    @property
+    def unverified_used(self) -> tuple[rt.RateEntry, ...]:
+        """Every figure the working touched that is not ``verified = true``."""
+        return tuple(e for e in self.rates_used if not e.is_verified)
+
+    @property
+    def placeholders_used(self) -> tuple[rt.RateEntry, ...]:
+        """Every *unlanded* figure the working touched — the worst kind of caveat."""
+        return tuple(e for e in self.rates_used if e.is_placeholder)
+
+    @property
+    def placeholder_figures(self) -> tuple[str, ...]:
+        """Dotted keys of the unlanded figures behind this answer, in key order."""
+        return tuple(sorted({e.key for e in self.placeholders_used}))
+
+    @property
+    def placeholder_data_used(self) -> bool:
+        return self.rates_file_placeholder or bool(self.placeholders_used)
+
+    @property
+    def data_grade(self) -> str:
+        """The worst verification grade behind this answer (see :data:`GRADE_FINAL`)."""
+        if self.placeholder_data_used:
+            return GRADE_PLACEHOLDER
+        if self.provisional:
+            return GRADE_UNVERIFIED
+        return GRADE_FINAL
+
+    @property
+    def filing_status(self) -> str:
+        if self.placeholder_data_used:
+            return STATUS_PLACEHOLDER
+        return STATUS_PROVISIONAL if self.provisional else STATUS_VERIFIED
+
+    def blocking_problems(self) -> tuple[str, ...]:
+        """Everything ``--strict`` refuses to produce a filing-ready computation over.
+
+        The twin of :meth:`vat.VatPosition.blocking_problems`: the caveats that name an
+        unverified or unlanded figure, plus any warning raised about the run itself.
+        """
+        return tuple(list(self.caveats) + list(self.warnings))
 
     @property
     def gross_tax(self) -> tb.Money:
@@ -708,6 +876,7 @@ def compute_surcharge(
     rates: rt.RateSet,
     *,
     net_wealth: tb.Money | None,
+    tax_before_rebate: tb.Money,
     tax_after_rebate: tb.Money,
     tax_after_minimum: tb.Money,
 ) -> SurchargeWorking:
@@ -725,7 +894,11 @@ def compute_surcharge(
             break
 
     base = rates.choice(KEY_SURCHARGE_BASE, SURCHARGE_BASES)
-    base_amount = tax_after_rebate if base == "tax_after_rebate" else tax_after_minimum
+    base_amount = {
+        "tax_before_rebate": tax_before_rebate,
+        "tax_after_rebate": tax_after_rebate,
+        "tax_after_minimum": tax_after_minimum,
+    }[base]
     computed = base_amount.percent(chosen.rate)
     minimum: tb.Money | None = None
     surcharge = computed
@@ -763,10 +936,12 @@ def compute_income_tax(
 ) -> TaxComputation:
     """Run every step against ``rates`` and return the full working.
 
-    ``rates`` is consulted for every figure; if it is a placeholder schema and the caller
-    did not opt in (``allow_placeholders``), this raises before computing anything.
+    ``rates`` is consulted for every figure.  If the file declares itself unlanded and the
+    caller did not opt in (``RateSet.allow_placeholders``), this raises before computing
+    anything; and any *individual* node marked ``placeholder = true`` raises the moment
+    the working asks for it, naming that key.  Per figure, not per file.
     """
-    rates.require_usable()
+    require_landed_rates(rates)
     assessment_year = rates.require_assessment_year()
 
     threshold, threshold_entry = category_threshold(rates, inputs.category)
@@ -785,6 +960,7 @@ def compute_income_tax(
     surcharge = compute_surcharge(
         rates,
         net_wealth=inputs.net_wealth,
+        tax_before_rebate=gross_tax,
         tax_after_rebate=rebate.tax_after_rebate,
         tax_after_minimum=minimum.tax_after,
     )
@@ -801,12 +977,14 @@ def compute_income_tax(
         rebate=rebate,
         minimum_tax=minimum,
         surcharge=surcharge,
-        provisional=rates.is_provisional,
+        provisional=rates.is_provisional or rates_file_is_placeholder(rates),
         caveats=tuple(rates.caveats()),
         rates_used=rates.used(),
         warnings=tuple(warnings),
         business_name=config.display_name if config and config.business_name else "",
         tin=config.tin if config else "",
+        rates_file_placeholder=rates_file_is_placeholder(rates),
+        allow_placeholders=bool(rates.allow_placeholders),
     )
 
 
@@ -856,13 +1034,40 @@ def render_markdown(
         lines.append(f"Taxpayer: {result.business_name}{tin}")
     lines.append("")
 
-    if result.provisional:
-        unverified = [e for e in result.rates_used if not e.is_verified]
+    lines.append(f"**Filing status:** {result.filing_status}")
+    lines.append("")
+
+    if result.placeholder_data_used:
+        keys = result.placeholder_figures
+        if result.rates_file_placeholder:
+            what = (
+                "The rates file declares itself a placeholder schema awaiting verified "
+                "data, so every figure below is unlanded."
+            )
+        else:
+            plural = "figure" if len(keys) == 1 else "figures"
+            verb = "has" if len(keys) == 1 else "have"
+            what = (
+                f"{len(keys)} of the {len(result.rates_used)} {plural} this working used "
+                f"{verb} no landed value: "
+                + ", ".join(f"`{key}`" for key in keys)
+                + "."
+            )
+        lines += [
+            "> **PLACEHOLDER DATA / অস্থায়ী উপাত্ত — NOT FOR FILING.**  "
+            f"{what} A placeholder is not a figure — it is schema awaiting research — and "
+            f"it was read only because {ALLOW_PLACEHOLDERS_FLAG} was given. What follows "
+            "is a walkthrough of the method, not a tax liability. Obtain each figure from "
+            "the National Board of Revenue (NBR). See *Caveats* at the end.",
+            "",
+        ]
+    elif result.provisional:
+        unverified = result.unverified_used
         lines += [
             "> **PROVISIONAL / অস্থায়ী — NOT FOR FILING.**  "
-            f"{len(unverified)} of the {len(result.rates_used)} rates used below are "
-            "unverified or placeholder figures. The result is a walkthrough of the method, "
-            "not a tax liability. See *Caveats* at the end.",
+            f"{len(unverified)} of the {len(result.rates_used)} rates used below are not "
+            "confirmed against a primary NBR source. The arithmetic is right; the figures "
+            "it rests on are not yet final. See *Caveats* at the end.",
             "",
         ]
     for warning in result.warnings:
@@ -1012,7 +1217,11 @@ def render_markdown(
                      "surcharge; it is **not** assumed to be zero.")
     else:
         band_from = "zero" if sc.wealth_above is None else f"above {fmt(sc.wealth_above)}"
-        base_text = "tax after rebate" if sc.base == "tax_after_rebate" else "tax after minimum tax"
+        base_text = {
+            "tax_before_rebate": "tax on taxable income, before the investment rebate",
+            "tax_after_rebate": "tax after rebate",
+            "tax_after_minimum": "tax after minimum tax",
+        }.get(sc.base, sc.base)
         sc_rows = [
             ["Net wealth", fmt(sc.net_wealth)],
             ["Band", f"{sc.band_order} — {sc.band_label} (net wealth {band_from}) at {_pct(sc.rate)}"],
@@ -1116,6 +1325,12 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
         "rates_source": result.rates_source,
         "rates_file": result.rates_path,
         "provisional": result.provisional,
+        "filing_status": result.filing_status,
+        "data_grade": result.data_grade,
+        "placeholder_data_used": result.placeholder_data_used,
+        "rates_file_placeholder": result.rates_file_placeholder,
+        "allow_placeholder_rates": result.allow_placeholders,
+        "placeholder_figures_used": list(result.placeholder_figures),
         "currency": tb.CURRENCY_CODE,
         "amounts": "taka (BDT) as decimal strings; percentages as decimal strings",
         "taxpayer": {"name": result.business_name, "tin": result.tin},
@@ -1211,6 +1426,7 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
         "rates_used": [_entry_dict(e) for e in result.rates_used],
         "caveats": list(result.caveats),
         "warnings": list(result.warnings),
+        "blocking_problems": list(result.blocking_problems()),
         "disclaimer": {"en": tb.DISCLAIMER_EN, "bn": tb.DISCLAIMER_BN},
         "attribution": tb.ATTRIBUTION,
     }
@@ -1308,9 +1524,13 @@ def build_parser() -> "tb.argparse.ArgumentParser":  # type: ignore[name-defined
                        help="use this rates TOML directly")
     which.add_argument("--data-dir", metavar="DIR", default=None,
                        help="directory holding rates-AY<year>.toml (default: src/data)")
-    which.add_argument("--allow-placeholder-rates", action="store_true",
-                       help="compute from a placeholder rates file; the output is stamped "
-                            "PROVISIONAL and must not be filed")
+    which.add_argument(ALLOW_PLACEHOLDERS_FLAG, dest="allow_placeholder_rates",
+                       action="store_true",
+                       help="compute from placeholder (unlanded) rates; the output is "
+                            "stamped PLACEHOLDER and must not be filed")
+    which.add_argument("--strict", action="store_true",
+                       help="exit non-zero if any figure used is unverified, a placeholder, "
+                            "or missing (the same posture as vat.py --strict)")
     out = parser.add_argument_group("output")
     out.add_argument("--language", choices=_LANGUAGES, default=None,
                      help="add the Bangla disclaimer (bn, bn-en); default: config.toml locale")
@@ -1387,6 +1607,20 @@ def main(argv: "Sequence[str] | None" = None) -> int:
         else:
             language = args.language or (config.language if config else "en")
             sys.stdout.write(render_markdown(result, language=language, config=config))
+
+        # --strict runs AFTER the output so the user still sees the working they asked
+        # for, then the refusal — the same order vat.py --strict uses.
+        if args.strict:
+            problems = result.blocking_problems()
+            if problems:
+                raise tb.ValidationError(
+                    f"--strict: this {tb.term('income_tax')} computation is not ready to "
+                    f"file — {len(problems)} problem(s) must be resolved first:\n  - "
+                    + "\n  - ".join(problems),
+                    problems=problems,
+                    hint="Confirm each unverified figure with the NBR and land every "
+                    "placeholder in the rates TOML with its source URL.",
+                )
         return 0
 
 

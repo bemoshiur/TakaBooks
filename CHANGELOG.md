@@ -125,6 +125,13 @@ specification of 2026-09-05 (`docs/superpowers/specs/2026-09-05-takabooks-design
   marked automatically).
 - `.github/workflows/publish-packages.yml` — publishes the npm installer to GitHub Packages
   on the same tag push.
+- `.github/workflows/wiki-sync.yml` — on a push to `main` touching `docs/wiki/**`, mirrors
+  `docs/wiki/` into the repository wiki, deleting before copying so a page removed from the
+  source disappears from the wiki. It refuses to run against a source tree that is missing,
+  empty, without `Home.md`, or not flat, rather than emptying the live wiki. The wiki must be
+  initialised once through the web UI first — `<repo>.wiki.git` does not exist until a page
+  has been saved there, and no token or Action can create it — so the workflow probes for the
+  repository and prints that click path instead of git's "not found".
 
 **Tests — `tests/`, `unittest`, standard library only**
 
@@ -143,6 +150,11 @@ specification of 2026-09-05 (`docs/superpowers/specs/2026-09-05-takabooks-design
   `CITATION.cff`, this changelog, MIT `LICENSE`.
 - `docs/research/` — provenance for the AY 2026-27 research pass, including the honest
   list of what could not be confirmed from primary text.
+- `assets/` — the hand-written SVG identity (`icon.svg`, `logo.svg`, `logo-dark.svg`,
+  `social-preview.svg`) and `social-preview.png`, the 1280 × 640 raster of the card. The PNG
+  is committed because GitHub's social-preview uploader accepts PNG/JPG/GIF and not SVG, and
+  because no API can set a social preview — it is uploaded by hand, once. `assets/README.md`
+  carries the palette with its contrast ratios, the render command, and that click path.
 
 ### Known limitations
 
@@ -169,7 +181,7 @@ specification of 2026-09-05 (`docs/superpowers/specs/2026-09-05-takabooks-design
   opt-in, and then every line of output says so.
 - No script opens a network connection or writes outside the `--books` / `--dest` directory
   it was given; there is no telemetry.
-- All three workflows run under a top-level `permissions: {}` and opt in per job; release
+- All four workflows run under a top-level `permissions: {}` and opt in per job; release
   assets ship with `SHA256SUMS.txt`.
 
 [Unreleased]: https://github.com/bemoshiur/TakaBooks/compare/v1.0.0...HEAD

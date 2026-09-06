@@ -30,6 +30,8 @@ import contextlib
 import datetime
 import io
 import json
+import os
+import subprocess
 import sys
 import tempfile
 import tokenize
@@ -42,7 +44,9 @@ ENGINE_DIR = REPO_ROOT / "src" / "engine"
 if str(ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ENGINE_DIR))
 
+import rates as rt  # noqa: E402
 import takabooks as tb  # noqa: E402
+import tax  # noqa: E402  (posture symmetry is asserted against the other engine)
 import vat  # noqa: E402
 
 M = tb.Money
@@ -183,19 +187,26 @@ def rates_toml(
     *,
     verified: bool = True,
     placeholder: bool = False,
+    placeholder_keys: tuple[str, ...] = (),
+    unverified_keys: tuple[str, ...] = (),
     file_placeholder: bool = False,
     assessment_year: str | None = "2026-27",
     standard: str = '"10"',
     omit: tuple[str, ...] = (),
     extra: str = "",
 ) -> str:
-    """A rates file whose every figure is a labelled FIXTURE, never a real BD figure."""
+    """A rates file whose every figure is a labelled FIXTURE, never a real BD figure.
+
+    ``placeholder_keys`` / ``unverified_keys`` mark *individual* nodes, which is how the
+    MIXED case is built: a file where some figures have landed and some have not.
+    """
 
     def node(key: str, value: str, unit: str, label_en: str, label_bn: str) -> str:
         if key in omit:
             return ""
-        flags = f"verified = {'true' if verified else 'false'}\n"
-        if placeholder:
+        is_verified = verified and key not in unverified_keys and key not in placeholder_keys
+        flags = f"verified = {'true' if is_verified else 'false'}\n"
+        if placeholder or key in placeholder_keys:
             flags += "placeholder = true\n"
         return (
             f"[{key}]\n"
@@ -308,14 +319,22 @@ class VatFixture(unittest.TestCase):
         period: str | None = "2026-07",
         accounts: str = ACCOUNTS_TOML,
         config: str | None = None,
+        allow_placeholders: bool = False,
     ) -> vat.VatPosition:
         books = self.write_books(journals, accounts=accounts, config=config)
         rates_path = self.write_rates(rates)
         ledger = tb.Ledger.load(books)
+        # Deliberately still a takabooks.RatesTable: compute_vat_position must keep
+        # accepting the parser object and adapt it onto the one reader itself.
         table = tb.RatesTable.from_toml_path(rates_path)
         since, until, label = vat.resolve_period(period=period)
         return vat.compute_vat_position(
-            ledger, rates=table, since=since, until=until, period_label=label
+            ledger,
+            rates=table,
+            since=since,
+            until=until,
+            period_label=label,
+            allow_placeholders=allow_placeholders,
         )
 
     def cli(self, *argv: str) -> tuple[int, str, str]:
@@ -555,13 +574,54 @@ class TestReferenceFigures(VatFixture):
         self.assertEqual(len([w for w in warnings if w.startswith("UNVERIFIED")]), len(figures))
         self.assertTrue(all("NBR" in w for w in warnings))
 
+    def test_required_placeholder_is_refused_like_a_missing_key(self):
+        """An unlanded required figure is an absent one wearing a label (exit 8)."""
+        table = self.table(rates_toml(verified=False, placeholder=True))
+        with self.assertRaises(tb.RatesError) as ctx:
+            vat.reference_figures(table)
+        self.assertEqual(ctx.exception.exit_code, 8)
+        self.assertIn("vat.rates.standard", str(ctx.exception))
+        self.assertIn("deadlines.vat_return_monthly", str(ctx.exception))
+        self.assertIn("still a placeholder", str(ctx.exception))
+        self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
+
     def test_placeholder_figure_is_flagged_and_unusable(self):
         figures, warnings = vat.reference_figures(
-            self.table(rates_toml(verified=False, placeholder=True))
+            self.table(rates_toml(verified=False, placeholder=True)),
+            allow_placeholders=True,
         )
         self.assertTrue(all(f.status == "PLACEHOLDER" for f in figures))
+        self.assertTrue(all(f.grade == vat.GRADE_PLACEHOLDER for f in figures))
         self.assertFalse(any(f.usable for f in figures))
         self.assertTrue(all(w.startswith("PLACEHOLDER") for w in warnings), warnings)
+
+    def test_optional_placeholder_withholds_its_value_but_does_not_refuse(self):
+        """The MIXED case: required figures landed, one optional still a placeholder."""
+        text = rates_toml(placeholder_keys=("vat.thresholds.registration",))
+        figures, warnings = vat.reference_figures(self.table(text))
+        by_key = {f.key: f for f in figures}
+        held = by_key["registration_threshold"]
+        self.assertTrue(held.placeholder)
+        self.assertTrue(held.withheld)
+        self.assertIsNone(held.raw_value)          # the unlanded number never surfaces
+        self.assertIsNone(held.money)
+        self.assertNotIn("1234567", held.display)
+        self.assertEqual(held.status, "PLACEHOLDER")
+        self.assertEqual(held.grade, vat.GRADE_PLACEHOLDER)
+        self.assertFalse(held.usable)
+        # Everything else in the same file is untouched and still fully usable.
+        self.assertEqual(by_key["standard_rate"].display, "10%")
+        self.assertTrue(by_key["standard_rate"].usable)
+        self.assertEqual(by_key["standard_rate"].grade, vat.GRADE_FINAL)
+        self.assertTrue(any("vat.thresholds.registration" in w for w in warnings))
+        self.assertTrue(any("withheld" in w for w in warnings))
+
+        # With the opt-in, the same node's value is shown — and still marked PLACEHOLDER.
+        figures, _ = vat.reference_figures(self.table(text), allow_placeholders=True)
+        shown = {f.key: f for f in figures}["registration_threshold"]
+        self.assertFalse(shown.withheld)
+        self.assertEqual(shown.money, M.from_str("1234567"))
+        self.assertEqual(shown.status, "PLACEHOLDER")
 
     def test_toml_float_is_refused_not_used(self):
         figures, warnings = vat.reference_figures(self.table(rates_toml(standard="7.5")))
@@ -608,13 +668,38 @@ class TestDeclaredRates(VatFixture):
         self.assertTrue(all(d.usable for d in declared))
 
     def test_placeholders_are_unusable_and_only_new_keys_warn(self):
-        declared, warnings = vat.declared_rates(self.table(rates_toml(verified=False, placeholder=True)))
+        declared, warnings = vat.declared_rates(
+            self.table(rates_toml(verified=False, placeholder=True)),
+            allow_placeholders=True,
+        )
         self.assertFalse(any(d.usable for d in declared))
         keys_warned = {w.split(":")[1].split("(")[0].strip() for w in warnings}
         # standard / zero_rated are reported by reference_figures, not again here
         self.assertNotIn("vat.rates.standard", keys_warned)
         self.assertIn("vat.rates.reduced.fixture_supply", keys_warned)
         self.assertIn("vds.services.fixture_service", keys_warned)
+
+    def test_placeholder_rate_is_withheld_by_default_and_never_matches_a_tag(self):
+        """A rate nobody landed cannot silently bless a rate written in the journal."""
+        text = rates_toml(placeholder_keys=("vat.rates.reduced.fixture_supply",))
+        declared, warnings = vat.declared_rates(self.table(text))
+        held = {d.rates_key: d for d in declared}["vat.rates.reduced.fixture_supply"]
+        self.assertTrue(held.placeholder)
+        self.assertTrue(held.withheld)
+        self.assertIsNone(held.rate)               # 2.5% never surfaces
+        self.assertEqual(held.rate_text, "—")
+        self.assertFalse(held.usable)
+        self.assertEqual(held.grade, vat.GRADE_PLACEHOLDER)
+        self.assertTrue(any("withheld" in w for w in warnings))
+        # The landed rates in the same file are unaffected.
+        self.assertEqual(
+            {d.rates_key for d in declared if d.usable},
+            {"vat.rates.standard", "vat.rates.zero_rated", "vds.services.fixture_service"},
+        )
+        declared, _ = vat.declared_rates(self.table(text), allow_placeholders=True)
+        shown = {d.rates_key: d for d in declared}["vat.rates.reduced.fixture_supply"]
+        self.assertEqual(shown.rate, D("2.5"))
+        self.assertFalse(shown.usable)             # opting in never makes it filing-ready
 
     def test_missing_sections_are_simply_absent(self):
         text = rates_toml(omit=("vat.rates.reduced.fixture_supply", "vds.services.fixture_service"))
@@ -837,17 +922,60 @@ class TestVatPosition(VatFixture):
         self.assertEqual(position.warnings, ())
         self.assertEqual(position.vds_withheld, M.from_str("2075"))
 
-    def test_placeholder_rates_file_stamps_output_provisional_and_skips_rate_check(self):
-        position = self.position(rates=rates_toml(verified=False, placeholder=True, file_placeholder=True))
+    def test_placeholder_rates_file_is_refused_until_opted_in(self):
+        """Same refusal, same exit code and same remedy as tax.py on the same file."""
+        text = rates_toml(verified=False, placeholder=True, file_placeholder=True)
+        with self.assertRaises(tb.RatesError) as ctx:
+            self.position(rates=text)
+        self.assertEqual(ctx.exception.exit_code, 8)
+        self.assertIn("awaiting verified data", str(ctx.exception))
+        self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
+
+    def test_placeholder_rates_file_stamps_output_placeholder_and_skips_rate_check(self):
+        position = self.position(
+            rates=rates_toml(verified=False, placeholder=True, file_placeholder=True),
+            allow_placeholders=True,
+        )
         self.assertTrue(position.rates_file_placeholder)
         self.assertTrue(position.provisional)
-        self.assertEqual(position.filing_status, vat.STATUS_PROVISIONAL)
+        self.assertTrue(position.placeholder_data_used)
+        self.assertEqual(position.data_grade, vat.GRADE_PLACEHOLDER)
+        self.assertEqual(position.filing_status, vat.STATUS_PLACEHOLDER)
+        self.assertIn("NOT FOR FILING", vat.STATUS_PLACEHOLDER)
         self.assertTrue(position.warnings[0].startswith("PLACEHOLDER RATES FILE"))
         self.assertTrue(any(w.startswith("RATE CHECK SKIPPED") for w in position.warnings))
         self.assertFalse(any(w.startswith("RATE NOT DECLARED") for w in position.warnings))
         # The arithmetic itself is untouched by the state of the rates file.
         self.assertEqual(position.net, M.from_str("600"))
         self.assertEqual(position.rates_caveats, position.warnings)
+
+    def test_mixed_file_computes_from_landed_nodes_and_withholds_the_rest(self):
+        """Per figure, not per file: one unlanded optional node does not stop the return."""
+        position = self.position(
+            rates=rates_toml(
+                placeholder_keys=("vat.rates.reduced.fixture_supply",),
+                unverified_keys=("vat.turnover_tax.rate",),
+            )
+        )
+        # The return figures are journal arithmetic and are exactly as before.
+        self.assertEqual(position.net, M.from_str("600"))
+        self.assertEqual(position.output_tax, M.from_str("1000"))
+        # An unlanded node that was withheld never touched the answer, so the answer is
+        # PROVISIONAL (something is unconfirmed), not PLACEHOLDER (something is invented).
+        self.assertFalse(position.placeholder_data_used)
+        self.assertEqual(position.data_grade, vat.GRADE_UNVERIFIED)
+        self.assertEqual(position.filing_status, vat.STATUS_PROVISIONAL)
+        self.assertEqual(
+            position.placeholder_figures_withheld, ("vat.rates.reduced.fixture_supply",)
+        )
+        self.assertEqual(position.placeholder_figures_used, ())
+        self.assertTrue(
+            any(w.startswith("UNVERIFIED") and "vat.turnover_tax.rate" in w
+                for w in position.warnings)
+        )
+        # 10% is still declared and landed, so the journal's own rate still checks out.
+        self.assertFalse(any(w.startswith("RATE NOT DECLARED") for w in position.warnings))
+        self.assertFalse(any(w.startswith("RATE CHECK SKIPPED") for w in position.warnings))
 
     def test_unverified_rates_file_is_provisional_but_still_checks_rates(self):
         position = self.position(rates=rates_toml(verified=False))
@@ -929,9 +1057,25 @@ class TestRendering(VatFixture):
         self.assertIn("UNVERIFIED", text)
         self.assertIn("PROVISIONAL / অস্থায়ী", text)
         self.assertIn("NOT FOR FILING", text)
-        text = vat.render_markdown(self.position(rates=rates_toml(verified=False, placeholder=True, file_placeholder=True)))
+        self.assertNotIn("PLACEHOLDER DATA", text)
+        text = vat.render_markdown(self.position(
+            rates=rates_toml(verified=False, placeholder=True, file_placeholder=True),
+            allow_placeholders=True,
+        ))
         self.assertIn("PLACEHOLDER", text)
+        self.assertIn("PLACEHOLDER DATA / অস্থায়ী উপাত্ত — NOT FOR FILING", text)
         self.assertIn("placeholder schema", text)
+        self.assertIn(vat.STATUS_PLACEHOLDER, text)
+
+    def test_markdown_names_a_withheld_placeholder_without_printing_its_value(self):
+        position = self.position(
+            rates=rates_toml(placeholder_keys=("vat.rates.reduced.fixture_supply",))
+        )
+        text = vat.render_markdown(position)
+        self.assertIn("PROVISIONAL / অস্থায়ী — NOT FOR FILING", text)
+        self.assertIn("vat.rates.reduced.fixture_supply", text)
+        self.assertIn("PLACEHOLDER", text)          # the node's own status column
+        self.assertNotIn("2.5%", text)              # but never its unlanded percentage
 
     def test_markdown_lists_declared_rates_and_reconciliation(self):
         text = vat.render_markdown(self.position())
@@ -988,12 +1132,41 @@ class TestRendering(VatFixture):
     def test_json_flags_unverified_and_placeholder(self):
         data = json.loads(vat.render_json(self.position(rates=rates_toml(verified=False))))
         self.assertTrue(data["provisional"])
+        self.assertEqual(data["data_grade"], vat.GRADE_UNVERIFIED)
+        self.assertFalse(data["placeholder_data_used"])
         self.assertTrue(all(f["status"] == "UNVERIFIED" for f in data["reference_figures"]))
         self.assertTrue(any(w.startswith("UNVERIFIED") for w in data["warnings"]))
-        data = json.loads(vat.render_json(self.position(rates=rates_toml(verified=False, placeholder=True, file_placeholder=True))))
+        data = json.loads(vat.render_json(self.position(
+            rates=rates_toml(verified=False, placeholder=True, file_placeholder=True),
+            allow_placeholders=True,
+        )))
         self.assertTrue(data["rates"]["file_placeholder"])
+        self.assertTrue(data["rates"]["allow_placeholder_rates"])
+        self.assertTrue(data["placeholder_data_used"])
+        self.assertEqual(data["data_grade"], vat.GRADE_PLACEHOLDER)
+        self.assertEqual(data["filing_status"], vat.STATUS_PLACEHOLDER)
         self.assertTrue(all(f["status"] == "PLACEHOLDER" for f in data["reference_figures"]))
         self.assertGreater(data["rates"]["unverified_keys_in_file"], 0)
+        self.assertGreater(data["rates"]["placeholder_keys_in_file"], 0)
+
+    def test_json_separates_withheld_placeholders_from_used_ones(self):
+        data = json.loads(vat.render_json(self.position(
+            rates=rates_toml(placeholder_keys=("vat.rates.reduced.fixture_supply",))
+        )))
+        rates_block = data["rates"]
+        self.assertEqual(
+            rates_block["placeholder_figures_withheld"],
+            ["vat.rates.reduced.fixture_supply"],
+        )
+        self.assertEqual(rates_block["placeholder_figures_used"], [])
+        self.assertFalse(data["placeholder_data_used"])
+        self.assertEqual(data["data_grade"], vat.GRADE_UNVERIFIED)
+        held = {d["rates_key"]: d for d in data["declared_rates"]}[
+            "vat.rates.reduced.fixture_supply"
+        ]
+        self.assertTrue(held["withheld"])
+        self.assertIsNone(held["rate_percent"])
+        self.assertEqual(held["grade"], vat.GRADE_PLACEHOLDER)
 
 
 # ======================================================================================
@@ -1005,7 +1178,8 @@ class TestCli(VatFixture):
     def test_help_lists_standard_flags(self):
         code, out, _ = self.cli("--help")
         self.assertEqual(code, 0)
-        for flag in ("--books", "--json", "--period", "--rates", "--strict", "--format"):
+        for flag in ("--books", "--json", "--period", "--rates", "--strict", "--format",
+                     "--allow-placeholder-rates"):
             self.assertIn(flag, out)
         self.assertIn("vat.rates.standard", out)
         self.assertIn("Ticon Sys", out)
@@ -1155,6 +1329,317 @@ class TestCli(VatFixture):
         code, out, err = self.cli("--books", str(books), "--json")
         self.assertEqual(code, 0, err)
         self.assertEqual(json.loads(out)["rates"]["file"], "fixture-rates.toml")
+
+    def test_placeholder_file_exits_8_then_computes_under_the_opt_in(self):
+        books = self.write_books()
+        rates = self.write_rates(
+            rates_toml(verified=False, placeholder=True, file_placeholder=True)
+        )
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates))
+        self.assertEqual(code, 8)
+        self.assertEqual(out, "")
+        self.assertIn("--allow-placeholder-rates", err)
+
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates),
+                                  "--allow-placeholder-rates")
+        self.assertEqual(code, 0, err)
+        self.assertIn(vat.STATUS_PLACEHOLDER, out)
+        self.assertIn("PLACEHOLDER DATA", out)
+        self.assertIn(tb.DISCLAIMER_EN, out)
+
+        # --strict must still refuse it: opting in never makes a figure fileable.
+        code, _, err = self.cli("--books", str(books), "--rates", str(rates),
+                                "--allow-placeholder-rates", "--strict")
+        self.assertEqual(code, 7)
+        self.assertIn("not ready to file", err)
+
+    def test_required_placeholder_key_exits_8_and_names_it(self):
+        books = self.write_books()
+        rates = self.write_rates(rates_toml(placeholder_keys=("vat.rates.standard",)))
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates))
+        self.assertEqual(code, 8)
+        self.assertEqual(out, "")
+        self.assertIn("vat.rates.standard", err)
+        self.assertIn("still a placeholder", err)
+
+    def test_optional_placeholder_key_runs_and_marks_json(self):
+        books = self.write_books()
+        rates = self.write_rates(
+            rates_toml(placeholder_keys=("vat.thresholds.registration",))
+        )
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates), "--json")
+        self.assertEqual(code, 0, err)
+        data = json.loads(out)
+        self.assertEqual(data["net"]["payable"], "600.00")
+        self.assertEqual(
+            data["rates"]["placeholder_figures_withheld"], ["vat.thresholds.registration"]
+        )
+        self.assertNotIn("1234567", out)
+
+
+# ======================================================================================
+# Posture symmetry — tax.py and vat.py must answer "has this landed?" the same way
+# ======================================================================================
+
+
+class TestEnginePostureSymmetry(unittest.TestCase):
+    """The two engines share a vocabulary and a gate.  Lock them together.
+
+    The adversarial review found an ASYMMETRIC REFUSAL: with a placeholder rates file
+    ``tax.py`` exited 8 while ``vat.py`` computed and exited 0 — two engines, two opposite
+    default postures towards unlanded data.  These tests are what stops that recurring.
+    """
+
+    def test_both_modules_share_the_same_words(self):
+        for name in ("ALLOW_PLACEHOLDERS_FLAG", "GRADE_FINAL", "GRADE_UNVERIFIED",
+                     "GRADE_PLACEHOLDER", "STATUS_PLACEHOLDER", "STATUS_PROVISIONAL",
+                     "PLACEHOLDER_STATUS_TEXT"):
+            with self.subTest(constant=name):
+                self.assertEqual(getattr(tax, name), getattr(vat, name), name)
+        self.assertIn("NOT FOR FILING", vat.STATUS_PLACEHOLDER)
+        self.assertIn("not for filing", vat.STATUS_PROVISIONAL)
+
+    def test_both_read_the_rates_file_through_the_same_reader(self):
+        """One reader, one implementation of "has this figure landed?"."""
+        self.assertIs(vat.rt, tax.rt)
+        self.assertIs(vat.as_rate_set(tb.RatesTable({})).__class__, rt.RateSet)
+        source = (ENGINE_DIR / "vat.py").read_text(encoding="utf-8")
+        # vat.py must not grow a second placeholder rule of its own.
+        self.assertNotIn('get("placeholder")', source)
+        self.assertNotIn('["placeholder"]', source)
+
+    def test_file_level_gate_agrees_across_every_meta_shape(self):
+        shapes = {
+            "empty": {},
+            "no meta key": {"meta": {}},
+            "flag true": {"meta": {"placeholder": True}},
+            "flag false": {"meta": {"placeholder": False}},
+            "status only": {"meta": {"status": "placeholder"}},
+            "status landed": {"meta": {"status": "landed"}},
+            "status landed, flag true": {"meta": {"status": "landed", "placeholder": True}},
+            "both": {"meta": {"status": "placeholder", "placeholder": True}},
+            "status mixed case": {"meta": {"status": "  PlaceHolder "}},
+        }
+        for label, raw in shapes.items():
+            with self.subTest(shape=label):
+                table = tb.RatesTable(raw)
+                from_vat = vat.rates_file_is_placeholder(table)
+                from_tax = tax.rates_file_is_placeholder(
+                    rt.RateSet(table, allow_placeholders=True)
+                )
+                self.assertEqual(from_vat, from_tax, label)
+
+    def test_refusal_and_opt_in_agree_across_every_meta_shape(self):
+        """Whatever the file says, both engines refuse or allow it identically."""
+        for raw, expect_refusal in (
+            ({"meta": {}}, False),
+            ({"meta": {"placeholder": True}}, True),
+            ({"meta": {"status": "placeholder"}}, True),
+            ({"meta": {"status": "landed", "placeholder": False}}, False),
+        ):
+            for allow in (False, True):
+                with self.subTest(meta=raw["meta"], allow=allow):
+                    table = tb.RatesTable(raw)
+                    should_raise = expect_refusal and not allow
+
+                    # Same signature, same call, two engines — the point of the test.
+                    def call_vat():
+                        vat.require_landed_rates(table, allow_placeholders=allow)
+
+                    def call_tax():
+                        tax.require_landed_rates(
+                            rt.RateSet(table), allow_placeholders=allow
+                        )
+
+                    def call_vat_via_posture():
+                        vat.require_landed_rates(
+                            rt.RateSet(table, allow_placeholders=allow)
+                        )
+
+                    def call_tax_via_posture():
+                        tax.require_landed_rates(
+                            rt.RateSet(table, allow_placeholders=allow)
+                        )
+
+                    calls = (
+                        ("vat", call_vat),
+                        ("tax", call_tax),
+                        ("vat via RateSet posture", call_vat_via_posture),
+                        ("tax via RateSet posture", call_tax_via_posture),
+                    )
+                    for name, call in calls:
+                        if should_raise:
+                            with self.assertRaises(tb.RatesError, msg=name) as ctx:
+                                call()
+                            self.assertEqual(ctx.exception.exit_code, 8, name)
+                            self.assertIn(
+                                vat.ALLOW_PLACEHOLDERS_FLAG, ctx.exception.hint, name
+                            )
+                        else:
+                            call()  # must not raise
+
+    def test_both_clis_offer_the_same_two_flags(self):
+        vat_flags = {
+            option
+            for action in vat.build_parser()._actions
+            for option in action.option_strings
+        }
+        tax_flags = {
+            option
+            for action in tax.build_parser()._actions
+            for option in action.option_strings
+        }
+        for flag in ("--allow-placeholder-rates", "--strict", "--json", "--rates"):
+            with self.subTest(flag=flag):
+                self.assertIn(flag, vat_flags)
+                self.assertIn(flag, tax_flags)
+
+    def test_the_same_placeholder_file_is_refused_by_both_command_lines(self):
+        """The end-to-end symmetry: one file, two tools, one exit code."""
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        root = Path(tmp.name)
+        books = root / "books"
+        (books / "journal").mkdir(parents=True)
+        (books / "config.toml").write_text(config_toml(), encoding="utf-8")
+        (books / "accounts.toml").write_text(ACCOUNTS_TOML, encoding="utf-8")
+        (books / "journal" / "2026-07.csv").write_text(
+            HEADER + "\n" + "\n".join(SALE) + "\n", encoding="utf-8"
+        )
+        rates_path = root / "rates-AY2026-27.toml"
+        rates_path.write_text(
+            rates_toml(verified=False, placeholder=True, file_placeholder=True)
+            + PLACEHOLDER_INCOME_TAX_EXTRA,
+            encoding="utf-8",
+        )
+
+        def run(script: str, *args: str) -> subprocess.CompletedProcess:
+            env = dict(os.environ, PYTHONIOENCODING="utf-8")
+            return subprocess.run(
+                [sys.executable, str(ENGINE_DIR / script), *args],
+                capture_output=True, text=True, encoding="utf-8", env=env,
+            )
+
+        vat_args = ("--books", str(books), "--rates", str(rates_path))
+        tax_args = ("--books", str(books), "--rates", str(rates_path), "--income", "500000")
+
+        refused = (run("vat.py", *vat_args), run("tax.py", *tax_args))
+        for result in refused:
+            self.assertEqual(result.returncode, 8, result.stderr)
+            self.assertEqual(result.stdout, "")
+            self.assertIn("--allow-placeholder-rates", result.stderr)
+
+        allowed = (
+            run("vat.py", *vat_args, "--allow-placeholder-rates"),
+            run("tax.py", *tax_args, "--allow-placeholder-rates"),
+        )
+        for result in allowed:
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn(vat.STATUS_PLACEHOLDER, result.stdout)
+            self.assertIn("NOT FOR FILING", result.stdout)
+
+        strict = (
+            run("vat.py", *vat_args, "--allow-placeholder-rates", "--strict"),
+            run("tax.py", *tax_args, "--allow-placeholder-rates", "--strict"),
+        )
+        for result in strict:
+            self.assertEqual(result.returncode, 7, result.stderr)
+            self.assertIn("not ready to file", result.stderr)
+
+
+#: The income-tax half of a rates file, so one fixture can drive both engines.  Every
+#: figure is a placeholder, which is the whole point: neither tool may compute from it.
+PLACEHOLDER_INCOME_TAX_EXTRA = """
+[income_tax.individual]
+default_category = "general"
+default_location = "metro"
+
+[income_tax.individual.thresholds.general]
+label_en = "General taxpayer (FIXTURE)"
+label_bn = "সাধারণ করদাতা"
+value = 100000
+unit = "BDT"
+source = "https://example.invalid/fixture"
+verified = false
+placeholder = true
+
+[[income_tax.individual.slabs]]
+order = 1
+label_en = "Tax-free threshold (FIXTURE)"
+width_source = "category_threshold"
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+
+[[income_tax.individual.slabs]]
+order = 2
+label_en = "Balance of income (FIXTURE)"
+  [income_tax.individual.slabs.rate]
+  value = 10
+  unit = "percent"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+
+[income_tax.individual.rebate]
+formula = "min_of_three_caps"
+  [income_tax.individual.rebate.rate]
+  value = 10
+  unit = "percent"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+  [income_tax.individual.rebate.income_cap_percent]
+  value = 25
+  unit = "percent"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+  [income_tax.individual.rebate.absolute_cap]
+  value = 500000
+  unit = "BDT"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+
+[income_tax.individual.minimum_tax.applies_when]
+value = "always"
+unit = "policy"
+allowed = ["always", "taxable_income_above_threshold", "never"]
+source = "https://example.invalid/fixture"
+verified = false
+placeholder = true
+
+[income_tax.individual.minimum_tax.by_location.metro]
+label_en = "Metropolitan (FIXTURE)"
+value = 4000
+unit = "BDT"
+source = "https://example.invalid/fixture"
+verified = false
+placeholder = true
+
+[income_tax.individual.surcharge]
+  [income_tax.individual.surcharge.base]
+  value = "tax_after_rebate"
+  unit = "policy"
+  allowed = ["tax_after_rebate", "tax_after_minimum"]
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+
+[[income_tax.individual.surcharge.bands]]
+order = 1
+label_en = "No surcharge (FIXTURE)"
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://example.invalid/fixture"
+  verified = false
+  placeholder = true
+"""
 
 
 if __name__ == "__main__":  # pragma: no cover

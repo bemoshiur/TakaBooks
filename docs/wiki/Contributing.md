@@ -8,7 +8,7 @@ repository's `CONTRIBUTING.md`; where the two differ, the repository file wins.
 
 1. **Verify or correct a tax figure.** The rates file is the heart of the project, and a
    figure read from a primary NBR source by someone who checked it is the most valuable
-   thing anyone can contribute. Use the *rate correction* issue template, or open a pull
+   thing anyone can contribute. Use the *Tax rule update* issue template, or open a pull
    request against `src/data/rates-AY<year>.toml` following
    [Updating Tax Rates](Updating-Tax-Rates).
 2. **Populate a reference.** Several `src/references/*.md` files are stubs with a *Scope this
@@ -113,8 +113,14 @@ failure, and `--strict` turns it into one for release builds.
 
 The full procedure — landing a figure, adding an assessment year — is on
 [Updating Tax Rates](Updating-Tax-Rates). In short: primary source URL, `as_of` date,
-`verified = true`, delete `placeholder`, rewrite `note`, run the audit, update the golden
-tests, cite the source in the PR.
+`verified = true` **only if you read it from primary text**, `placeholder = false`, rewrite
+`note` for the end user who will see it as a warning, run the audit, update the golden tests,
+cite the source in the PR.
+
+If your source is a professional summary rather than enacted text, the honest state is
+`verified = false, placeholder = false` with the reason in `note` — not `verified = true`, and
+not a placeholder. To report a figure you believe is wrong, use the **Tax rule update** issue
+template (`.github/ISSUE_TEMPLATE/tax-rule-update.yml`), publicly.
 
 ### Documentation
 
@@ -138,8 +144,9 @@ absolute URL, and state no figure. The full checklist is in
 
 ## Reporting a wrong tax figure
 
-Open an issue with the **rate correction** template
-(https://github.com/bemoshiur/TakaBooks/issues/new/choose). It asks for the dotted key in
+Open an issue with the **Tax rule update** template
+(`.github/ISSUE_TEMPLATE/tax-rule-update.yml`, offered at
+https://github.com/bemoshiur/TakaBooks/issues/new/choose). It asks for the dotted key in
 the rates file, the assessment year, the NBR source URL and the date you read it.
 
 **Do this publicly.** A wrong or outdated rate is a correctness bug, not a security
@@ -159,8 +166,10 @@ loud comment.
 
 Two steps in a release cannot be automated and are recorded here so they are not forgotten:
 
-- **Social preview image** (`assets/social-preview.png`) is uploaded by hand under
-  *Settings → General → Social preview*. No API exists.
+- **Social preview image** (`assets/social-preview.png`, 1280×640) is uploaded by hand under
+  *Settings → General → Social preview*. No API exists. The PNG is the raster of
+  `assets/social-preview.svg`; keep the SVG as the editable source, but upload the **PNG** —
+  GitHub's uploader does not accept SVG.
 - **The wiki repository** must be initialised once by creating a first page in the web UI
   before any sync can push to it, and *Restrict editing to collaborators only* should be
   set at the same time. See `docs/README.md`.

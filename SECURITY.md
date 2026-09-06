@@ -99,7 +99,10 @@ If TakaBooks states, or computes from, a **rate, threshold, deadline, form refer
 statute reference that is wrong for the assessment year it claims**, treat it exactly as
 seriously as a security bug — and report it **publicly**, not through the private route.
 
-**https://github.com/bemoshiur/TakaBooks/issues/new/choose → Rate correction**
+**[Open a *Tax rule update / কর বিধি হালনাগাদ* issue](https://github.com/bemoshiur/TakaBooks/issues/new?template=tax-rule-update.yml)** —
+the form named *Tax rule update* on
+[issues/new/choose](https://github.com/bemoshiur/TakaBooks/issues/new/choose)
+(`.github/ISSUE_TEMPLATE/tax-rule-update.yml`).
 
 Why public? A private report reaches one maintainer. A public issue is seen at once by
 every user who is about to file on that figure, and by every fork and bundle built from it.

@@ -175,8 +175,13 @@ GEMINI_KNOWLEDGE_MAX_FILES = 10  # hard · "Gems supports up to 10 source docume
 GEMINI_INSTRUCTIONS_SOFT_CHARS = 2000  # soft · Google publishes NO limit; see --help
 
 # --- Universal single-file bundle ------------------------------------------------------
-UNIVERSAL_SOFT_TOKENS = 50_000  # soft · leave room inside a 128K context for the ledger
-UNIVERSAL_SOFT_BYTES = 200_000  # soft · same budget expressed in UTF-8 bytes
+UNIVERSAL_CORE_SOFT_TOKENS = 50_000  # soft · takabooks-core.md must fit a 128K context
+UNIVERSAL_CORE_SOFT_BYTES = 200_000  # soft · same budget expressed in UTF-8 bytes
+# takabooks-complete.md embeds every reference and the rates TOML verbatim, because
+# summarising a rate table is how a wrong number reaches NBR.  It is therefore large by
+# design and is the large-context / attach-as-a-file option, not the paste-anywhere one.
+UNIVERSAL_COMPLETE_SOFT_TOKENS = 300_000  # soft · needs a 512K+ context model
+UNIVERSAL_COMPLETE_SOFT_BYTES = 1_200_000  # soft · same ceiling in UTF-8 bytes
 
 # --- AGENTS.md -------------------------------------------------------------------------
 AGENTS_MD_MAX_BYTES = 32 * 1024  # hard · Codex `project_doc_max_bytes` default
@@ -1778,17 +1783,74 @@ def build_universal(tree: SourceTree) -> Bundle:
     document = "\n".join(lines).rstrip() + "\n"
     bundle.add("dist/universal/takabooks-complete.md", document)
 
+    # --- the paste-anywhere entry point -------------------------------------------------
+    # A model with a 128K context cannot hold takabooks-complete.md.  takabooks-core.md
+    # carries the behaviour (which is what must never be dropped) plus a map of what lives
+    # in the complete file, so a small-context user pastes this and supplies the one
+    # reference section their question needs.
+    core_lines = [
+        f"# {PROJECT_NAME} — core (small-context edition)",
+        "",
+        stop_block,
+        "",
+        "---",
+        "",
+        compact_core_text(tree),
+        "",
+        "---",
+        "",
+        "## What is NOT in this file",
+        "",
+        "This is the core instruction only. Every rate, threshold, deadline, form number and",
+        "statute reference lives in `takabooks-complete.md`, alongside the full reference",
+        "documents. **Do not answer a rate question from this file — it contains none.**",
+        "Ask the user to paste the section you need, or to attach `takabooks-complete.md`:",
+        "",
+    ]
+    for section in sections:
+        core_lines.append(f"- {section.number}. {section.title}")
+    core_lines += ["", "---", "", DISCLAIMER, "", ATTRIBUTION, "",
+                   f"Build id: `{tree.build_id()}`"]
+    core_doc = "\n".join(core_lines).rstrip() + "\n"
+    bundle.add("dist/universal/takabooks-core.md", core_doc)
+
+    bundle.checks.append(
+        limit_check(
+            "universal",
+            "takabooks-core.md.tokens",
+            estimate_tokens(core_doc),
+            UNIVERSAL_CORE_SOFT_TOKENS,
+            "est. tokens",
+            hard=False,
+            detail=(
+                "SOFT budget — takabooks-core.md is the paste-anywhere file and must fit "
+                "the smallest common context (128K) with room for the answer"
+            ),
+        )
+    )
+    bundle.checks.append(
+        limit_check(
+            "universal",
+            "takabooks-core.md.bytes",
+            len(core_doc.encode("utf-8")),
+            UNIVERSAL_CORE_SOFT_BYTES,
+            "bytes",
+            hard=False,
+            detail="SOFT budget, the same ceiling expressed in UTF-8 bytes",
+        )
+    )
     bundle.checks.append(
         limit_check(
             "universal",
             "takabooks-complete.md.tokens",
             estimate_tokens(document),
-            UNIVERSAL_SOFT_TOKENS,
+            UNIVERSAL_COMPLETE_SOFT_TOKENS,
             "est. tokens",
             hard=False,
             detail=(
-                "SOFT budget — the smallest common context among the target models is "
-                "128K, and the user still needs room for their ledger and the answer"
+                "SOFT budget — this file is lossless by design (the rates TOML travels "
+                "verbatim), so it needs a large-context model or must be attached as a "
+                "file. Small-context users take takabooks-core.md instead."
             ),
         )
     )
@@ -1797,7 +1859,7 @@ def build_universal(tree: SourceTree) -> Bundle:
             "universal",
             "takabooks-complete.md.bytes",
             len(document.encode("utf-8")),
-            UNIVERSAL_SOFT_BYTES,
+            UNIVERSAL_COMPLETE_SOFT_BYTES,
             "bytes",
             hard=False,
             detail="SOFT budget, the same ceiling expressed in UTF-8 bytes",

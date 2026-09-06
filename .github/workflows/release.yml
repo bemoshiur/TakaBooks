@@ -14,9 +14,13 @@
 # is self-sufficient and re-runs the suite before building anything. Green
 # tests are a release precondition (spec 7).
 #
-# BUILD SCRIPT CONTRACT: build/build.py has no --all flag. The full build is
-# `--target all` (or bare). `--strict` makes a missing expected source file a
-# hard failure — right for a release, where "absent" must never ship silently.
+# BUILD SCRIPT CONTRACT: `--target all`, bare `build.py` and `--all` are three
+# equivalent spellings of the full build (verified 2026-09-06 against
+# `build/build.py --help`; an earlier revision of this comment wrongly said
+# --all did not exist). This workflow writes `--target all` because a release
+# log should name the target set it produced. `--strict` makes a missing
+# expected source file a hard failure — right for a release, where "absent"
+# must never ship silently.
 # The build also refuses to write anything when a platform limit is exceeded
 # (the ChatGPT 8,000-character cap above all), so an over-cap release fails
 # here, before a single asset exists.

@@ -24,10 +24,19 @@ Consequences:
 - **Every change goes through a pull request**, so wiki content gets the same review as code.
   A wiki page that stated a tax figure would be the easiest place for a wrong number to hide;
   the review is the guard.
-- **The wiki states no rate, threshold, deadline or statute number.** It documents mechanisms
-  — how the rates file works, how a figure is verified, how to run the engine. Every figure
-  lives in `src/data/rates-AY<year>.toml` with a `source` URL and a `verified` flag, and the
-  wiki points there. If you find a figure on a wiki page, that is a bug; open an issue.
+- **The wiki asserts no rate, threshold, deadline or statute number as a statement of law.**
+  It documents mechanisms — how the rates file works, how a figure is verified, how to run the
+  engine. Every figure lives in `src/data/rates-AY<year>.toml` with a `source` URL and a
+  `verified` flag, and the wiki points there.
+
+  The one place a figure may legitimately appear on a page is **inside a pasted command
+  transcript**, where it is there because the engine read it out of the rates file and printed
+  it. `Getting-Started.md` does this deliberately, and pairs it with the
+  `rates.py --key …` command that shows the reader where the figure came from — teaching the
+  sourcing habit instead of a number. The test to apply in review is therefore not "does a
+  digit appear?" but: **would a reader come away believing this page is the authority for that
+  figure?** If yes, that is a bug; open an issue. A rate written into prose as a fact, a slab
+  table typed out by hand, or a deadline stated in a sentence all fail that test.
 
 ### Page naming — GitHub Wiki rules
 
@@ -67,12 +76,30 @@ first page → Save.** After that, automation works. Turn on **Restrict editing 
 collaborators only** at the same time, or any GitHub user can edit pages that the next sync
 silently wipes.
 
-**Automated path (CI).** A workflow (`.github/workflows/wiki-sync.yml`, triggered by pushes
-to `main` that touch `docs/wiki/**`) checks out `${{ github.repository }}.wiki`, deletes
-everything in it except `.git`, copies `docs/wiki/.` in, commits as `github-actions[bot]`,
-and pushes with the default `GITHUB_TOKEN` (`permissions: contents: write` is enough for the
-wiki repository). It must copy **`docs/wiki/`**, never the whole of `docs/` — `research/` and
-`superpowers/` are not wiki pages and would become stray, un-navigable files.
+**Automated path (CI).** `.github/workflows/wiki-sync.yml` — the *Wiki sync* workflow — runs
+**on push to `main` when the push touches `docs/wiki/**`**, and can also be started by hand
+with `workflow_dispatch` (that is how you recover after a bad sync, or publish the first time
+straight after initialising the wiki without waiting for the next `docs/wiki/` change).
+
+It checks out the source repository, sanity-checks the tree before touching anything,
+confirms the wiki repository actually exists, checks it out, replaces its working tree with
+`docs/wiki/`, and commits and pushes. It copies **`docs/wiki/` only** — never the whole of
+`docs/`, because `research/` and `superpowers/` are not wiki pages and would become stray,
+un-navigable files.
+
+Two details worth knowing if you touch the workflow:
+
+- Permissions are denied at the top level (`permissions: {}`) and the single job opts in to
+  `contents: write`, which is what the default `GITHUB_TOKEN` needs to push to the wiki
+  repository. No PAT is required.
+- A `concurrency` group serialises runs with `cancel-in-progress: false`. Two syncs must never
+  race, because each deletes then re-copies the same tree — and a *cancelled* sync could leave
+  the wiki emptied, which is why in-progress runs are allowed to finish rather than being
+  cancelled.
+
+The workflow cannot create the wiki repository; the manual prerequisite above still has to
+happen once first, and the workflow checks for it and fails with a clear message rather than
+pushing into nothing.
 
 **Manual path (works without CI, and is how to recover after a bad sync):**
 
@@ -97,12 +124,21 @@ wiki.
 ### Checklist for a wiki change
 
 1. The file is at the top level of `docs/wiki/`, named `Title-With-Hyphens.md`.
-2. It contains no tax rate, threshold, deadline or statute number.
-3. Bangla statutory terms are paired with English on first use (মূসক / VAT, উৎসে কর কর্তন / TDS).
-4. Links to repository files are absolute `https://github.com/bemoshiur/TakaBooks/...` URLs.
-5. Links to other wiki pages use the page name, and that page exists.
-6. `_Sidebar.md` lists the page if it is meant to be found from the navigation.
-7. Every tax-related page ends with, or links to, the [Disclaimer](wiki/Disclaimer.md).
+2. It asserts no tax rate, threshold, deadline or statute number as a fact of law. Any figure
+   that appears sits inside a pasted command transcript and is accompanied by the command that
+   reads it from the rates file.
+3. **Every command and every block of output was actually run**, and pasted back rather than
+   composed. Where a machine-specific absolute path was shortened, the page says so. Invented
+   terminal output is the worst defect this wiki can carry: it teaches a workflow that does not
+   run, and readers cannot tell it apart from the real thing.
+4. Account codes come from `src/templates/accounts.toml` (the 131-account chart that ships) —
+   not from the 42-account fallback embedded in `init_books.py`, and not from memory.
+5. Bangla statutory terms are paired with English on first use (মূসক / VAT, উৎসে কর কর্তন / TDS).
+6. Links to repository files are absolute `https://github.com/bemoshiur/TakaBooks/...` URLs.
+7. Links to other wiki pages use the page name, and that page exists.
+8. Issue-template references name a template that exists in `.github/ISSUE_TEMPLATE/`.
+9. `_Sidebar.md` lists the page if it is meant to be found from the navigation.
+10. Every tax-related page ends with, or links to, the [Disclaimer](wiki/Disclaimer.md).
 
 ---
 

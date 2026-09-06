@@ -10,7 +10,8 @@
 #      SME's office laptop.
 #   2. Every distribution bundle still builds. A broken bundle fails CI.
 #
-# BUILD SCRIPT CONTRACT (build/build.py — verified 2026-09-06; there is NO --all flag):
+# BUILD SCRIPT CONTRACT (build/build.py — re-verified 2026-09-06 against
+# `python3 build/build.py --help` and build_parser() in build/build.py):
 #   python3 build/build.py --check [--strict]
 #     Assembles every target from src/ and verifies every platform limit —
 #     notably the ChatGPT 8,000-character instruction cap (spec 5) — but writes
@@ -19,7 +20,18 @@
 #     release.yml / publish-packages.yml apply it always.
 #   python3 build/build.py --target all [--clean] [--strict]
 #     The real build. Writes dist/ and regenerates AGENTS.md at the repo root.
-#     Bare `python3 build/build.py` is equivalent (the default target is all).
+#     THREE SPELLINGS OF "BUILD EVERYTHING" ARE ALL VALID AND EQUIVALENT:
+#       python3 build/build.py                 (no target given → all)
+#       python3 build/build.py --all           (the flag, for CI scripts)
+#       python3 build/build.py --target all    (the enum choice)
+#     An earlier revision of this file asserted "there is NO --all flag" and a
+#     guard below threw on any script that used it. That was wrong: build.py
+#     declares `--all` (store_true) and main() resolves it as ["all"] before
+#     --target is consulted. The assertion and the guard are corrected here.
+#     TakaBooks still writes `--target all` everywhere on purpose — it names the
+#     target set in the command line, so a reader of a CI log sees WHAT was
+#     built, not merely that everything was. That is a house style, not a
+#     capability of the script, and it is enforced as such below.
 #
 # ACTION VERSIONS verified 2026-09-05 from each action's releases.atom:
 #   actions/checkout@v7 (v7.0.1) · actions/setup-python@v7 (v7.0.0)
@@ -223,7 +235,7 @@ jobs:
             const p = require('./package.json');
             const must = { name: '@bemoshiur/takabooks', license: 'MIT', homepage: 'https://ticonsys.com' };
             for (const [k, v] of Object.entries(must)) {
-              if (p[k] !== v) { throw new Error(\`package.json ${k} is '\${p[k]}', expected '\${v}'\`); }
+              if (p[k] !== v) { throw new Error(\`package.json \${k} is '\${p[k]}', expected '\${v}'\`); }
             }
             if (p.bin.takabooks !== 'bin/takabooks.mjs') throw new Error('bin.takabooks moved');
             if (!/^https:\/\/github\.com\/bemoshiur\/TakaBooks\.git$/.test(p.repository.url)) {
@@ -232,8 +244,13 @@ jobs:
             if (p.publishConfig.registry !== 'https://npm.pkg.github.com') throw new Error('publishConfig.registry must be https://npm.pkg.github.com');
             const deps = Object.keys(p.dependencies || {}).length + Object.keys(p.devDependencies || {}).length;
             if (deps) throw new Error('the installer must stay dependency-free, found ' + deps);
-            for (const s of Object.values(p.scripts || {})) {
-              if (/build\/build\.py.*--all(\s|$)/.test(s)) throw new Error('build.py has no --all flag; use --target all: ' + s);
+            // House style, not a capability check: build.py accepts --all, but
+            // TakaBooks spells the full build '--target all' so a CI log names the
+            // target set it built. Keep package.json in step with the workflows.
+            for (const [name, script] of Object.entries(p.scripts || {})) {
+              if (/build\/build\.py(?=\s|$)/.test(script) && /(^|\s)--all(\s|$)/.test(script)) {
+                throw new Error('script ' + name + ' spells the full build --all; TakaBooks writes --target all: ' + script);
+              }
             }
             console.log('package.json OK');
           "

@@ -53,10 +53,13 @@ TakaBooks is built so that its *status* is visible from the files themselves, an
 trust those over any summary, including this one:
 
 - The rates file declares its own state in `[meta]` (`status`, `placeholder`, `verified`),
-  and every node in it carries `verified` and `source`. Run
-  `python3 src/engine/rates.py --assessment-year <AY>` for an audit that counts verified,
-  unverified and placeholder nodes. While a file is a placeholder schema, the engine refuses
-  to compute from it unless you opt in, and then stamps the output **PROVISIONAL / অস্থায়ী**.
+  and every node in it carries `verified`, `placeholder` and `source`. Run
+  `python3 src/engine/rates.py --assessment-year <AY> --all` for an audit that counts and
+  names verified, unverified and placeholder nodes. Real figures for AY 2026-27 have been
+  landed, so that file opens and the engines compute against it — but `[meta] verified` is
+  still `false` while any node rests on a professional summary rather than primary text, and
+  every output that touches such a node is stamped **PROVISIONAL / অস্থায়ী** with the key
+  named. A node still marked `placeholder = true` is refused outright unless you opt in.
 - Every reference file opens with **Current as of**, **Sources** and **Status** lines. A
   reference marked `STUB` carries no verified content, and the assistant is instructed not to
   answer from it.
