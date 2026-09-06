@@ -60,7 +60,23 @@ def scaffold(books: Path, *extra: str) -> None:
     assert code == 0, "scaffold failed"
 
 
+ACCOUNTS_TEMPLATE = REPO_ROOT / "src" / "templates" / "accounts.toml"
+
+
+def shipped_chart() -> tb.ChartOfAccounts:
+    """The chart ``init_books.py`` actually installs — ``src/templates/accounts.toml``.
+
+    ``init_books`` reaches for its built-in chart only when that template is missing
+    (proved by ``test_templates.test_init_books_uses_this_template_not_its_fallback``),
+    so books scaffolded in these tests carry the shipped codes.  Per spec §4.4 the
+    9xxx block holds the tax accounts: মূসক / VAT output payable is **9200**, VAT
+    input / rebateable is 9100 and উৎসে কর কর্তন / TDS payable is 9320.
+    """
+    return tb.ChartOfAccounts.from_toml_path(ACCOUNTS_TEMPLATE)
+
+
 def fallback_chart() -> tb.ChartOfAccounts:
+    """The emergency chart carried inside ``init_books.py`` (numbered differently)."""
     return tb.ChartOfAccounts.from_toml_bytes(
         init_books.FALLBACK_ACCOUNTS_TOML.encode("utf-8"), source_path="accounts.toml"
     )
@@ -76,11 +92,11 @@ def E(*lines: post.LineSpec, date: str = "2026-07-15", **kwargs) -> post.EntrySp
 
 
 def sale() -> post.EntrySpec:
-    """A three-line VAT sale that balances: Dr 1200 11,500 / Cr 4100 10,000 / Cr 2310 1,500."""
+    """A three-line VAT sale that balances: Dr 1200 11,500 / Cr 4100 10,000 / Cr 9200 1,500."""
     return E(
         L("1200", debit="11500.00"),
         L("4100", credit="10000.00"),
-        L("2310", credit="1500.00", tax_tag="VAT:OUT:15"),
+        L("9200", credit="1500.00", tax_tag="VAT:OUT:15"),
         description="Sale to Rahim Traders",
         party="Rahim Traders",
         doc_ref="INV-0012",
@@ -177,7 +193,7 @@ class TestParseLineArg(unittest.TestCase):
         self.assertEqual(line.tax_tag, tb.TAG_NONE)
 
     def test_credit_line_with_tag(self):
-        line = post.parse_line_arg("2310=1500:VAT:OUT:15", post.SIDE_CREDIT)
+        line = post.parse_line_arg("9200=1500:VAT:OUT:15", post.SIDE_CREDIT)
         self.assertIsNone(line.debit)
         self.assertEqual(line.credit, "1500")
         self.assertEqual(line.tax_tag, "VAT:OUT:15")
@@ -223,7 +239,7 @@ class TestParseJsonEntry(unittest.TestCase):
         "memo": "paid by bKash, ref 123",
         "lines": [
             {"account": "5100", "debit": "8000"},
-            {"account": "1310", "debit": "1200", "tax_tag": "VAT:IN:15", "memo": "input VAT"},
+            {"account": "9100", "debit": "1200", "tax_tag": "VAT:IN:15", "memo": "input VAT"},
             {"account": "2100", "credit": 9200},
         ],
     }
@@ -349,7 +365,7 @@ class TestGenerateEntryId(unittest.TestCase):
 
 class TestBuildEntry(unittest.TestCase):
     def setUp(self) -> None:
-        self.chart = fallback_chart()
+        self.chart = shipped_chart()
 
     def build(self, spec, **kwargs):
         kwargs.setdefault("chart", self.chart)
@@ -362,7 +378,7 @@ class TestBuildEntry(unittest.TestCase):
         self.assertEqual(entry.entry_id, "JE-2026-07-0001")
         self.assertTrue(entry.is_balanced)
         self.assertEqual(entry.total_debit, M(1150000))
-        self.assertEqual([p.account for p in entry.postings], ["1200", "4100", "2310"])
+        self.assertEqual([p.account for p in entry.postings], ["1200", "4100", "9200"])
         self.assertEqual(entry.postings[2].tax_tag, tb.TaxTag.parse("VAT:OUT:15"))
         self.assertEqual(entry.postings[0].party, "Rahim Traders")
         self.assertEqual(built.warnings, ())
@@ -409,10 +425,10 @@ class TestBuildEntry(unittest.TestCase):
 
     def test_unknown_account(self):
         with self.assertRaises(tb.UnknownAccountError) as ctx:
-            self.build(E(L("1210", debit="1"), L("4100", credit="1")))
+            self.build(E(L("1201", debit="1"), L("4100", credit="1")))
         self.assertEqual(ctx.exception.exit_code, 3)
-        self.assertEqual(ctx.exception.code, "1210")
-        self.assertIn("1210", ctx.exception.message)
+        self.assertEqual(ctx.exception.code, "1201")
+        self.assertIn("1201", ctx.exception.message)
         self.assertIn("Did you mean", ctx.exception.hint)
         self.assertIn("1200", ctx.exception.hint)
 
@@ -503,15 +519,15 @@ class TestBuildEntry(unittest.TestCase):
 
     def test_tag_on_the_wrong_control_account(self):
         with self.assertRaises(tb.TaxTagError) as ctx:
-            self.build(E(L("1100", debit="1"), L("2320", credit="1", tax_tag="VAT:OUT:15")))
+            self.build(E(L("1100", debit="1"), L("9320", credit="1", tax_tag="VAT:OUT:15")))
         self.assertIn("different tax", ctx.exception.message)
         self.assertIn("tds_payable", ctx.exception.message)
 
     def test_tag_on_the_right_control_account_is_fine(self):
-        built = self.build(E(L("1100", debit="1"), L("2310", credit="1", tax_tag="VAT:OUT:15"), doc_ref="M-1"))
+        built = self.build(E(L("1100", debit="1"), L("9200", credit="1", tax_tag="VAT:OUT:15"), doc_ref="M-1"))
         self.assertEqual(built.warnings, ())
-        built = self.build(E(L("6700", debit="100"), L("2320", credit="5", tax_tag="TDS:52AA:5"),
-                             L("1110", credit="95"), doc_ref="B-2"))
+        built = self.build(E(L("6610", debit="100"), L("9320", credit="5", tax_tag="TDS:52AA:5"),
+                             L("1150", credit="95"), doc_ref="B-2"))
         self.assertEqual(built.warnings, ())
 
     def test_warnings_do_not_block(self):
@@ -521,7 +537,39 @@ class TestBuildEntry(unittest.TestCase):
         self.assertIn("no description", text)
         self.assertIn("no doc_ref", text)
         self.assertIn("tax-tag orphan", text)
-        self.assertIn("2310", text)
+        self.assertIn("9200", text)
+
+
+# ======================================================================================
+# the built-in fallback chart inside init_books.py
+# ======================================================================================
+
+
+class TestFallbackChart(unittest.TestCase):
+    """The emergency chart is numbered differently from the shipped template, so it gets
+    its own proof: it must parse, and it must still carry every role the engine looks up
+    (spec §4.4 — codes are indicative, names and roles are normative)."""
+
+    def setUp(self) -> None:
+        self.chart = fallback_chart()
+
+    def test_it_parses_and_is_not_empty(self):
+        self.assertGreater(len(self.chart), 0)
+
+    def test_every_mandated_role_is_present(self):
+        self.assertEqual(self.chart.missing_roles(), [])
+        for role in tb.REQUIRED_ROLES:
+            self.assertTrue(self.chart.account_for_role(role).code)
+
+    def test_a_vat_sale_builds_against_it_whatever_its_codes_are(self):
+        vat_out = self.chart.account_for_role(tb.ROLE_VAT_OUTPUT).code
+        built = post.build_entry(
+            E(L("1100", debit="115"), L("4100", credit="100"),
+              L(vat_out, credit="15", tax_tag="VAT:OUT:15"), doc_ref="M-1"),
+            chart=self.chart,
+        )
+        self.assertTrue(built.entry.is_balanced)
+        self.assertEqual(built.warnings, ())
 
 
 # ======================================================================================
@@ -546,7 +594,7 @@ class TestPostEntry(BooksCase):
         self.assertEqual(result["rows"][2]["tax_tag"], "VAT:OUT:15")
         self.assertEqual(result["rows"][0]["debit"], "11500.00")
         self.assertEqual(result["rows"][0]["credit"], "0.00")
-        self.assertEqual(result["postings"][0]["account_name"], "Accounts Receivable")
+        self.assertEqual(result["postings"][0]["account_name"], "Accounts Receivable — Trade")
         self.assertEqual(result["postings"][0]["amount_formatted"], "৳11,500.00")
         self.assertEqual(result["warnings"], [])
         self.assertIn("Ticon Sys", result["attribution"])
@@ -608,7 +656,7 @@ class TestPostEntry(BooksCase):
 
     def test_ledger_accepts_what_post_wrote(self):
         post.post_entry(self.books, sale())
-        post.post_entry(self.books, E(L("5100", debit="8000"), L("1310", debit="1200", tax_tag="VAT:IN:15"),
+        post.post_entry(self.books, E(L("5100", debit="8000"), L("9100", debit="1200", tax_tag="VAT:IN:15"),
                                       L("2100", credit="9200"), description="Purchase", doc_ref="BILL-7",
                                       date="2026-08-01", memo="paid later, by cheque"))
         ledger = tb.Ledger.load(self.books)  # require_balanced=True by default
@@ -618,7 +666,7 @@ class TestPostEntry(BooksCase):
         self.assertEqual(ledger.entry_id_conflicts(), [])
         self.assertEqual(ledger.misfiled_postings(), [])
         self.assertEqual(ledger.out_of_order_dates(), [])
-        self.assertEqual(ledger.balance("1310"), M(120000))
+        self.assertEqual(ledger.balance("9100"), M(120000))
 
     def test_missing_journal_dir_is_created(self):
         os.rmdir(self.journal)
@@ -731,7 +779,7 @@ class TestEntrySpecFromArgs(unittest.TestCase):
 
 class TestRendering(BooksCase):
     def test_render_csv_matches_library_writer(self):
-        entry = post.build_entry(sale(), chart=fallback_chart()).entry
+        entry = post.build_entry(sale(), chart=shipped_chart()).entry
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "x.csv"
             tb.append_journal_csv(path, entry.postings)
@@ -745,8 +793,8 @@ class TestRendering(BooksCase):
         self.assertIn("dry run", text)
         self.assertIn("nothing was written", text)
         self.assertIn("JE-2026-07-0001", text)
-        self.assertIn("Dr  1200 Accounts Receivable (প্রাপ্য হিসাব)", text)
-        self.assertIn("Cr  2310 VAT Output Payable", text)
+        self.assertIn("Dr  1200 Accounts Receivable — Trade (প্রাপ্য হিসাব — বাণিজ্যিক (দেনাদার))", text)
+        self.assertIn("Cr  9200 VAT Output Payable", text)
         self.assertIn("VAT:OUT:15 — output মূসক / VAT at 15%", text)
         self.assertIn("debits ৳11,500.00 = credits ৳11,500.00 — balanced", text)
         self.assertIn("would append to", text)
@@ -785,7 +833,7 @@ class TestPostCli(BooksCase):
     def test_successful_post_text(self):
         proc = run_cli("--books", str(self.books), "--date", "2026-07-15", "--description", "Cash sale",
                        "--doc-ref", "M-1", "--debit", "1100=11500", "--credit", "4100=10000",
-                       "--credit", "2310=1500:VAT:OUT:15")
+                       "--credit", "9200=1500:VAT:OUT:15")
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertIn("posted JE-2026-07-0001", proc.stdout)
         self.assertEqual(proc.stderr, "")
@@ -821,7 +869,7 @@ class TestPostCli(BooksCase):
 
     def test_exit_codes_per_refusal(self):
         cases = [
-            (3, ["--date", "2026-07-15", "--debit", "1210=1", "--credit", "4100=1"]),
+            (3, ["--date", "2026-07-15", "--debit", "1201=1", "--credit", "4100=1"]),
             (6, ["--date", "2026-07-15", "--debit", "1100=1", "--credit", "4100=1:VAT:15"]),
             (4, ["--date", "15/07/2026", "--debit", "1100=1", "--credit", "4100=1"]),
             (4, ["--date", "2026-07-15"]),
@@ -840,7 +888,7 @@ class TestPostCli(BooksCase):
     def test_json_entry_via_stdin_flag(self):
         doc = json.dumps({"date": "2026-08-01", "description": "Purchase", "doc_ref": "B-1",
                           "lines": [{"account": "5100", "debit": "8000"},
-                                    {"account": "1310", "debit": "1200", "tax_tag": "VAT:IN:15"},
+                                    {"account": "9100", "debit": "1200", "tax_tag": "VAT:IN:15"},
                                     {"account": "2100", "credit": 9200}]})
         proc = run_cli("--books", str(self.books), "--stdin", stdin_text=doc)
         self.assertEqual(proc.returncode, 0, proc.stderr)
@@ -849,7 +897,7 @@ class TestPostCli(BooksCase):
 
     def test_json_flag_reads_piped_stdin(self):
         doc = json.dumps({"date": "2026-08-02", "description": "Bank charge",
-                          "lines": [{"account": "6800", "debit": 150}, {"account": "1110", "credit": 150}]})
+                          "lines": [{"account": "6700", "debit": 150}, {"account": "1150", "credit": 150}]})
         proc = run_cli("--books", str(self.books), "--json", stdin_text=doc)
         self.assertEqual(proc.returncode, 0, proc.stderr)
         self.assertEqual(json.loads(proc.stdout)["entry_id"], "JE-2026-08-0001")
@@ -1017,7 +1065,7 @@ class TestInitBooks(unittest.TestCase):
         self.assertEqual(code, 0)
         data = json.loads(out)
         self.assertTrue(data["ok"])
-        self.assertEqual(data["accounts"], 42)
+        self.assertEqual(data["accounts"], len(shipped_chart()))
         self.assertEqual(data["missing_roles"], [])
         self.assertEqual(sorted(data["roles_present"]), sorted(tb.REQUIRED_ROLES))
         self.assertEqual(data["warnings"], [])

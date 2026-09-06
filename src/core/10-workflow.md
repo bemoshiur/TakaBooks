@@ -21,8 +21,8 @@ If a `needed` fact would change the result, parts 3 and 4 are not run. A provisi
 entry, formula, table, or a list of the accounts an entry would touch, under an assumed fact, is a
 provisional answer; it is not given.
 
-The income year runs 1 July – 30 June. Its assessment year (করবর্ষ) is the following 1 July – 30 June
-(income year 2025-26 → AY 2026-27). Banks, insurers and finance companies use the calendar year.
+The rates file names `income_year` and `assessment_year` (করবর্ষ) with their source. Read them there and
+state both; never derive them from today's date. Absent from the file, the year is a `needed` fact.
 
 ## Where statutory content comes from
 
