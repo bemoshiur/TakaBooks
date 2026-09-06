@@ -1,0 +1,168 @@
+# .github/ISSUE_TEMPLATE/tax-rule-update.yml
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# This is the form that keeps TakaBooks current after every Finance Act, SRO and NBR
+# circular. A rate, threshold, deadline or form changes; someone files this; a maintainer
+# lands it in src/data/rates-AY<year>.toml with a source URL and verified = true.
+# The form deliberately asks for a PRIMARY source and for old-vs-new values, because a
+# wrong number that reaches NBR is worse than an absent one (spec §6.2).
+name: "Tax rule update / কর বিধি হালনাগাদ"
+description: "A rate, threshold, deadline, form or section in Bangladesh has changed (or is wrong in TakaBooks). Cite the primary source."
+title: "[tax-rule] "
+labels: ["tax-rule", "needs-verification"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ধন্যবাদ / Thank you. This is how TakaBooks stays correct after each Finance Act.
+
+        **Please read before filling in:**
+        - Every figure in TakaBooks lives in `src/data/rates-AY<year>.toml` with a `source` URL,
+          an `as_of` date and a `verified` flag (spec §4.5). Your report should give a maintainer
+          everything needed to land the change there.
+        - **Primary sources only** for `verified = true`: the Finance Act or Ordinance text, the
+          SRO, the NBR circular / পরিপত্র, or the page on nbr.gov.bd that publishes it. A Big-4
+          summary or a news article is welcome as *supporting* evidence, but on its own it lands
+          as `verified = false`.
+        - **Absent beats wrong.** If you are not certain, say so in the confidence field. A guess
+          marked as a guess is useful; a guess marked as fact is dangerous.
+        - Do not paste anyone's TIN, BIN, return or bank details.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: "What changed?"
+      description: "Pick the closest. One issue per figure is easiest to land; several related figures from one SRO are fine together."
+      options:
+        - "Rate (হার) — income tax slab, VAT, TDS/VDS, SD, turnover tax, corporate…"
+        - "Threshold or exemption (সীমা) — tax-free limit, registration turnover, payment cap…"
+        - "Deadline (সময়সীমা) — return filing, deposit, instalment, certificate issue"
+        - "Section / rule renumbering (ধারা) — the id in tds.sections or a cited provision"
+        - "Form (ফরম) — a Mushak / return / certificate form added, replaced or withdrawn"
+        - "Taxpayer category or location tier added / removed"
+        - "Existing TakaBooks figure is wrong for the stated assessment year"
+        - "Other (explain below)"
+    validations:
+      required: true
+
+  - type: input
+    id: assessment_year
+    attributes:
+      label: "Assessment year / করবর্ষ"
+      description: "The assessment year the new value applies to, as NBR writes it. This decides which rates-AY<year>.toml file is touched."
+      placeholder: "2027-28"
+    validations:
+      required: true
+
+  - type: input
+    id: effective_from
+    attributes:
+      label: "Effective from"
+      description: "The date the change takes effect, if the source states one (ISO YYYY-MM-DD). Income year vs assessment year matters — say which the source means."
+      placeholder: "2027-07-01 (start of income year)"
+
+  - type: input
+    id: statute
+    attributes:
+      label: "Statute / SRO / circular reference"
+      description: "The instrument that makes the change: Act name and section, SRO number and date, NBR circular / পরিপত্র title and paragraph."
+      placeholder: "Finance Act 2027, s.__; or SRO No. ___-AIN/2027/___ dated ____; or আয়কর পরিপত্র ২০২৭-২৮ para __"
+    validations:
+      required: true
+
+  - type: input
+    id: source_url
+    attributes:
+      label: "Primary source URL"
+      description: "Where the maintainer can read the instrument itself — nbr.gov.bd, the Bangladesh Gazette (dpp.gov.bd / bgpress.gov.bd) or the Ministry of Finance. This URL becomes the `source` field in the rates file."
+      placeholder: "https://nbr.gov.bd/…"
+    validations:
+      required: true
+
+  - type: input
+    id: as_of
+    attributes:
+      label: "Date you read the source (as_of)"
+      description: "ISO YYYY-MM-DD. NBR pages change; the rates file records when the figure was read."
+      placeholder: "2027-07-15"
+    validations:
+      required: true
+
+  - type: input
+    id: rates_key
+    attributes:
+      label: "Rates file key (if you know it)"
+      description: "The dotted key in src/data/rates-AY<year>.toml, e.g. vat.rates.standard, income_tax.individual.thresholds.general, tds.sections.<id>.rate, deadlines.vat_return_monthly. Leave blank if unsure."
+      placeholder: "vat.rates.standard"
+
+  - type: textarea
+    id: old_value
+    attributes:
+      label: "Old value (as TakaBooks has it now)"
+      description: "Copy the current node from the rates file, or write 'not present' if TakaBooks has no entry for this yet. Percentages as percent (15 means 15%), money in whole taka."
+      placeholder: |
+        value = 0
+        unit = "percent"
+        verified = false
+        placeholder = true
+      render: toml
+    validations:
+      required: true
+
+  - type: textarea
+    id: new_value
+    attributes:
+      label: "New value (as the source states it)"
+      description: "The figure exactly as the primary source gives it, with its unit, plus any condition attached (category, location, TIN held or not, amount band, sector). If the source gives a table, paste the whole table."
+      placeholder: |
+        value = 0
+        unit = "percent"
+        condition = "…"
+      render: toml
+    validations:
+      required: true
+
+  - type: textarea
+    id: conditions
+    attributes:
+      label: "Who it applies to and under what conditions"
+      description: "Taxpayer category, entity type, location, sector, thresholds that switch it on or off, and anything the assistant should read aloud to a user before relying on it. Bangla terms welcome alongside English."
+      placeholder: "Applies to … · Does not apply when … · Requires …"
+
+  - type: dropdown
+    id: confidence
+    attributes:
+      label: "How sure are you?"
+      description: "Be honest — this sets the initial verified flag."
+      options:
+        - "I read it in the primary text myself (Act / SRO / NBR circular) — can be verified = true"
+        - "From a professional summary (KPMG, PwC, a law firm, ICAB) — needs primary confirmation"
+        - "From news or a blog — needs primary confirmation"
+        - "I heard it from a practitioner — treat as a lead only"
+    validations:
+      required: true
+
+  - type: textarea
+    id: also_affects
+    attributes:
+      label: "Other files that must change with it"
+      description: "The prose must agree with the data. List what else you think needs updating: src/references/*.md (income-tax, vat-mushak, withholding-tds-vds, payroll, penalties), src/references/compliance-calendar.md, tests/ golden cases, the CHANGELOG."
+      placeholder: "src/references/vat-mushak.md §…, src/references/compliance-calendar.md …"
+
+  - type: textarea
+    id: supporting
+    attributes:
+      label: "Supporting evidence (optional)"
+      description: "Secondary sources, screenshots of the gazette page, the paragraph text pasted verbatim (Bangla is fine)."
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: "Confirm"
+      options:
+        - label: "I have not guessed any figure; everything above is copied from the source I cited."
+          required: true
+        - label: "I understand a value lands as verified = false unless a primary source confirms it, and that TakaBooks is not professional tax advice."
+          required: true
+        - label: "This issue contains no real TIN, BIN, return data or bank details."
+          required: true

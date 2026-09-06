@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-labelledby="t d">
+  <title id="t">TakaBooks — টাকাবুকস</title>
+  <desc id="d">Social preview card: TakaBooks, Bangladeshi bookkeeping and taxation for any LLM. Ticon Sys.</desc>
+  <rect width="1280" height="640" fill="#0B2E24"/>
+  <path d="M0 40h1280M0 80h1280M0 120h1280M0 160h1280M0 200h1280M0 240h1280M0 280h1280M0 320h1280M0 360h1280M0 400h1280M0 440h1280M0 480h1280M0 520h1280M0 560h1280M0 600h1280" stroke="#F4F8F5" stroke-opacity=".05"/>
+  <path d="M8 21a13 13 0 0 1 26 0v52a19 19 0 1 0 19-19M24 33h46" transform="translate(1010 -30) scale(3.2)" fill="none" stroke="#F4F8F5" stroke-opacity=".06" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(90 118) scale(3.3)">
+    <rect x="5" y="3" width="54" height="58" rx="9" fill="#004B37"/>
+    <path d="M15 3h35a9 9 0 0 1 9 9v40a9 9 0 0 1-9 9H15z" fill="#006A4E"/>
+    <path d="M46 3h7v15l-3.5-3.5L46 18z" fill="#F42A41"/>
+    <path d="M8 21a13 13 0 0 1 26 0v52a19 19 0 1 0 19-19M24 33h46" transform="translate(21 12) scale(.4)" fill="none" stroke="#FFFFFF" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g transform="translate(330 140) scale(.96)" fill="none" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke="#4FD1A1" d="M8 8h68M42 8v84M132 64a28 28 0 1 0-56 0a28 28 0 1 0 56 0M132 36v56M160 8v84M160 68l36-32M174 55.6L202 92M286 64a28 28 0 1 0-56 0a28 28 0 1 0 56 0M286 36v56"/>
+    <path stroke="#F4F8F5" d="M316 92V8h26a20 20 0 0 1 0 40h-26M316 48h30a22 22 0 0 1 0 44h-30M452 64a28 28 0 1 0-56 0a28 28 0 1 0 56 0M536 64a28 28 0 1 0-56 0a28 28 0 1 0 56 0M564 8v84M564 68l36-32M578 55.6L606 92M667.4 44.1A17.5 14 0 1 0 651.5 64A17.5 14 0 1 1 635.6 83.9"/>
+  </g>
+  <g font-family="'Noto Sans Bengali','Kohinoor Bangla','Bangla Sangam MN','Bangla MN',SolaimanLipi,'Nirmala UI',Vrinda,sans-serif">
+    <text x="332" y="302" font-size="46" fill="#4FD1A1">টাকাবুকস</text>
+    <text x="332" y="424" font-size="26" fill="#9DB0A8">মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger</text>
+  </g>
+  <g font-family="-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif">
+    <text x="332" y="374" font-size="36" font-weight="600" fill="#F4F8F5">Bangladeshi bookkeeping &amp; taxation for any LLM</text>
+    <g font-size="20" font-weight="600" text-anchor="middle">
+      <g fill="none" stroke="#F4F8F5" stroke-opacity=".35" stroke-width="1.5">
+        <rect x="90" y="468" width="122" height="40" rx="20"/>
+        <rect x="224" y="468" width="140" height="40" rx="20"/>
+        <rect x="376" y="468" width="122" height="40" rx="20"/>
+        <rect x="510" y="468" width="96" height="40" rx="20"/>
+        <rect x="618" y="468" width="140" height="40" rx="20"/>
+        <rect x="770" y="468" width="108" height="40" rx="20"/>
+        <rect x="890" y="468" width="118" height="40" rx="20"/>
+      </g>
+      <rect x="1020" y="468" width="140" height="40" rx="20" fill="#4FD1A1"/>
+      <g fill="#F4F8F5">
+        <text x="151" y="495">Claude</text>
+        <text x="294" y="495">ChatGPT</text>
+        <text x="437" y="495">Gemini</text>
+        <text x="558" y="495">Kimi</text>
+        <text x="688" y="495">DeepSeek</text>
+        <text x="824" y="495">Llama</text>
+        <text x="949" y="495">Cursor</text>
+      </g>
+      <text x="1090" y="495" fill="#0B2E24">any LLM</text>
+    </g>
+    <g font-size="20" fill="#F4F8F5" fill-opacity=".8">
+      <text x="90" y="568">Ticon Sys · ticonsys.com</text>
+      <text x="640" y="568" text-anchor="middle">Python 3.11+ · zero dependencies · MIT</text>
+      <text x="1190" y="568" text-anchor="end">github.com/bemoshiur/TakaBooks</text>
+    </g>
+  </g>
+</svg>

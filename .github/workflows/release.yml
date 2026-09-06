@@ -1,0 +1,338 @@
+# .github/workflows/release.yml
+# TakaBooks — tag-triggered release: test, build every bundle, attach assets.
+# Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# Flow on `git push origin vX.Y.Z`:
+#   1. tests on Python 3.11 / 3.12 / 3.13 inside an empty virtualenv (stdlib only)
+#   2. python3 build/build.py --clean --strict --target all
+#   3. the installer CLI is run against the real dist/ for every target
+#   4. one zip per dist/<target>/, the build's own skill zip, the single-file
+#      bundles, and SHA256SUMS.txt
+#   5. a GitHub Release with everything attached (spec 8)
+#
+# ci.yml does NOT run on tag pushes (it filters on branches), so this workflow
+# is self-sufficient and re-runs the suite before building anything. Green
+# tests are a release precondition (spec 7).
+#
+# BUILD SCRIPT CONTRACT: build/build.py has no --all flag. The full build is
+# `--target all` (or bare). `--strict` makes a missing expected source file a
+# hard failure — right for a release, where "absent" must never ship silently.
+# The build also refuses to write anything when a platform limit is exceeded
+# (the ChatGPT 8,000-character cap above all), so an over-cap release fails
+# here, before a single asset exists.
+#
+# ACTION VERSIONS current as of 2026-09-05, verified from each releases.atom:
+#   actions/checkout@v7             (v7.0.1)
+#   actions/setup-python@v7         (v7.0.0)
+#   actions/setup-node@v7           (v7.0.0)
+#   softprops/action-gh-release@v3  (v3.0.3, Node 24 runtime)
+# DEPRECATED — never use: actions/create-release@v1 and
+# actions/upload-release-asset@v1 (both archived read-only on 2021-03-04;
+# their own READMEs point at softprops/action-gh-release).
+# Consider pinning softprops to a full commit SHA once one has been verified;
+# a moving @v3 tag can be repointed by the action's single maintainer.
+#
+# CHAINING NOTE: a release created with the default GITHUB_TOKEN does NOT fire
+# `on: release` in any other workflow. publish-packages.yml therefore triggers
+# on the same tag push, not on this release. Do not "simplify" that.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to (re)build a release for, e.g. v1.0.0"
+        required: true
+        type: string
+
+# Deny everything at the top level; each job opts in to exactly what it needs.
+permissions: {}
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Tests — Python ${{ matrix.python-version }} (stdlib only)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: true
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      # Validate the ref BEFORE it reaches actions/checkout, so a malformed
+      # workflow_dispatch input fails with a clear message instead of a checkout error.
+      - name: Validate the tag
+        env:
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RAW_TAG' is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Enforce the Python 3.11 floor
+        run: |
+          set -euo pipefail
+          python3 --version
+          python3 -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 'TakaBooks requires Python 3.11+ for tomllib; found ' + sys.version)"
+
+      - name: Create an empty virtualenv (no third-party package can hide in it)
+        run: |
+          set -euo pipefail
+          python3 -m venv --without-pip "$RUNNER_TEMP/clean"
+
+      - name: Unit tests
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/clean/bin/python" -m unittest discover tests -v
+
+      - name: Build check — every limit, every expected source file
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --check --strict
+
+  release:
+    name: Build bundles and publish the GitHub Release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write            # create the release and upload its assets
+    steps:
+      # Validate the ref BEFORE it reaches actions/checkout, so a malformed
+      # workflow_dispatch input fails with a clear message instead of a checkout error.
+      - name: Validate the tag
+        env:
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RAW_TAG' is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          persist-credentials: false
+
+      - name: Set up Python 3.11 (the floor — bundles are built on it)
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Set up Node (only to exercise the installer against the real build)
+        uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+
+      - name: Resolve version from tag
+        id: ver
+        env:
+          # Never interpolate an input straight into a shell line; go through env.
+          RAW_TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RAW_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Tag '$RAW_TAG' is not vMAJOR.MINOR.PATCH[-prerelease]"
+            exit 1
+          fi
+          version="${RAW_TAG#v}"
+          prerelease=false
+          case "$version" in *-*) prerelease=true ;; esac
+          {
+            printf 'tag=%s\n' "$RAW_TAG"
+            printf 'version=%s\n' "$version"
+            printf 'prerelease=%s\n' "$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "tag=$RAW_TAG version=$version prerelease=$prerelease"
+
+      - name: Build every distribution target
+        run: |
+          set -euo pipefail
+          python3 build/build.py --clean --strict --target all
+          for must in \
+            dist/claude-skill/bd-bookkeeping-tax/SKILL.md \
+            dist/chatgpt/instructions.md \
+            dist/gemini/gem-instructions.md \
+            dist/universal/takabooks-complete.md \
+            AGENTS.md
+          do
+            if [ ! -s "$must" ]; then
+              echo "::error::build/build.py did not produce $must"
+              exit 1
+            fi
+          done
+
+      - name: Installer smoke test against the real dist/
+        run: |
+          set -euo pipefail
+          node bin/takabooks.mjs list --dist dist
+          for target in claude chatgpt gemini universal agents; do
+            node bin/takabooks.mjs install "$target" --dist dist --dest "$RUNNER_TEMP/smoke/$target" --quiet
+          done
+          test -s "$RUNNER_TEMP/smoke/claude/SKILL.md"
+          test -s "$RUNNER_TEMP/smoke/universal"
+
+      - name: Package bundles and checksums
+        id: pack
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          if [ ! -d dist ]; then
+            echo "::error::build/build.py produced no dist/ directory"
+            exit 1
+          fi
+
+          # One zip per platform bundle. Nested zips (the build's own skill zip)
+          # are excluded here and attached on their own below, so nothing ships
+          # zip-in-zip. -X drops platform extra fields for reproducible archives.
+          for target in dist/*/; do
+            name="$(basename "$target")"
+            ( cd "$target" && zip -q -r -X "$GITHUB_WORKSPACE/artifacts/takabooks-${name}-${VERSION}.zip" . -x '*.zip' )
+          done
+
+          # The build's own Claude Skill zip keeps the skill folder at the zip
+          # root, which is what claude.ai's skill upload and ~/.claude/skills/
+          # both expect (spec 5). Attach it as-is, versioned.
+          found_skill_zip=0
+          for z in dist/claude-skill/*.zip; do
+            [ -f "$z" ] || continue
+            cp "$z" "artifacts/$(basename "${z%.zip}")-skill-${VERSION}.zip"
+            found_skill_zip=1
+          done
+          if [ "$found_skill_zip" -ne 1 ]; then
+            echo "::error::build/build.py emitted no skill zip under dist/claude-skill/"
+            exit 1
+          fi
+
+          # Single-file bundles, versioned so a download folder stays legible.
+          cp dist/universal/takabooks-complete.md "artifacts/takabooks-complete-${VERSION}.md"
+          cp AGENTS.md "artifacts/AGENTS-${VERSION}.md"
+
+          # Checksums. Written outside the directory first so the glob can never
+          # pick up the checksum file itself, then verified in place.
+          ( cd artifacts && sha256sum -- * ) > "$RUNNER_TEMP/SHA256SUMS.txt"
+          mv "$RUNNER_TEMP/SHA256SUMS.txt" artifacts/SHA256SUMS.txt
+          ( cd artifacts && sha256sum -c SHA256SUMS.txt )
+          ls -l artifacts
+
+      - name: Compose release notes
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          set -euo pipefail
+          notes="$RUNNER_TEMP/release-notes.md"
+          {
+            echo "## TakaBooks ${TAG} — টাকাবুকস"
+            echo
+            echo "LLM-agnostic Bangladeshi bookkeeping & taxation — মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger."
+            echo "Deterministic Python engine (standard library only, 3.11+), one source of truth, one bundle per platform."
+            echo
+            echo "### Which file do I want?"
+            echo
+            echo "| Platform | Asset | Then |"
+            echo "|---|---|---|"
+            echo "| Claude (claude.ai, Claude Code, Claude Desktop) | \`bd-bookkeeping-tax-skill-${VERSION}.zip\` | Upload under Skills, or unzip into \`~/.claude/skills/\` |"
+            echo "| ChatGPT custom GPT | \`takabooks-chatgpt-${VERSION}.zip\` | Paste \`instructions.md\`, upload \`knowledge/\` |"
+            echo "| Gemini Gem | \`takabooks-gemini-${VERSION}.zip\` | Paste \`gem-instructions.md\`, attach \`knowledge/\` |"
+            echo "| Any other LLM (Kimi, DeepSeek, Llama, Mistral, Copilot…) | \`takabooks-complete-${VERSION}.md\` | Paste the whole file as the system prompt |"
+            echo "| Cursor, Codex, Copilot and other agent tools | \`AGENTS-${VERSION}.md\` | Save as \`AGENTS.md\` in your project root |"
+            echo
+            echo "Or, with Node installed: \`npx @bemoshiur/takabooks install <claude|chatgpt|gemini|universal|agents>\`"
+            echo "(GitHub Packages requires an authenticated npm — see the README)."
+            echo
+            echo "### Assets"
+            echo
+            for f in artifacts/*; do
+              echo "- \`$(basename "$f")\`"
+            done
+            echo
+            echo "Verify a download: \`sha256sum -c SHA256SUMS.txt\`"
+            echo
+            echo "### Rates data in this release"
+            echo
+            python3 - <<'PY'
+          import pathlib
+          import tomllib
+
+          files = sorted(pathlib.Path("src/data").glob("rates-AY*.toml"))
+          if not files:
+              print("- _No rates file under src/data/ — this release carries no tax figures._")
+
+          for path in files:
+              data = tomllib.loads(path.read_text(encoding="utf-8"))
+              total = 0
+              unverified = 0
+
+              def walk(node):
+                  global total, unverified
+                  if isinstance(node, dict):
+                      if "verified" in node:
+                          total += 1
+                          if node["verified"] is False:
+                              unverified += 1
+                      for value in node.values():
+                          walk(value)
+                  elif isinstance(node, list):
+                      for value in node:
+                          walk(value)
+
+              walk(data)
+              print(f"- `{path}` — {total} sourced figure(s), **{unverified} marked `verified = false`**")
+          PY
+            echo
+            echo "Every rate, threshold and deadline lives in that file with a source URL and a \`verified\` flag (spec 4.5)."
+            echo "Anything marked \`verified = false\` could not be confirmed from a primary source: confirm it with NBR before relying on it."
+            echo "Every tax computation states the assessment year it used."
+            echo
+            echo "### Disclaimer · দাবিত্যাগ"
+            echo
+            echo "TakaBooks prepares figures. It is not professional advice — verify with a licensed ITP/CA before filing."
+            echo
+            echo "টাকাবুকস কেবল হিসাব প্রস্তুত করে। এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত ITP/CA-এর সঙ্গে যাচাই করুন।"
+            echo
+            echo "Maintained by Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com · MIT"
+            echo
+            echo "---"
+          } > "$notes"
+          cat "$notes"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: TakaBooks ${{ steps.ver.outputs.tag }}
+          body_path: ${{ runner.temp }}/release-notes.md
+          draft: false
+          prerelease: ${{ steps.ver.outputs.prerelease }}
+          make_latest: ${{ steps.ver.outputs.prerelease == 'false' }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/*.zip
+            artifacts/*.md
+            artifacts/SHA256SUMS.txt

@@ -637,7 +637,7 @@ def _journal_header_text(templates_dir: Path | None) -> str:
     if templates_dir is not None:
         path = templates_dir / TEMPLATE_JOURNAL_HEADER
         if path.is_file():
-            template_header = path.read_text(encoding="utf-8").strip().lstrip("﻿")
+            template_header = path.read_text(encoding="utf-8").strip().lstrip("\ufeff")
             if template_header != header:
                 raise tb.JournalError(
                     f"{path}: journal header does not match the schema.",

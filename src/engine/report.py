@@ -189,11 +189,25 @@ class StatementRow:
 
 @dataclass(frozen=True)
 class Check:
-    """A reconciliation that had to hold before anything was printed."""
+    """A reconciliation that had to hold before anything was printed.
+
+    The amounts are kept as :class:`takabooks.Money` and formatted only when rendered, so
+    the reconciliation lines follow the same digit grouping as the tables they sit under.
+    """
 
     name: str
     ok: bool
-    detail: str
+    template: str  # str.format template; {0}, {1}, … are the amounts below
+    amounts: tuple[tb.Money, ...] = ()
+
+    def describe(self, fmt: Callable[[tb.Money], str] | None = None) -> str:
+        formatter = fmt or (lambda amount: tb.format_bdt(amount, symbol=True))
+        return self.template.format(*(formatter(amount) for amount in self.amounts))
+
+    @property
+    def detail(self) -> str:
+        """The sentence with default (লাখ/কোটি) grouping — used in errors and JSON."""
+        return self.describe()
 
 
 @dataclass(frozen=True)
@@ -325,8 +339,10 @@ class FinancialStatements:
     profit_and_loss: ProfitAndLoss
     balance_sheet: BalanceSheet
     checks: tuple[Check, ...]
-    posting_count: int
+    posting_count: int  # postings up to as_at — what the trial balance is built from
     entry_count: int
+    period_posting_count: int = 0  # postings inside the reporting period — the P&L's input
+    period_entry_count: int = 0
 
     @property
     def period_text(self) -> str:
@@ -344,12 +360,17 @@ class FinancialStatements:
 # ======================================================================================
 
 _MONTH_RE = re.compile(r"^(\d{4})-(0[1-9]|1[0-2])$")
-_FY_RE = re.compile(r"^FY[ _-]?(\d{4})(?:[-/](\d{2}|\d{4}))?$", re.IGNORECASE)
+#: ``FY2026``, ``FY2026-27``, ``FY 2026/2027`` — or the bare income-year form ``2026-27``.
+#: Without the ``FY`` prefix the second half is mandatory; months (``2026-07``) are matched
+#: by :data:`_MONTH_RE` first, so a month can never be read as a fiscal year.
+_FY_RE = re.compile(
+    r"^(?:FY[ _-]?(\d{4})(?:[-/](\d{2}|\d{4}))?|(\d{4})[-/](\d{2}|\d{4}))$", re.IGNORECASE
+)
 
 _PERIOD_FORMS = (
     "a month as YYYY-MM (e.g. 2026-07), or "
-    "a fiscal year as FY<year> / FY<year>-<next> (e.g. FY2026-27), which reads "
-    "books.fiscal_year_start from config.toml"
+    "a fiscal year as FY<year>, FY<year>-<next> or <year>-<next> (e.g. FY2026-27 or "
+    "2026-27), which reads books.fiscal_year_start from config.toml"
 )
 
 
@@ -429,8 +450,9 @@ def resolve_period(
 
         fiscal = _FY_RE.match(text)
         if fiscal:
-            start_year = int(fiscal.group(1))
-            suffix = fiscal.group(2)
+            prefixed = fiscal.group(1) is not None
+            start_year = int(fiscal.group(1) if prefixed else fiscal.group(3))
+            suffix = fiscal.group(2) if prefixed else fiscal.group(4)
             if suffix is not None:
                 expected = start_year + 1
                 given = int(suffix)
@@ -622,6 +644,8 @@ def build_statements(
         checks=checks,
         posting_count=len(as_at_ledger),
         entry_count=len(as_at_ledger.entries),
+        period_posting_count=len(period_ledger),
+        period_entry_count=len(period_ledger.entries),
     )
 
 
@@ -633,8 +657,6 @@ def _reconcile(
     period_ledger: tb.Ledger,
 ) -> tuple[Check, ...]:
     """Every reconciliation that must hold before a figure is allowed out of this module."""
-    money = tb.format_bdt
-
     ledger_result = _result_of(as_at_ledger)
     period_result = _result_of(period_ledger)
 
@@ -642,39 +664,41 @@ def _reconcile(
         Check(
             name="trial_balance_debits_equal_credits",
             ok=trial.is_balanced,
-            detail=(
-                f"total debits {money(trial.total_debit, symbol=True)} vs total credits "
-                f"{money(trial.total_credit, symbol=True)} — difference "
-                f"{money(trial.difference, symbol=True)}"
-            ),
+            template="total debits {0} vs total credits {1} — difference {2}",
+            amounts=(trial.total_debit, trial.total_credit, trial.difference),
         ),
         Check(
             name="balance_sheet_assets_equal_liabilities_plus_equity",
             ok=balance_sheet.is_balanced,
-            detail=(
-                f"assets {money(balance_sheet.total_assets, symbol=True)} vs liabilities "
-                f"{money(balance_sheet.total_liabilities, symbol=True)} + equity "
-                f"{money(balance_sheet.total_equity, symbol=True)} — difference "
-                f"{money(balance_sheet.difference, symbol=True)}"
+            template="assets {0} vs liabilities {1} + equity {2} — difference {3}",
+            amounts=(
+                balance_sheet.total_assets,
+                balance_sheet.total_liabilities,
+                balance_sheet.total_equity,
+                balance_sheet.difference,
             ),
         ),
         Check(
             name="profit_and_loss_sections_cover_every_income_and_expense_account",
             ok=profit_and_loss.net_profit == period_result,
-            detail=(
-                f"net profit from the sections {money(profit_and_loss.net_profit, symbol=True)} "
-                f"vs income less expenses straight from the ledger "
-                f"{money(period_result, symbol=True)}"
+            template=(
+                "net profit from the sections {0} vs income less expenses straight from "
+                "the ledger {1}"
             ),
+            amounts=(profit_and_loss.net_profit, period_result),
         ),
         Check(
             name="accumulated_result_ties_to_the_ledger",
             ok=balance_sheet.accumulated_result == ledger_result,
-            detail=(
-                f"brought forward {money(balance_sheet.opening_result, symbol=True)} + period "
-                f"{money(balance_sheet.period_result, symbol=True)} = "
-                f"{money(balance_sheet.accumulated_result, symbol=True)} vs cumulative income "
-                f"less expenses {money(ledger_result, symbol=True)}"
+            template=(
+                "brought forward {0} + period {1} = {2} vs cumulative income less "
+                "expenses {3}"
+            ),
+            amounts=(
+                balance_sheet.opening_result,
+                balance_sheet.period_result,
+                balance_sheet.accumulated_result,
+                ledger_result,
             ),
         ),
     ]
@@ -1023,8 +1047,24 @@ def render_markdown(
     lines.append(f"Period requested: {statements.period_label}")
     lines.append(
         f"{statements.posting_count} postings in {statements.entry_count} "
-        f"{tb.term('journal')} entries up to {statements.as_at_text}."
+        f"{tb.term('journal')} entries up to {statements.as_at_text}; "
+        f"{statements.period_posting_count} postings in {statements.period_entry_count} "
+        "entries fall inside the period."
     )
+    if statements.posting_count == 0:
+        lines.append("")
+        lines.append(
+            "> **The journal has no postings up to this date.** Every figure below is zero; "
+            "nothing has been earned, spent, owned or owed yet."
+        )
+    elif statements.period_posting_count == 0:
+        lines.append("")
+        lines.append(
+            "> **No postings fall inside the reporting period.** The "
+            f"{tb.term('profit_and_loss')} account below is therefore zero; the "
+            f"{tb.term('trial_balance')} and {tb.term('balance_sheet')} still carry the "
+            "cumulative position."
+        )
     lines.append("")
     lines.append(
         f"> The {tb.term('profit_and_loss')} account covers **{statements.period_text}**. "
@@ -1048,8 +1088,9 @@ def render_markdown(
         lines.append("")
         lines.append(
             "**Net profit carried to the balance sheet** — "
-            f"{fmt(statements.profit_and_loss.net_profit, symbol=True)} appears unchanged in "
-            f"the {tb.term('equity')} section below."
+            f"{fmt(statements.profit_and_loss.net_profit, symbol=True)} appears unchanged as "
+            f"\u201cProfit for the period\u201d in the {tb.term('equity')} section of the "
+            f"{tb.term('balance_sheet')}."
         )
         lines.append("")
 
@@ -1077,7 +1118,8 @@ def render_markdown(
     lines.append("")
     for check in statements.checks:
         mark = "PASS" if check.ok else "FAIL"
-        lines.append(f"- **{mark}** `{check.name}` — {check.detail}")
+        detail = check.describe(lambda amount: fmt(amount, symbol=True))
+        lines.append(f"- **{mark}** `{check.name}` — {detail}")
     lines.append("")
 
     if files:
@@ -1268,6 +1310,8 @@ def build_payload(
             "as_at": statements.as_at,
             "postings": statements.posting_count,
             "entries": statements.entry_count,
+            "period_postings": statements.period_posting_count,
+            "period_entries": statements.period_entry_count,
         },
         "trial_balance": {
             "as_at": trial.as_at,
@@ -1306,7 +1350,12 @@ def build_payload(
             "balanced": balance_sheet.is_balanced,
         },
         "checks": [
-            {"name": check.name, "ok": check.ok, "detail": check.detail}
+            {
+                "name": check.name,
+                "ok": check.ok,
+                "detail": check.detail,
+                "amounts": list(check.amounts),
+            }
             for check in statements.checks
         ],
         "files": [str(path) for path in files],
@@ -1344,7 +1393,7 @@ def build_parser() -> Any:
     parser.add_argument(
         "--period",
         metavar="PERIOD",
-        help="a month as YYYY-MM (e.g. 2026-07) or a fiscal year as FY2026-27 "
+        help="a month as YYYY-MM (e.g. 2026-07) or a fiscal year as FY2026-27 / 2026-27 "
         "(reads books.fiscal_year_start from config.toml); not combinable with --from/--to",
     )
     parser.add_argument(
@@ -1425,7 +1474,7 @@ def run(args: Any, *, out: Any = None) -> dict[str, Any]:
             render_markdown(
                 statements,
                 files=files,
-                statement=",".join(wanted) if len(wanted) == 1 else "all",
+                statement=statement,
                 grouping=getattr(args, "grouping", None),
             )
             + "\n"

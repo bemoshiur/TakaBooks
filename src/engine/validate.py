@@ -43,9 +43,10 @@ import datetime
 import io
 import re
 import sys
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence
 
 _ENGINE_DIR = str(Path(__file__).resolve().parent)
 if _ENGINE_DIR not in sys.path:  # pragma: no cover - import plumbing
@@ -57,6 +58,7 @@ __all__ = [
     "SEVERITY_ERROR",
     "SEVERITY_WARNING",
     "SEVERITIES",
+    "FINDINGS_EXIT_CODE",
     "Check",
     "CHECKS",
     "CHECKS_BY_SLUG",
@@ -65,6 +67,8 @@ __all__ = [
     "ValidationReport",
     "validate_books",
     "fiscal_year_window",
+    "fiscal_year_start_for",
+    "majority_fiscal_year",
     "render_text",
     "render_json",
     "render_checks",
@@ -90,7 +94,7 @@ _MAX_FY_FINDINGS = 10
 _ISO_DATEISH = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}$")
 
 #: Byte-order mark Excel likes to prepend to a UTF-8 CSV.
-_BOM = "\ufeff"
+_BOM = "﻿"
 
 # Which chart roles a tax_tag kind expects to see somewhere in its entry.
 _KIND_ROLES: dict[str, tuple[str, ...]] = {
@@ -173,6 +177,7 @@ CHECKS: tuple[Check, ...] = (
     Check("orphan-entry", SEVERITY_ERROR, "an entry_id has a single line, so it can never balance"),
     Check("duplicate-entry-id", SEVERITY_ERROR, "one entry_id is used by rows that are not one entry"),
     Check("tax-tag-orphan", SEVERITY_WARNING, "an entry carries a tax tag but posts to no matching tax account"),
+    Check("tax-tag-control-only", SEVERITY_WARNING, "a tax tag sits only on the tax control account, so its taxable value is ৳0.00"),
 )
 
 CHECKS_BY_SLUG: dict[str, Check] = {check.slug: check for check in CHECKS}
@@ -282,6 +287,14 @@ def _safe_date(year: int, month: int, day: int) -> datetime.date:
     return datetime.date(year, month, min(day, last))
 
 
+def fiscal_year_start_for(when: datetime.date, start_month: int, start_day: int) -> datetime.date:
+    """The opening day of the financial year (starting MM-DD) that contains ``when``."""
+    opens_this_year = _safe_date(when.year, start_month, start_day)
+    if when >= opens_this_year:
+        return opens_this_year
+    return _safe_date(when.year - 1, start_month, start_day)
+
+
 def fiscal_year_window(
     anchor: datetime.date, start_month: int, start_day: int
 ) -> tuple[datetime.date, datetime.date]:
@@ -290,12 +303,25 @@ def fiscal_year_window(
     This is pure calendar arithmetic: TakaBooks never assumes *which* month a
     Bangladeshi income year opens in — that comes from ``books.fiscal_year_start``.
     """
-    opens_this_year = _safe_date(anchor.year, start_month, start_day)
-    start = opens_this_year if anchor >= opens_this_year else _safe_date(
-        anchor.year - 1, start_month, start_day
-    )
+    start = fiscal_year_start_for(anchor, start_month, start_day)
     next_start = _safe_date(start.year + 1, start_month, start_day)
     return start, next_start - datetime.timedelta(days=1)
+
+
+def majority_fiscal_year(
+    dates: Iterable[datetime.date], start_month: int, start_day: int
+) -> tuple[tuple[datetime.date, datetime.date], int, int]:
+    """The financial year holding the most of ``dates`` → ``(window, inside, total)``.
+
+    Anchoring on the *majority* rather than on the earliest row means one stray
+    backdated posting is reported as the odd one out, instead of dragging the whole
+    window back a year and flagging every correct row.  A tie goes to the later year.
+    """
+    counted = Counter(fiscal_year_start_for(d, start_month, start_day) for d in dates)
+    if not counted:
+        raise ValueError("majority_fiscal_year() needs at least one date.")
+    best = max(counted, key=lambda start: (counted[start], start))
+    return fiscal_year_window(best, start_month, start_day), counted[best], sum(counted.values())
 
 
 def _account_matches_kind(account: tb.Account, kind: str) -> bool:
@@ -367,6 +393,11 @@ class ValidationReport:
             "warnings": len(self.warnings),
         }
 
+    def by_check(self) -> dict[str, int]:
+        """``{check slug: number of findings}`` in catalogue order — handy for summaries."""
+        counted = Counter(finding.check for finding in self.findings)
+        return {check.slug: counted[check.slug] for check in CHECKS if counted[check.slug]}
+
     def sorted_findings(self) -> list[Finding]:
         return sorted(self.findings, key=lambda f: f.sort_key())
 
@@ -421,6 +452,7 @@ class ValidationReport:
             ),
             "journal_files": list(self.journal_files),
             "counts": self.counts(),
+            "by_check": self.by_check(),
             "totals": {
                 "debit": self.total_debit,
                 "credit": self.total_credit,
@@ -441,6 +473,37 @@ class ValidationReport:
 # ======================================================================================
 
 
+@dataclass
+class _Run:
+    """One contiguous block of rows sharing an ``entry_id`` in one file on one date.
+
+    A journal entry is one transaction on one date, written as adjacent rows.  Runs are
+    built from *every* data row — parsed or not — so a broken row between two blocks
+    of the same id cannot hide that the id was reused.
+    """
+
+    entry_id: str
+    file: str
+    first_line: int
+    last_line: int
+    date: "datetime.date | None"
+    postings: list[tb.Posting] = field(default_factory=list)
+    damaged: bool = False
+
+    @property
+    def location(self) -> str:
+        if self.first_line == self.last_line:
+            return f"{self.file} line {self.first_line}"
+        return f"{self.file} lines {self.first_line}–{self.last_line}"
+
+
+@dataclass(frozen=True)
+class _RowResult:
+    posting: "tb.Posting | None"
+    entry_id: str
+    date: "datetime.date | None"
+
+
 def _normalise_header(cells: Sequence[str]) -> list[str]:
     normalised: list[str] = []
     for index, cell in enumerate(cells):
@@ -459,9 +522,13 @@ def _check_row(
     label: str,
     line: int,
     findings: list[Finding],
-    damaged: set[str],
-) -> "tb.Posting | None":
-    """Validate one CSV data row.  Returns a Posting, or None after recording findings."""
+) -> _RowResult:
+    """Validate one CSV data row.
+
+    Returns the :class:`tb.Posting` when the row is sound, otherwise ``None`` in its
+    place — after recording one finding per problem, so a row with a bad date *and* a
+    bad amount reports both.
+    """
     values = list(cells)
     entry_id_guess = str(values[1]).strip() if len(values) > 1 else ""
 
@@ -477,9 +544,7 @@ def _check_row(
                 hint=f"The header must be: {tb.JOURNAL_HEADER}",
             )
         )
-        if entry_id_guess:
-            damaged.add(entry_id_guess)
-        return None
+        return _RowResult(None, entry_id_guess, None)
 
     # `memo` is last precisely so unquoted commas in it survive — mirror Posting.from_row.
     if len(values) > len(tb.JOURNAL_COLUMNS):
@@ -614,12 +679,10 @@ def _check_row(
         )
 
     if broken or date is None or tax_tag is None or len(amounts) != 2:
-        if entry_id:
-            damaged.add(entry_id)
-        return None
+        return _RowResult(None, entry_id, date)
 
     try:
-        return tb.Posting(
+        posting = tb.Posting(
             date=date,
             entry_id=entry_id,
             description=row["description"],
@@ -645,9 +708,31 @@ def _check_row(
                 hint=exc.hint or "",
             )
         )
-        if entry_id:
-            damaged.add(entry_id)
-        return None
+        return _RowResult(None, entry_id, date)
+    return _RowResult(posting, entry_id, date)
+
+
+def _extend_runs(runs: list[_Run], result: _RowResult, *, label: str, line: int) -> None:
+    """Attach one data row to the current run, or open a new one."""
+    if not result.entry_id:
+        return  # already reported as missing-entry-id; it belongs to nothing
+    current = runs[-1] if runs else None
+    continues = (
+        current is not None
+        and current.file == label
+        and current.entry_id == result.entry_id
+        and (result.date is None or current.date is None or current.date == result.date)
+    )
+    if current is None or not continues:
+        current = _Run(result.entry_id, label, line, line, result.date)
+        runs.append(current)
+    current.last_line = line
+    if current.date is None and result.date is not None:
+        current.date = result.date
+    if result.posting is None:
+        current.damaged = True
+    else:
+        current.postings.append(result.posting)
 
 
 def _read_journal_file(
@@ -656,7 +741,7 @@ def _read_journal_file(
     label: str,
     findings: list[Finding],
     notes: list[str],
-    damaged: set[str],
+    runs: list[_Run],
 ) -> tuple[list[tb.Posting], int]:
     """Read one journal CSV tolerantly.  Returns (postings, data rows seen)."""
     try:
@@ -714,9 +799,10 @@ def _read_journal_file(
             header_seen = True
             continue
         rows += 1
-        posting = _check_row(cells, label=label, line=line, findings=findings, damaged=damaged)
-        if posting is not None:
-            postings.append(posting)
+        result = _check_row(cells, label=label, line=line, findings=findings)
+        _extend_runs(runs, result, label=label, line=line)
+        if result.posting is not None:
+            postings.append(result.posting)
 
     if not header_seen:
         findings.append(
@@ -736,12 +822,12 @@ def _read_journal_file(
 
 
 def _check_accounts(
-    ledger: tb.Ledger, chart: "tb.ChartOfAccounts | None", findings: list[Finding]
+    postings: Sequence[tb.Posting], chart: "tb.ChartOfAccounts | None", findings: list[Finding]
 ) -> None:
     """Unknown codes (error) and postings to retired accounts (warning)."""
     if chart is None:
         return
-    for posting in ledger.postings:
+    for posting in postings:
         if not chart.has(posting.account):
             findings.append(
                 _finding(
@@ -774,25 +860,26 @@ def _check_accounts(
             )
 
 
-def _check_duplicate_entry_ids(ledger: tb.Ledger, findings: list[Finding]) -> None:
-    """One entry_id must cover exactly one contiguous group of rows in one file."""
-    runs: dict[str, list[list[tb.Posting]]] = {}
-    previous_key: tuple[str, str] | None = None
-    for posting in ledger.postings:
-        key = (posting.source_file, posting.entry_id)
-        groups = runs.setdefault(posting.entry_id, [])
-        if not groups or previous_key != key:
-            groups.append([posting])
-        else:
-            groups[-1].append(posting)
-        previous_key = key
+def _runs_by_id(runs: Sequence[_Run]) -> dict[str, list[_Run]]:
+    by_id: dict[str, list[_Run]] = {}
+    for run in runs:
+        by_id.setdefault(run.entry_id, []).append(run)
+    return by_id
 
-    for entry_id, groups in runs.items():
+
+def _check_duplicate_entry_ids(runs: Sequence[_Run], findings: list[Finding]) -> set[str]:
+    """One entry_id must cover exactly one contiguous group of rows, in one file, on one date.
+
+    Returns the ids that were reported, so the entry checks can treat them specially.
+    """
+    duplicated: set[str] = set()
+    for entry_id, groups in _runs_by_id(runs).items():
         if len(groups) < 2:
             continue
+        duplicated.add(entry_id)
         reasons: list[str] = []
-        files = sorted({p.source_file for group in groups for p in group if p.source_file})
-        dates = sorted({p.date for group in groups for p in group})
+        files = sorted({run.file for run in groups if run.file})
+        dates = sorted({run.date for run in groups if run.date is not None})
         if len(files) > 1:
             reasons.append(f"across {len(files)} files")
         if len(dates) > 1:
@@ -800,60 +887,77 @@ def _check_duplicate_entry_ids(ledger: tb.Ledger, findings: list[Finding]) -> No
                 "on " + ", ".join(d.isoformat() for d in dates[:4])
                 + (" …" if len(dates) > 4 else "")
             )
-        where = "; ".join(
-            f"{group[0].source_file} "
-            + (
-                f"line {group[0].source_line}"
-                if group[0].source_line == group[-1].source_line
-                else f"lines {group[0].source_line}–{group[-1].source_line}"
-            )
-            for group in groups
-        )
+        where = "; ".join(run.location for run in groups)
         detail = f" ({', '.join(reasons)})" if reasons else ""
-        first = groups[0][0]
+        first = groups[0]
         findings.append(
             _finding(
                 "duplicate-entry-id",
                 f"entry_id {entry_id!r} is used by {len(groups)} separate groups of rows"
                 f"{detail}: {where}. Rows sharing an entry_id must be one entry, written "
-                "together.",
-                file=first.source_file,
-                line=first.source_line,
+                "together on one date.",
+                file=first.file,
+                line=first.first_line,
+                end_line=first.last_line,
                 entry_id=entry_id,
                 hint="Give each transaction its own entry_id; TakaBooks balances rows by "
                 "entry_id, so a reused id silently merges two transactions.",
             )
         )
+    return duplicated
 
 
 def _check_entries(
-    ledger: tb.Ledger,
+    runs: Sequence[_Run],
     findings: list[Finding],
     notes: list[str],
-    damaged: set[str],
     config: "tb.Config | None",
+    *,
+    duplicated: "set[str] | frozenset[str]" = frozenset(),
 ) -> None:
-    """Orphan lines and the double-entry invariant (spec §2)."""
-    for entry in ledger.entries:
-        first = entry.postings[0]
-        last = entry.postings[-1]
-        if entry.entry_id in damaged:
+    """Orphan lines and the double-entry invariant (spec §2), one run at a time.
+
+    Checking per contiguous run — not per merged entry_id — means a reused id is
+    reported once as ``duplicate-entry-id`` while each transaction is still judged on
+    its own rows, instead of the two being summed into one meaningless imbalance.
+    When the rows of a reused id *do* balance taken together (one entry split by a
+    date typo or an interleaved row), only the duplicate is reported: it is the root
+    cause, and the per-run orphans it would produce are noise.
+    """
+    by_id = _runs_by_id(runs)
+    settled: set[str] = set()
+    for entry_id in sorted(duplicated):
+        group = by_id.get(entry_id, [])
+        if not group or any(run.damaged for run in group):
+            continue
+        together = [posting for run in group for posting in run.postings]
+        if len(together) > 1 and tb.Entry.from_postings(together).is_balanced:
+            settled.add(entry_id)
             notes.append(
-                f"Balance was not checked for entry {entry.entry_id!r} because at least one "
-                "of its rows could not be read."
+                f"entry {entry_id!r}: its {len(together)} rows balance when taken together, "
+                "so only the reused entry_id was reported — fix that first."
+            )
+    for run in runs:
+        if run.entry_id in settled:
+            continue
+        if run.damaged:
+            notes.append(
+                f"Balance was not checked for entry {run.entry_id!r} ({run.location}) "
+                "because at least one of its rows could not be read."
             )
             continue
-        if len(entry.postings) == 1:
+        first = run.postings[0]
+        if len(run.postings) == 1:
             findings.append(
                 _finding(
                     "orphan-entry",
-                    f"entry_id {entry.entry_id!r} has a single line "
+                    f"entry_id {run.entry_id!r} has a single line "
                     f"({first.account} {'debit' if first.is_debit else 'credit'} "
                     f"{_money(first.amount, config)}), so it can never balance. Every entry "
                     "needs at least one debit and one credit.",
-                    file=first.source_file,
-                    line=first.source_line,
-                    entry_id=entry.entry_id,
+                    file=run.file,
+                    line=run.first_line,
+                    entry_id=run.entry_id,
                     account=first.account,
                     amount=first.amount,
                     hint="Add the other side of the transaction, or fix the entry_id if this "
@@ -861,20 +965,21 @@ def _check_entries(
                 )
             )
             continue
+        entry = tb.Entry.from_postings(run.postings)
         if not entry.is_balanced:
             difference = entry.difference
             side = "debit" if difference.is_positive() else "credit"
             findings.append(
                 _finding(
                     "unbalanced-entry",
-                    f"entry_id {entry.entry_id!r} dated {entry.date.isoformat()} does not "
+                    f"entry_id {run.entry_id!r} dated {entry.date.isoformat()} does not "
                     f"balance: debits {_money(entry.total_debit, config)} vs credits "
                     f"{_money(entry.total_credit, config)} — "
                     f"{_money(abs(difference), config)} too much {side}.",
-                    file=first.source_file,
-                    line=first.source_line,
-                    end_line=last.source_line if last.source_file == first.source_file else 0,
-                    entry_id=entry.entry_id,
+                    file=run.file,
+                    line=run.first_line,
+                    end_line=run.last_line,
+                    entry_id=run.entry_id,
                     amount=difference,
                     hint="Correct the rows. TakaBooks never adjusts your numbers for you.",
                 )
@@ -882,78 +987,111 @@ def _check_entries(
 
 
 def _check_tax_tags(
-    ledger: tb.Ledger, chart: "tb.ChartOfAccounts | None", findings: list[Finding]
+    runs: Sequence[_Run], chart: "tb.ChartOfAccounts | None", findings: list[Finding]
 ) -> None:
-    """VAT/TDS/VDS tags must sit on, and travel with, the right accounts."""
+    """VAT/TDS/VDS tags must sit on, and travel with, the right accounts.
+
+    The convention shared with ``vat.py``: inside one entry, the line hitting the tax
+    control account (chart role ``vat_output`` / ``vat_input`` / ``vds_payable`` /
+    ``tds_*``) *is* the tax; every other line carrying the same tag is taxable value.
+    """
     if chart is None:
         return
 
     # Row level: a tag sitting directly on the control account of a *different* tax.
-    for posting in ledger.postings:
-        kind = posting.tax_tag.kind
-        if kind == tb.TAG_NONE or not chart.has(posting.account):
-            continue
-        account = chart.get(posting.account)
-        if account.role in _CONTROL_ROLES and account.role not in _KIND_ROLES.get(kind, ()):
-            findings.append(
-                _finding(
-                    "tax-tag-account-mismatch",
-                    f"tax_tag {str(posting.tax_tag)} ({_KIND_TERM.get(kind, kind)}) sits on "
-                    f"{account.label}, which accounts.toml declares as role "
-                    f"{account.role!r} — a different tax.",
-                    file=posting.source_file,
-                    line=posting.source_line,
-                    entry_id=posting.entry_id,
-                    account=posting.account,
-                    hint=tb.TAX_TAG_GRAMMAR,
+    mismatched: set[tuple[str, str]] = set()
+    for run in runs:
+        for posting in run.postings:
+            kind = posting.tax_tag.kind
+            if kind == tb.TAG_NONE or not chart.has(posting.account):
+                continue
+            account = chart.get(posting.account)
+            if account.role in _CONTROL_ROLES and account.role not in _KIND_ROLES.get(kind, ()):
+                mismatched.add((run.entry_id, kind))
+                findings.append(
+                    _finding(
+                        "tax-tag-account-mismatch",
+                        f"tax_tag {str(posting.tax_tag)} ({_KIND_TERM.get(kind, kind)}) sits on "
+                        f"{account.label}, which accounts.toml declares as role "
+                        f"{account.role!r} — a different tax.",
+                        file=posting.source_file,
+                        line=posting.source_line,
+                        entry_id=posting.entry_id,
+                        account=posting.account,
+                        hint=tb.TAX_TAG_GRAMMAR,
+                    )
                 )
-            )
 
-    # Entry level: the tag should be accompanied by its control account somewhere.
+    # Entry level: the tag should be accompanied by its control account somewhere, and
+    # the control line must not be the *only* tagged line.
     declared = {
         kind: [role for role in roles if chart.by_role(role)]
         for kind, roles in _KIND_ROLES.items()
     }
-    for entry in ledger.entries:
-        accounts = [chart.get(code) for code in entry.accounts if chart.has(code)]
-        seen: set[str] = set()
-        for posting in entry.postings:
+    for run in runs:
+        known = {p.account: chart.get(p.account) for p in run.postings if chart.has(p.account)}
+        tagged_by_kind: dict[str, list[tb.Posting]] = {}
+        for posting in run.postings:
             kind = posting.tax_tag.kind
-            if kind == tb.TAG_NONE or kind in seen or not declared.get(kind):
-                continue
-            seen.add(kind)
-            if any(_account_matches_kind(account, kind) for account in accounts):
-                continue
-            expected = ", ".join(
-                account.label
-                for role in declared[kind]
-                for account in chart.by_role(role)
-            )
-            findings.append(
-                _finding(
-                    "tax-tag-orphan",
-                    f"entry_id {entry.entry_id!r} carries tax_tag {str(posting.tax_tag)} "
-                    f"({_KIND_TERM.get(kind, kind)}) but no line in it posts to the matching "
-                    f"tax account ({expected}).",
-                    file=posting.source_file,
-                    line=posting.source_line,
-                    entry_id=entry.entry_id,
-                    account=posting.account,
-                    hint="Either post the tax to its control account in the same entry, or "
-                    "clear the tax_tag on this row if the line is not tax-relevant.",
+            if kind != tb.TAG_NONE:
+                tagged_by_kind.setdefault(kind, []).append(posting)
+        for kind, tagged in tagged_by_kind.items():
+            if not declared.get(kind) or (run.entry_id, kind) in mismatched:
+                continue  # nothing to compare, or the row-level error already says it all
+            first = tagged[0]
+            control_present = any(_account_matches_kind(a, kind) for a in known.values())
+            if not control_present:
+                expected = ", ".join(
+                    account.label for role in declared[kind] for account in chart.by_role(role)
                 )
-            )
+                findings.append(
+                    _finding(
+                        "tax-tag-orphan",
+                        f"entry_id {run.entry_id!r} carries tax_tag {str(first.tax_tag)} "
+                        f"({_KIND_TERM.get(kind, kind)}) but no line in it posts to the "
+                        f"matching tax account ({expected}).",
+                        file=first.source_file,
+                        line=first.source_line,
+                        entry_id=run.entry_id,
+                        account=first.account,
+                        hint="Either post the tax to its control account in the same entry, or "
+                        "clear the tax_tag on this row if the line is not tax-relevant.",
+                    )
+                )
+                continue
+            value_lines = [
+                p
+                for p in tagged
+                if not (p.account in known and _account_matches_kind(known[p.account], kind))
+            ]
+            if not value_lines:
+                control = known[first.account]
+                findings.append(
+                    _finding(
+                        "tax-tag-control-only",
+                        f"entry_id {run.entry_id!r} carries tax_tag {str(first.tax_tag)} "
+                        f"({_KIND_TERM.get(kind, kind)}) only on its tax control account "
+                        f"({control.label}); no value line is tagged, so the taxable value "
+                        "behind this tax would be read as ৳0.00.",
+                        file=first.source_file,
+                        line=first.source_line,
+                        entry_id=run.entry_id,
+                        account=first.account,
+                        hint="Tag the sales/purchase line that the tax was charged on as well. "
+                        "A pure tax deposit or adjustment should use NONE.",
+                    )
+                )
 
 
 def _check_dates(
-    ledger: tb.Ledger,
+    postings: Sequence[tb.Posting],
     findings: list[Finding],
     window: "tuple[datetime.date, datetime.date] | None",
     window_source: str,
 ) -> None:
     """Backwards dates, rows in the wrong month file, dates outside the financial year."""
     previous: dict[str, tb.Posting] = {}
-    for posting in ledger.postings:
+    for posting in postings:
         earlier = previous.get(posting.source_file)
         if earlier is not None and posting.date < earlier.date:
             findings.append(
@@ -989,13 +1127,13 @@ def _check_dates(
     if window is None:
         return
     start, end = window
-    outside = [p for p in ledger.postings if not (start <= p.date <= end)]
+    outside = [p for p in postings if not (start <= p.date <= end)]
     for posting in outside[:_MAX_FY_FINDINGS]:
         findings.append(
             _finding(
                 "date-outside-financial-year",
                 f"Date {posting.date.isoformat()} is outside the financial year being "
-                f"validated ({start.isoformat()} → {end.isoformat()}, {window_source}).",
+                f"validated ({start.isoformat()} → {end.isoformat()}; {window_source}).",
                 file=posting.source_file,
                 line=posting.source_line,
                 entry_id=posting.entry_id,
@@ -1019,6 +1157,31 @@ def _check_dates(
         )
 
 
+def _note_month_gaps(journal_labels: Sequence[str], notes: list[str]) -> None:
+    """A missing month between two journal files is worth a note — never a finding."""
+    months: list[tuple[int, int, str]] = []
+    for label in journal_labels:
+        name = Path(label).name
+        match = tb.JOURNAL_FILENAME_RE.match(name)
+        if match:
+            months.append((int(match.group(1)), int(match.group(2)), name))
+    months.sort()
+    for (y1, m1, n1), (y2, m2, n2) in zip(months, months[1:]):
+        span = (y2 - y1) * 12 + (m2 - m1)
+        if span > 1:
+            missing = []
+            y, m = y1, m1
+            for _ in range(span - 1):
+                m += 1
+                if m > 12:
+                    m, y = 1, y + 1
+                missing.append(f"{y:04d}-{m:02d}")
+            notes.append(
+                f"No journal file for {', '.join(missing)} between {n1} and {n2} — fine if "
+                "those months had no transactions, otherwise entries are missing."
+            )
+
+
 # ======================================================================================
 # The pipeline
 # ======================================================================================
@@ -1033,8 +1196,11 @@ def validate_books(
 
     ``fy_start`` pins the financial year window explicitly (an ISO date, the day the
     year opens).  Without it the window comes from ``books.fiscal_year_start`` in
-    ``config.toml``, anchored on the earliest posting; with neither, the date-range
-    check is skipped and said so.  TakaBooks never guesses an income year.
+    ``config.toml``, anchored on the year that holds most postings; with neither, the
+    date-range check is skipped and said so.  TakaBooks never guesses an income year.
+
+    Raises :class:`takabooks.LedgerError` only when ``books_dir`` itself is not a
+    directory; every other problem is returned as a finding.
     """
     root = Path(books_dir)
     if not root.is_dir():
@@ -1120,7 +1286,7 @@ def validate_books(
     journal_dirname = config.journal_dirname if config is not None else tb.JOURNAL_DIRNAME
     jdir = tb.journal_dir(root, journal_dirname)
     postings: list[tb.Posting] = []
-    damaged: set[str] = set()
+    runs: list[_Run] = []
     if not jdir.is_dir():
         findings.append(
             _finding(
@@ -1172,30 +1338,37 @@ def validate_books(
                     )
                 )
             file_postings, rows = _read_journal_file(
-                path, label=label, findings=findings, notes=notes, damaged=damaged
+                path, label=label, findings=findings, notes=notes, runs=runs
             )
             postings.extend(file_postings)
             report.rows_read += rows
+        _note_month_gaps(report.journal_files, notes)
 
     # -- ledger-level checks ----------------------------------------------------------
     ledger = tb.Ledger(postings, chart=chart, config=config, books_dir=root)
     report.postings_checked = len(ledger.postings)
-    report.entries = len(ledger.entries)
+    report.entries = len(runs)
     report.total_debit = ledger.total_debits()
     report.total_credit = ledger.total_credits()
     report.first_date, report.last_date = ledger.date_range()
 
     window, window_source = _resolve_financial_year(
-        report, config=config, fy_start=fy_start, notes=notes, findings=findings, relative_to=relative_to
+        report,
+        config=config,
+        fy_start=fy_start,
+        dates=[p.date for p in ledger.postings],
+        notes=notes,
+        findings=findings,
+        relative_to=relative_to,
     )
     report.financial_year = window
     report.financial_year_source = window_source
 
-    _check_accounts(ledger, chart, findings)
-    _check_duplicate_entry_ids(ledger, findings)
-    _check_entries(ledger, findings, notes, damaged, config)
-    _check_tax_tags(ledger, chart, findings)
-    _check_dates(ledger, findings, window, window_source)
+    _check_accounts(ledger.postings, chart, findings)
+    duplicated = _check_duplicate_entry_ids(runs, findings)
+    _check_entries(runs, findings, notes, config, duplicated=duplicated)
+    _check_tax_tags(runs, chart, findings)
+    _check_dates(ledger.postings, findings, window, window_source)
     return report
 
 
@@ -1204,6 +1377,7 @@ def _resolve_financial_year(
     *,
     config: "tb.Config | None",
     fy_start: "datetime.date | str | None",
+    dates: Sequence[datetime.date],
     notes: list[str],
     findings: list[Finding],
     relative_to: "Path | None",
@@ -1232,23 +1406,24 @@ def _resolve_financial_year(
         )
         return None, ""
 
-    if report.first_date is None:
+    if not dates:
         notes.append("The financial-year date check was skipped: no postings were readable.")
         return None, ""
 
     month_text, _, day_text = config.fiscal_year_start.partition("-")
     try:
         month, day = int(month_text), int(day_text)
-        window = fiscal_year_window(report.first_date, month, day)
+        window, inside, total = majority_fiscal_year(dates, month, day)
     except ValueError:  # pragma: no cover - Config already validates the MM-DD shape
         notes.append(
             f"The financial-year date check was skipped: fiscal_year_start "
             f"{config.fiscal_year_start!r} could not be read as MM-DD."
         )
         return None, ""
+    share = f"all {total}" if inside == total else f"{inside} of {total}"
     return window, (
-        f"config fiscal_year_start = {config.fiscal_year_start}, anchored on the earliest "
-        f"posting {report.first_date.isoformat()}"
+        f"config fiscal_year_start = {config.fiscal_year_start}; the year holding "
+        f"{share} posting(s)"
     )
 
 
@@ -1353,7 +1528,7 @@ def render_text(
     width = max(len(key) for key, _ in rows)
     lines.extend(f"{key.ljust(width)} : {value}" for key, value in rows)
 
-    grouped = {severity: [] for severity in SEVERITIES}
+    grouped: dict[str, list[Finding]] = {severity: [] for severity in SEVERITIES}
     for finding in report.sorted_findings():
         grouped[finding.severity].append(finding)
 
@@ -1398,8 +1573,8 @@ _EPILOG = f"""severity:
 exit codes:
   0  clean (or only warnings remain and --allow-warnings was given)
   {FINDINGS_EXIT_CODE}  findings were reported
-  2  a config problem (e.g. --fy-start is not an ISO date, or config.toml is unusable)
-  4  the books directory could not be read
+  {tb.ConfigError.exit_code}  a config problem (e.g. --fy-start is not an ISO date)
+  {tb.LedgerError.exit_code}  the books directory could not be read
 
 {tb.ATTRIBUTION}"""
 

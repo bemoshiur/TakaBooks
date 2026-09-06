@@ -10,13 +10,16 @@
 #      SME's office laptop.
 #   2. Every distribution bundle still builds. A broken bundle fails CI.
 #
-# BUILD SCRIPT CONTRACT (reconcile with build/build.py if it drifts):
-#   python3 build/build.py --check
-#     Builds every target from src/ and exits NON-ZERO if any target is missing,
-#     malformed, or over its platform limit — notably the ChatGPT 8,000-character
-#     instruction cap (spec 5). Writing dist/ as a side effect is fine.
-#   python3 build/build.py --all
-#     Full build, used by release.yml and publish-packages.yml.
+# BUILD SCRIPT CONTRACT (build/build.py — verified 2026-09-06; there is NO --all flag):
+#   python3 build/build.py --check [--strict]
+#     Assembles every target from src/ and verifies every platform limit —
+#     notably the ChatGPT 8,000-character instruction cap (spec 5) — but writes
+#     NOTHING. Exits non-zero on any hard failure. --strict additionally treats
+#     a missing expected source file as a failure: CI applies it on main, and
+#     release.yml / publish-packages.yml apply it always.
+#   python3 build/build.py --target all [--clean] [--strict]
+#     The real build. Writes dist/ and regenerates AGENTS.md at the repo root.
+#     Bare `python3 build/build.py` is equivalent (the default target is all).
 #
 # ACTION VERSIONS verified 2026-09-05 from each action's releases.atom:
 #   actions/checkout@v7 (v7.0.1) · actions/setup-python@v7 (v7.0.0)
@@ -117,9 +120,68 @@ jobs:
           "$RUNNER_TEMP/clean/bin/python" -m unittest discover tests -v
 
       - name: Build check — every bundle must build, ChatGPT 8k cap enforced
+        env:
+          # main must always be releasable, so a missing source file fails there.
+          # Elsewhere a missing file is reported but does not block the push.
+          STRICT_FLAG: ${{ github.ref == 'refs/heads/main' && '--strict' || '' }}
         run: |
           set -euo pipefail
-          "$RUNNER_TEMP/clean/bin/python" build/build.py --check
+          # shellcheck disable=SC2086  # STRICT_FLAG is either empty or exactly one flag
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --check $STRICT_FLAG
+
+      # --check writes nothing, so a real build on one matrix leg proves the
+      # write path and produces the dist/ that the next two steps consume.
+      - name: Full build (3.11 only) — write dist/ and regenerate AGENTS.md
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --target all --clean --quiet
+          for must in \
+            dist/claude-skill/bd-bookkeeping-tax/SKILL.md \
+            dist/chatgpt/instructions.md \
+            dist/gemini/gem-instructions.md \
+            dist/universal/takabooks-complete.md \
+            AGENTS.md
+          do
+            if [ ! -s "$must" ]; then
+              echo "::error::build/build.py did not produce $must"
+              exit 1
+            fi
+          done
+          # Byte-identical output on a re-run is the determinism promise (spec 5).
+          find dist -type f -exec sha256sum {} + | sort -k2 > "$RUNNER_TEMP/build-1.sha"
+          "$RUNNER_TEMP/clean/bin/python" build/build.py --target all --quiet
+          find dist -type f -exec sha256sum {} + | sort -k2 > "$RUNNER_TEMP/build-2.sha"
+          if ! diff -q "$RUNNER_TEMP/build-1.sha" "$RUNNER_TEMP/build-2.sha" > /dev/null; then
+            echo "::error::two consecutive builds produced different dist/ bytes — build.py is not deterministic"
+            diff "$RUNNER_TEMP/build-1.sha" "$RUNNER_TEMP/build-2.sha" || true
+            exit 1
+          fi
+          echo "dist/ is byte-identical across two builds"
+
+      - name: Installer against the real build (catches layout drift between build.py and bin/takabooks.mjs)
+        if: matrix.python-version == '3.11'
+        run: |
+          set -euo pipefail
+          node --version
+          node bin/takabooks.mjs list --dist dist --json > "$RUNNER_TEMP/list.json"
+          node -e "
+            const r = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8'));
+            const missing = r.targets.filter(t => !t.available).map(t => t.target);
+            if (missing.length) {
+              console.error('::error::bundles the installer cannot find in dist/: ' + missing.join(', '));
+              process.exit(1);
+            }
+            console.log('installer sees every bundle: ' + r.targets.map(t => t.target).join(', '));
+          " "$RUNNER_TEMP/list.json"
+          for target in claude chatgpt gemini universal agents; do
+            node bin/takabooks.mjs install "$target" --dist dist --dest "$RUNNER_TEMP/integ/$target" --quiet
+          done
+          test -s "$RUNNER_TEMP/integ/claude/SKILL.md"
+          test -s "$RUNNER_TEMP/integ/chatgpt/instructions.md"
+          test -s "$RUNNER_TEMP/integ/gemini/gem-instructions.md"
+          test -s "$RUNNER_TEMP/integ/universal"
+          test -s "$RUNNER_TEMP/integ/agents"
 
       - name: Upload the built bundles for review
         if: ${{ always() && matrix.python-version == '3.11' }}
@@ -167,15 +229,19 @@ jobs:
             if (!/^https:\/\/github\.com\/bemoshiur\/TakaBooks\.git$/.test(p.repository.url)) {
               throw new Error('repository.url must be https://github.com/bemoshiur/TakaBooks.git — GitHub Packages links the package to the repo through it');
             }
+            if (p.publishConfig.registry !== 'https://npm.pkg.github.com') throw new Error('publishConfig.registry must be https://npm.pkg.github.com');
             const deps = Object.keys(p.dependencies || {}).length + Object.keys(p.devDependencies || {}).length;
             if (deps) throw new Error('the installer must stay dependency-free, found ' + deps);
+            for (const s of Object.values(p.scripts || {})) {
+              if (/build\/build\.py.*--all(\s|$)/.test(s)) throw new Error('build.py has no --all flag; use --target all: ' + s);
+            }
             console.log('package.json OK');
           "
 
       - name: Syntax check
         run: node --check bin/takabooks.mjs
 
-      - name: Smoke test — version, help, list
+      - name: Smoke test — version, help, list, usage errors
         run: |
           set -euo pipefail
           node bin/takabooks.mjs --version
@@ -184,6 +250,14 @@ jobs:
           # No sub-command at all is a usage error, not a success.
           if node bin/takabooks.mjs > /dev/null 2>&1; then
             echo "::error::bare invocation should exit non-zero"
+            exit 1
+          fi
+          # Usage problems are exit 2, distinct from a failed install (exit 1).
+          set +e
+          node bin/takabooks.mjs install nosuchplatform > /dev/null 2>&1; rc=$?
+          set -e
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::unknown target should exit 2, got $rc"
             exit 1
           fi
 
@@ -210,19 +284,28 @@ jobs:
       - name: Refuse to clobber, then replace with --force
         run: |
           set -euo pipefail
+          # Stamp the install so we can prove the refusal touched nothing.
+          printf 'LOCAL EDIT\n' > sandbox/skills/bd-bookkeeping-tax/SKILL.md
           if node bin/takabooks.mjs install claude --dist fixture-dist --dest sandbox/skills/bd-bookkeeping-tax; then
             echo "::error::the installer overwrote an existing install without --force"
             exit 1
           fi
-          test -f sandbox/skills/bd-bookkeeping-tax/SKILL.md
+          if [ "$(cat sandbox/skills/bd-bookkeeping-tax/SKILL.md)" != "LOCAL EDIT" ]; then
+            echo "::error::the refused install still modified the destination"
+            exit 1
+          fi
           node bin/takabooks.mjs install claude --dist fixture-dist --dest sandbox/skills/bd-bookkeeping-tax --force --quiet
-          test -f sandbox/skills/bd-bookkeeping-tax/SKILL.md
+          grep -q "CI fixture" sandbox/skills/bd-bookkeeping-tax/SKILL.md
 
       - name: Install a single-file bundle
         run: |
           set -euo pipefail
           node bin/takabooks.mjs install universal --dist fixture-dist --dest sandbox/takabooks-complete.md --quiet
           test -s sandbox/takabooks-complete.md
+          if node bin/takabooks.mjs install universal --dist fixture-dist --dest sandbox/takabooks-complete.md --quiet; then
+            echo "::error::a single-file install was overwritten without --force"
+            exit 1
+          fi
 
       - name: --dry-run writes nothing
         run: |

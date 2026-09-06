@@ -242,7 +242,7 @@ function distHint(dist) {
   return [
     `No built bundles found at ${dist.dir}`,
     'Build them from a TakaBooks checkout:',
-    '      python3 build/build.py --all',
+    '      python3 build/build.py --target all',
     'then point the installer at the result:',
     '      npx @bemoshiur/takabooks install <target> --dist ./dist',
     `Or download a bundle from ${REPO_URL}/releases/latest`,
@@ -572,7 +572,7 @@ function commandInstall(positional, opts) {
   }
   if (target.kind === 'dir' && isEmptyDir(source)) {
     throw new CliError(`The ${target.label} at ${source} is empty.`, {
-      hint: 'Re-run `python3 build/build.py --all` and read its output.',
+      hint: 'Re-run `python3 build/build.py --target all` and read its output.',
     });
   }
 
@@ -647,7 +647,7 @@ function commandInstall(positional, opts) {
 
   if (copied.files === 0) {
     throw new CliError(`Copied nothing from ${source}. The bundle looks broken.`, {
-      hint: 'Rebuild with `python3 build/build.py --all` and try again.',
+      hint: 'Rebuild with `python3 build/build.py --target all` and try again.',
     });
   }
 

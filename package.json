@@ -50,7 +50,7 @@
     "registry": "https://npm.pkg.github.com"
   },
   "scripts": {
-    "build": "python3 build/build.py --all",
+    "build": "python3 build/build.py --target all",
     "check": "python3 build/build.py --check",
     "test": "python3 -m unittest discover tests -v",
     "takabooks": "node bin/takabooks.mjs"

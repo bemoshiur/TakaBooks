@@ -1,0 +1,115 @@
+# .github/ISSUE_TEMPLATE/bug_report.yml
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+name: "Bug report / ত্রুটি প্রতিবেদন"
+description: "The engine, a bundle, the installer or the docs behave wrongly."
+title: "[bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ধন্যবাদ / Thank you for reporting. A few things make a bug fixable in one pass:
+        the exact command, the exact output, and a journal snippet that reproduces it.
+
+        **A wrong tax figure is not a bug report — it is a tax rule update.** If a rate,
+        threshold, deadline or section number is wrong or out of date, use the
+        *Tax rule update* form instead so the primary source gets recorded.
+
+        **Never paste real data.** No TIN, BIN, bank statements, real party names or real
+        amounts. Round the numbers and rename the parties; the engine does not care.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: "Where is the bug?"
+      options:
+        - "Engine — takabooks.py (money, formatting, chart, journal IO)"
+        - "Engine — init_books.py"
+        - "Engine — post.py"
+        - "Engine — report.py (trial balance, P&L, balance sheet)"
+        - "Engine — vat.py (মূসক / VAT, Mushak 9.1)"
+        - "Engine — tax.py (আয়কর / income tax)"
+        - "Engine — validate.py"
+        - "Engine — rates.py / rates-AY<year>.toml loading"
+        - "Templates — accounts.toml, config.toml, journal header"
+        - "Build — build/build.py or a dist/ bundle"
+        - "Installer — npx @bemoshiur/takabooks"
+        - "Docs — core/, references/, README, wiki"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: "What happened?"
+      description: "What you did, what you expected, what you got. Paste the full error message — TakaBooks errors carry a hint line that is often the whole answer."
+      placeholder: "I ran … and expected … but got …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: command
+    attributes:
+      label: "Exact command and output"
+      description: "The command line you ran and everything it printed. Add --json if the script supports it."
+      render: shell
+      placeholder: |
+        $ python3 src/engine/validate.py --books books
+        …
+    validations:
+      required: true
+
+  - type: textarea
+    id: snippet
+    attributes:
+      label: "Minimal journal / config / chart snippet that reproduces it"
+      description: "The smallest CSV or TOML that shows the problem, with fake amounts and fake party names. Keep the header row."
+      render: csv
+      placeholder: |
+        date,entry_id,description,account,debit,credit,party,doc_ref,tax_tag,memo
+        2026-07-01,X-1,example,1100,100.00,,Example Party,DOC-1,NONE,fake data
+
+  - type: input
+    id: python
+    attributes:
+      label: "Python version and OS"
+      description: "Output of `python3 --version`, plus Windows / macOS / Linux. TakaBooks needs Python 3.11 or newer and nothing else."
+      placeholder: "Python 3.12.4 · Windows 11"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "TakaBooks version / commit"
+      description: "Release tag, `python3 src/engine/takabooks.py --version`, or the git commit."
+      placeholder: "v0.1.0"
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: "LLM platform (only if the bug is in a bundle or in the assistant's behaviour)"
+      options:
+        - "Not applicable — engine / docs bug"
+        - "Claude skill (claude.ai or Claude Code)"
+        - "ChatGPT custom GPT"
+        - "Gemini Gem"
+        - "Universal bundle (Kimi, DeepSeek, Llama, other)"
+        - "AGENTS.md (Cursor, Codex, Copilot, other)"
+
+  - type: input
+    id: assessment_year
+    attributes:
+      label: "Assessment year / করবর্ষ in books/config.toml (if relevant)"
+      placeholder: "2026-27"
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: "Confirm"
+      options:
+        - label: "This issue contains no real TIN, BIN, bank data, real party names or real amounts."
+          required: true
+        - label: "This is a software bug, not a wrong or outdated tax figure (those go to the Tax rule update form)."
+          required: true

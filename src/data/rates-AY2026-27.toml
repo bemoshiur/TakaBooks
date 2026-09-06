@@ -58,6 +58,7 @@
 #            income_tax.individual.default_location        (bare string)
 #            income_tax.individual.thresholds.<category>   (BDT — tax-free threshold)
 #            income_tax.individual.slabs                   (array of slab tables)
+#            income_tax.individual.rebate.formula          (bare string: which construction)
 #            income_tax.individual.rebate.rate             (percent of eligible investment)
 #            income_tax.individual.rebate.income_cap_percent   (percent of taxable income)
 #            income_tax.individual.rebate.absolute_cap     (BDT)

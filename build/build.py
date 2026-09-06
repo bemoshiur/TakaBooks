@@ -4,6 +4,7 @@
 Usage::
 
     python3 build/build.py                      # build every target
+    python3 build/build.py --all                # the same, spelled out (CI uses this)
     python3 build/build.py --target chatgpt     # build one target
     python3 build/build.py --clean              # wipe dist/ first, then build
     python3 build/build.py --check              # verify every limit, write nothing
@@ -21,8 +22,14 @@ Targets (design spec §5):
                  (HARD 10 files — the tightest packaging cap of any platform).
 ``universal``    ``dist/universal/takabooks-complete.md`` — one paste-anywhere
                  file with an anchor-linked table of contents.
-``agents-md``    ``AGENTS.md`` at the repository root.
+``agents-md``    ``AGENTS.md`` at the repository root, plus a copy at
+                 ``dist/agents-md/AGENTS.md`` for the npm installer.
 ===============  ==============================================================
+
+One source of truth.  ``src/core/`` *is* the assistant instruction on every platform;
+the build never restates its rules.  What the build adds is navigation only — where the
+references, the rates file and the scripts live on that particular platform — so a rule
+edited in ``src/core/`` reaches every bundle and no bundle can drift.
 
 Design contracts this file honours:
 
@@ -61,6 +68,7 @@ if sys.version_info < MIN_PYTHON:  # pragma: no cover - cannot run on a new inte
     raise SystemExit(2)
 
 import argparse  # noqa: E402
+import ast  # noqa: E402
 import hashlib  # noqa: E402
 import json  # noqa: E402
 import re  # noqa: E402
@@ -106,21 +114,13 @@ DISCLAIMER = (
     "submitting anything to the National Board of Revenue (NBR)."
 )
 
-# The four rules that must survive even when a platform drops the knowledge files.
-PRIME_DIRECTIVE_LINES = (
-    "1. **You never do arithmetic.** Deterministic Python owns every number; you own "
-    "classification, form selection and explanation. If you cannot run the engine, give "
-    "the accounts, the `tax_tag` and the formula, then ask the user to run the script and "
-    "paste the output back. Do not compute it yourself.",
-    "2. **Never invent a rate, threshold, deadline or statute number.** Every figure comes "
-    "from the rates file. If a figure is marked `verified = false`, say so in the answer "
-    "and tell the user to confirm with NBR. Absent beats wrong.",
-    "3. **State the assessment year** in any tax computation output.",
-    "4. **Carry the Bangla statutory term beside the English one** — মূসক / VAT, "
-    "উৎসে কর কর্তন / TDS, খতিয়ান / ledger — so the user can find the form on the NBR "
-    "portal. Reply in the user's language (Bangla, Banglish or English); reason in English.",
-    "5. **End every tax output with the disclaimer** below.",
-)
+# Where the engine scripts sit for a user who has no bundle with scripts in it (ChatGPT,
+# Gemini, the single-file bundle): a clone of the repository.
+CLONE_LOCATION = f"in a clone of {REPO_URL}"
+
+# The behavioural rules — prime directive, never invent a figure, state the assessment
+# year, the user's language, the disclaimer — live in ``src/core/`` and nowhere else.
+# This file deliberately holds no copy of them.
 
 
 # --------------------------------------------------------------------------------------
@@ -131,12 +131,14 @@ PRIME_DIRECTIVE_LINES = (
 SKILL_NAME = "bd-bookkeeping-tax"
 
 # The description is the ONLY thing an assistant sees before deciding to load the skill,
-# so it is dense with trigger terms: Bangladesh, BDT, taka, VAT, মূসক, Mushak, TDS,
-# উৎসে কর কর্তন, NBR, income tax, TIN, BIN, bookkeeping.
+# so it says when to trigger and is dense with the terms a user actually types:
+# Bangladesh, BDT, taka, VAT, মূসক, Mushak, TDS, উৎসে কর কর্তন, VDS, NBR, TIN, BIN,
+# income tax, payroll, journals, trial balance, P&L.  It must stay within 200 characters
+# (the claude.ai upload cap); the build measures it in Unicode codepoints.
 SKILL_DESCRIPTION = (
-    "Bangladeshi bookkeeping and tax. Use for BDT/taka double-entry books, VAT/মূসক and "
-    "Mushak forms, TDS/উৎসে কর কর্তন, NBR income tax, TIN/BIN, trial balance, P&L or "
-    "balance sheet."
+    "Bangladesh bookkeeping and tax. Use when a user mentions Bangladesh, BDT/taka, "
+    "VAT/মূসক, Mushak forms, TDS/উৎসে কর কর্তন, VDS, NBR, TIN/BIN, income tax, payroll, "
+    "journals, trial balance or P&L."
 )
 
 SKILL_COMPATIBILITY = (
@@ -242,6 +244,31 @@ ENGINE_PURPOSE = {
     ),
 }
 
+
+def module_purpose(name: str, source: str) -> str:
+    """One line on what an engine module is for.
+
+    Spec §4.6 wording when the module is one the spec names; otherwise the first line of
+    the module's own docstring (``rates.py`` and any helper added later), so a script is
+    never listed as "see the module docstring" — that is exactly the file the assistant
+    is told not to read.
+    """
+    purpose = ENGINE_PURPOSE.get(name)
+    if purpose:
+        return purpose
+    try:
+        docstring = ast.get_docstring(ast.parse(source)) or ""
+    except (SyntaxError, ValueError):
+        docstring = ""
+    for line in docstring.split("\n"):
+        line = line.strip()
+        if not line:
+            continue
+        line = re.sub(rf"^{re.escape(PROJECT_NAME)}\s*[—–-]\s*", "", line).rstrip(".")
+        return line[:1].upper() + line[1:]
+    return "Supporting module for the engine scripts."
+
+
 # Content between these markers is dropped from the two *compact instruction* targets
 # (ChatGPT `instructions.md`, Gemini `gem-instructions.md`) and kept everywhere else.
 # It is the documented escape valve when `src/core/` grows past the 8,000-character cap.
@@ -334,12 +361,24 @@ def shift_headings(text: str, target_min_level: int) -> str:
     return "\n".join(out)
 
 
+# Punctuation GitHub's slugger drops: ASCII punctuation plus the general and supplemental
+# punctuation blocks (em dash, ellipsis, ...).  Letters, digits and combining marks in every
+# script survive, so a Bangla heading keeps its vowel signs.
+_SLUG_DROP_RE = re.compile(
+    "[\u2000-\u206f\u2e00-\u2e7f" + re.escape("\\'!\"#$%&()*+,./:;<=>?@[]^`{|}~") + "]"
+)
+
+
 def slugify(title: str) -> str:
-    """GitHub-flavoured anchor slug.  Unicode letters (including Bangla) are kept."""
+    """GitHub-style anchor slug: lower-case, drop punctuation, spaces become hyphens.
+
+    ``re``'s ``\\w`` does not match combining marks, so a ``[^\\w\\s-]`` strip would turn
+    ``মূসক`` into ``মসক`` and every Bangla anchor would dangle.  This follows the algorithm
+    GitHub, VS Code and most Markdown renderers use instead.
+    """
     slug = title.strip().lower()
-    slug = re.sub(r"[^\w\s-]", "", slug, flags=re.UNICODE)
-    slug = re.sub(r"\s+", "-", slug, flags=re.UNICODE)
-    return slug
+    slug = _SLUG_DROP_RE.sub("", slug)
+    return slug.replace(" ", "-")
 
 
 def fence_for(text: str, language: str = "") -> tuple[str, str]:
@@ -681,28 +720,23 @@ class Bundle:
 # ======================================================================================
 
 
-def rates_note(tree: SourceTree) -> str:
-    if not tree.rates:
-        return (
-            "No rates file was found in `src/data/`. Do not state any rate, threshold or "
-            "deadline until one is supplied — say the figure is unavailable and tell the "
-            "user to confirm it with NBR."
-        )
-    return (
-        f"Every rate, threshold and deadline lives in `{tree.rates_filename}` "
-        f"(assessment year **{tree.assessment_year}**), each with its own `source` URL and "
-        "a `verified` boolean. Quote the file, never your memory. If a figure carries "
-        "`verified = false`, repeat that caveat in your answer."
-    )
+def engine_usage_markdown(
+    tree: SourceTree,
+    script_dir: str = "scripts",
+    location: str = "inside this skill folder",
+) -> str:
+    """The 'how to run the engine' document, generated from the scripts that actually exist.
 
-
-def engine_usage_markdown(tree: SourceTree, script_dir: str = "scripts") -> str:
-    """The 'how to run the engine' document, generated from the scripts that actually exist."""
+    ``script_dir`` and ``location`` say where the scripts are *for the reader of this
+    particular bundle*: ``scripts/`` inside the skill folder, ``src/engine/`` in a clone
+    for everyone else.
+    """
     lines = [
         "# Running the TakaBooks engine",
         "",
         "The engine is the half of TakaBooks that is allowed to do arithmetic. It is pure "
-        "Python 3.11+ standard library — no `pip install`, no network.",
+        "Python 3.11+ standard library — no `pip install`, no network. The scripts live in "
+        f"`{script_dir}/` {location}.",
         "",
         "## Scripts",
         "",
@@ -710,9 +744,8 @@ def engine_usage_markdown(tree: SourceTree, script_dir: str = "scripts") -> str:
         "| --- | --- |",
     ]
     if tree.engine:
-        for name in tree.engine:
-            purpose = ENGINE_PURPOSE.get(name, "See the module docstring.")
-            lines.append(f"| `{script_dir}/{name}` | {purpose} |")
+        for name, source in tree.engine.items():
+            lines.append(f"| `{script_dir}/{name}` | {module_purpose(name, source)} |")
     else:
         lines.append("| _(no engine scripts were present at build time)_ | |")
 
@@ -901,100 +934,98 @@ def skill_frontmatter(tree: SourceTree) -> str:
 
 
 def skill_markdown(tree: SourceTree) -> str:
-    """`SKILL.md` — frontmatter, the core instruction, then pointers to everything else.
+    """`SKILL.md` — frontmatter, the core instruction verbatim, then where everything is.
 
     Level 2 of progressive disclosure: this whole file loads when the skill triggers, so
     the detail lives one relative link away in ``references/`` and the arithmetic lives
-    one bash call away in ``scripts/``.
+    one bash call away in ``scripts/``.  The rules come from ``src/core/`` and are not
+    restated here; the sections after the core only say where things are in this folder.
     """
     parts = [skill_frontmatter(tree), ""]
-    parts.append(f"# {PROJECT_NAME} — Bangladeshi bookkeeping & taxation")
-    parts.append("")
     parts.append(
-        "Double-entry bookkeeping (খতিয়ান / ledger), VAT / মূসক, withholding "
-        "(উৎসে কর কর্তন / TDS and VDS) and income tax for Bangladesh, in BDT / টাকা."
+        f"# {PROJECT_NAME} — Bangladeshi bookkeeping & taxation "
+        f"(assessment year {tree.assessment_year})"
     )
-    parts.append("")
-    parts.append("## Non-negotiable rules")
-    parts.append("")
-    parts.extend(PRIME_DIRECTIVE_LINES)
-    parts.append("")
-    parts.append(rates_note(tree))
     parts.append("")
 
     if tree.core:
-        parts.append("## Core instruction")
-        parts.append("")
-        for name, text in tree.core_files():
+        for _name, text in tree.core_files():
             body = drop_knowledge_only_markers(text).strip()
             if body:
-                parts.append(shift_headings(body, 3).strip())
+                parts.append(shift_headings(body, 2).strip())
                 parts.append("")
     else:
-        parts.append(
-            "## Core instruction\n\n"
-            "_`src/core/` was empty when this bundle was built._"
-        )
+        parts.append("_`src/core/` was empty when this bundle was built._")
         parts.append("")
 
-    parts.append("## References — load one when the question needs it")
+    parts.append("## Where everything is in this skill folder")
+    parts.append("")
+    parts.append(
+        "The instruction above names files by their bare names. In this folder they are:"
+    )
+    parts.append("")
+
+    parts.append("### References — load one when the question needs it")
     parts.append("")
     if tree.references:
-        parts.append("| Read this | When |")
-        parts.append("| --- | --- |")
         for name in tree.references:
             stem = Path(name).stem
             title = REFERENCE_TITLES.get(stem, stem.replace("-", " "))
-            parts.append(f"| [{title}](references/{name}) | {title} questions |")
+            parts.append(f"- [`references/{name}`](references/{name}) — {title}")
     else:
         parts.append("_No reference files were present at build time._")
     parts.append("")
+
+    parts.append("### Rates data")
+    parts.append("")
     if tree.rates:
         parts.append(
-            f"Rates data: [`assets/{tree.rates_filename}`](assets/{tree.rates_filename})."
+            f"[`data/{tree.rates_filename}`](data/{tree.rates_filename}) — assessment year "
+            f"{tree.assessment_year}. The scripts read it from there; you quote it, never "
+            "memory. Each entry carries a `source` URL and a `verified` flag."
         )
-        parts.append("")
+    else:
+        parts.append(
+            "_No rates file was present at build time. Do not state any rate, threshold or "
+            "deadline; say the figure is unavailable and send the user to NBR._"
+        )
+    parts.append("")
 
-    parts.append("## Scripts — the only thing allowed to do arithmetic")
+    parts.append("### Scripts — the only thing allowed to do arithmetic")
     parts.append("")
     if tree.engine:
         parts.append("| Script | What it does |")
         parts.append("| --- | --- |")
-        for name in tree.engine:
-            purpose = ENGINE_PURPOSE.get(name, "See the module docstring.")
-            parts.append(f"| `scripts/{name}` | {purpose} |")
+        for name, source in tree.engine.items():
+            parts.append(f"| `scripts/{name}` | {module_purpose(name, source)} |")
         parts.append("")
         parts.append(
-            "Run them with bash. Their source never enters your context — only their "
-            "stdout does, which is exactly the point. Every script takes `--help`, "
-            "`--books <dir>` (default `./books`) and `--json`, and exits non-zero on any "
-            "integrity failure. A non-zero exit is a refusal: report it and stop."
+            "Run them with bash from this folder. Their source never enters your context — "
+            "only their stdout does, which is exactly the point. Every script takes "
+            "`--help`, `--books <dir>` (default `./books`) and `--json`, and exits non-zero "
+            "on any integrity failure. A non-zero exit is a refusal: report it and stop."
         )
         parts.append("")
         parts.append(fenced("python3 scripts/validate.py --books ./books --json", "bash"))
         parts.append("")
-        parts.append("Full engine guide: [scripts/USAGE.md](scripts/USAGE.md).")
+        parts.append("Full engine guide: [`scripts/USAGE.md`](scripts/USAGE.md).")
     else:
         parts.append("_No engine scripts were present at build time._")
     parts.append("")
 
     if tree.templates:
-        parts.append("## Templates")
+        parts.append("### Templates")
         parts.append("")
         parts.append(
-            "Starting `accounts.toml`, `config.toml` and the journal header live in "
-            "`templates/`. `scripts/init_books.py` copies them into a new `books/` "
-            "directory; scripts only ever *read* TOML, humans and you edit it."
+            "Starting `accounts.toml`, `config.toml` and the journal header. "
+            "`scripts/init_books.py` copies them into a new `books/` directory; scripts "
+            "only ever *read* TOML — humans and you edit it."
         )
         parts.append("")
         for name in tree.templates:
             parts.append(f"- [`templates/{name}`](templates/{name})")
         parts.append("")
 
-    parts.append("## Every tax answer ends with this")
-    parts.append("")
-    parts.append(DISCLAIMER)
-    parts.append("")
     parts.append("---")
     parts.append("")
     parts.append(ATTRIBUTION)
@@ -1015,8 +1046,11 @@ def build_claude_skill(tree: SourceTree) -> Bundle:
     bundle.add(f"{root}/scripts/USAGE.md", engine_usage_markdown(tree, "scripts"))
     for name, text in tree.templates.items():
         bundle.add(f"{root}/templates/{name}", text)
+    # `data/`, not `assets/`: rates.py resolves its data directory as
+    # `<script dir>/../data/`, and the core instruction names `data/rates-AY<year>.toml`.
+    # Either would break if the file sat anywhere else.
     for name, text in tree.rates.items():
-        bundle.add(f"{root}/assets/{name}", text)
+        bundle.add(f"{root}/data/{name}", text)
 
     bundle.add(
         "dist/claude-skill/README-install.md",
@@ -1179,77 +1213,60 @@ def build_claude_skill(tree: SourceTree) -> Bundle:
 # ======================================================================================
 
 
+def chatgpt_rates_knowledge_name(tree: SourceTree) -> str:
+    """``rates-AY2026-27.toml`` → ``rates-AY2026-27.md``: same stem, an accepted suffix."""
+    return f"{Path(tree.rates_filename).stem}.md" if tree.rates else ""
+
+
 def chatgpt_knowledge(tree: SourceTree) -> list[tuple[str, str]]:
-    """Numbered knowledge files, ≤ 20, each one source document kept whole."""
+    """Knowledge files, ≤ 20, each source document whole and under its own basename.
+
+    The core's routing table says "load `vat-mushak.md`"; a knowledge file with exactly
+    that name is what makes the instruction true inside a Custom GPT without spending
+    instruction characters on a name map.  The core files ride along too — the copy in
+    knowledge keeps any ``knowledge-only`` passages the instruction had to drop.
+    """
     files: list[tuple[str, str]] = []
-    index = 1
     for name, text in tree.core_files():
-        stem = Path(name).stem
-        title = CORE_TITLES.get(stem, stem.replace("-", " "))
-        files.append(
-            (
-                f"{index:02d}-{stem.lstrip('0123456789-') or stem}.md",
-                _titled(title, drop_knowledge_only_markers(text)),
-            )
-        )
-        index += 1
+        files.append((name, drop_knowledge_only_markers(text)))
     for name, text in tree.reference_files():
-        stem = Path(name).stem
-        title = REFERENCE_TITLES.get(stem, stem.replace("-", " "))
-        files.append((f"{index:02d}-{stem}.md", _titled(title, text)))
-        index += 1
+        files.append((name, text))
     if tree.rates:
-        files.append((f"{index:02d}-rates-AY{tree.assessment_year}.md", rates_markdown(tree)))
-        index += 1
-    files.append((f"{index:02d}-engine-usage.md", engine_usage_markdown(tree)))
+        files.append((chatgpt_rates_knowledge_name(tree), rates_markdown(tree)))
+    files.append(
+        ("engine-usage.md", engine_usage_markdown(tree, "src/engine", CLONE_LOCATION))
+    )
     return files
 
 
-def _titled(title: str, text: str) -> str:
-    """Give a knowledge file one unambiguous H1, then the source content beneath it."""
-    body = shift_headings(text.strip(), 2)
-    return f"# {title}\n\n{body}\n"
+def chatgpt_footer(tree: SourceTree) -> str:
+    """The only text the build adds to the Custom GPT instruction: where the files are.
 
-
-def chatgpt_instructions(tree: SourceTree, knowledge_names: list[str]) -> str:
-    header = [
-        f"# {PROJECT_NAME} — Bangladeshi bookkeeping & taxation "
-        f"(assessment year {tree.assessment_year})",
-        "",
-        "You keep double-entry books (খতিয়ান / ledger) and prepare Bangladeshi tax "
-        "figures — VAT / মূসক, উৎসে কর কর্তন / TDS, VDS and income tax — in BDT / টাকা "
-        "(৳). You answer in the user's language (Bangla, Banglish or English) and reason "
-        "in English.",
-        "",
-        "## Non-negotiable rules",
-        "",
-    ]
-    header.extend(PRIME_DIRECTIVE_LINES)
-    header += ["", rates_note(tree), ""]
-
-    core = compact_core_text(tree)
-    core_block = shift_headings(core, 2).strip() if core else ""
-
-    footer = ["", "## Knowledge files — open one before answering from it", ""]
-    if knowledge_names:
-        for name in knowledge_names:
-            footer.append(f"- `{name}`")
+    Kept to a few lines on purpose — every character here is a character ``src/core/``
+    cannot use.  The rules themselves are in the core; this just makes its file names
+    resolve inside a GPT whose knowledge is a flat list of uploads.
+    """
+    if tree.rates:
+        rates = (
+            f"`data/{tree.rates_filename}` as `{chatgpt_rates_knowledge_name(tree)}` "
+            "(TOML verbatim)"
+        )
     else:
-        footer.append("_(no knowledge files in this build)_")
-    footer += [
-        "",
-        "Read the rates file before quoting any figure. Read the engine-usage file before "
-        "telling anyone to run a script.",
-        "",
-        "## Every tax answer ends with this",
-        "",
-        DISCLAIMER,
-    ]
+        rates = "no rates file — state no figure"
+    return (
+        "## Knowledge files\n"
+        f"`references/*.md` are attached by name; {rates}; `engine-usage.md` shows how to "
+        "run the scripts. Open a file before answering from it."
+    )
 
-    pieces = ["\n".join(header).rstrip()]
-    if core_block:
-        pieces.append(core_block)
-    pieces.append("\n".join(footer).strip())
+
+def chatgpt_instructions(tree: SourceTree) -> str:
+    """`src/core/` verbatim (minus ``knowledge-only`` passages) plus the navigation footer.
+
+    Nothing else.  The 8,000-character field is the binding constraint of the whole
+    project (spec §5), so the build spends none of it restating what the core says.
+    """
+    pieces = [piece for piece in (compact_core_text(tree), chatgpt_footer(tree)) if piece]
     return "\n\n".join(pieces).rstrip() + "\n"
 
 
@@ -1259,9 +1276,10 @@ def build_chatgpt(tree: SourceTree) -> Bundle:
     for name, text in knowledge:
         bundle.add(f"dist/chatgpt/knowledge/{name}", text)
 
-    instructions = chatgpt_instructions(tree, [name for name, _ in knowledge])
+    instructions = chatgpt_instructions(tree)
     bundle.add("dist/chatgpt/instructions.md", instructions)
 
+    rates_knowledge = chatgpt_rates_knowledge_name(tree) or "the rates file"
     bundle.add(
         "dist/chatgpt/README-install.md",
         install_readme(
@@ -1277,20 +1295,24 @@ def build_chatgpt(tree: SourceTree) -> Bundle:
                     "build fails rather than emit an over-long file.",
                     "3. Knowledge → upload every file in `knowledge/`. A Custom GPT holds "
                     f"up to {CHATGPT_KNOWLEDGE_MAX_FILES} knowledge files; this bundle "
-                    f"ships {len(knowledge)}.",
-                    "4. Enable **Code Interpreter** if you want the GPT to run the "
-                    "TakaBooks engine on an uploaded `books/` folder.",
+                    f"ships {len(knowledge)}. Keep the file names: the instruction refers "
+                    "to them by name.",
+                    "4. The engine scripts are not in the knowledge set — the GPT explains "
+                    "and classifies; the numbers come from running the scripts locally, "
+                    "as `engine-usage.md` describes.",
                     "",
-                    "The rates file is shipped as Markdown with the TOML inside a fenced "
-                    "block, because `.toml` is not on any published list of accepted "
-                    "upload types. The values are byte-identical to `src/data/`.",
+                    f"The rates file is shipped as `{rates_knowledge}`: Markdown with the "
+                    "TOML inside a fenced block, because `.toml` is not on any published "
+                    "list of accepted upload types. The values are byte-identical to "
+                    "`src/data/`.",
                     "",
                     "## Projects",
                     "",
                     "Paste `instructions.md` into the project instructions and add the "
                     "`knowledge/` files. A project holds fewer files than a Custom GPT "
-                    "(5 on Free), so on a small plan add, in order: the rates file, the "
-                    "core instruction files, then the reference you need for the task.",
+                    "(5 on Free), so on a small plan add, in order: "
+                    f"`{rates_knowledge}`, `30-tax-overview.md`, then the reference you "
+                    "need for the task.",
                     "",
                     "## ChatGPT Skills and Codex CLI",
                     "",
@@ -1305,21 +1327,26 @@ def build_chatgpt(tree: SourceTree) -> Bundle:
         ),
     )
 
-    over_by = len(instructions) - CHATGPT_INSTRUCTIONS_MAX_CHARS
-    detail = (
-        "instructions.md is pasted into the Custom GPT Instructions field, which caps at "
-        f"{CHATGPT_INSTRUCTIONS_MAX_CHARS:,} characters"
+    # The budget is printed on every build, not only on failure: the core's author needs
+    # to know how much of the 8,000 the navigation footer takes and how much is left.
+    used = len(instructions)
+    core_chars = len(compact_core_text(tree))
+    footer_chars = used - core_chars
+    headroom = CHATGPT_INSTRUCTIONS_MAX_CHARS - used
+    per_file = ", ".join(
+        f"{name} {len(strip_knowledge_only(text).strip()):,}"
+        for name, text in tree.core_files()
     )
-    if over_by > 0:
-        core_chars = len(compact_core_text(tree))
-        per_file = ", ".join(
-            f"{name} {len(strip_knowledge_only(text).strip()):,}"
-            for name, text in tree.core_files()
-        )
+    detail = (
+        f"src/core/ {core_chars:,} + navigation footer {footer_chars:,} = {used:,} of "
+        f"{CHATGPT_INSTRUCTIONS_MAX_CHARS:,} characters; headroom {headroom:,} "
+        f"({per_file or 'no core files'})"
+    )
+    if headroom < 0:
         detail = (
-            f"OVER BY {over_by:,} characters. src/core/ contributes {core_chars:,} of them "
-            f"({per_file or 'no core files'}); the generated framing contributes the rest. "
-            "Cut src/core/, or wrap the detail in "
+            f"OVER BY {-headroom:,} characters. src/core/ contributes {core_chars:,} "
+            f"({per_file or 'no core files'}); the navigation footer contributes "
+            f"{footer_chars:,}. Cut src/core/, or wrap reference material in "
             f"{KNOWLEDGE_ONLY_OPEN} ... {KNOWLEDGE_ONLY_CLOSE} so it ships in knowledge/ "
             "instead of in the instruction."
         )
@@ -1439,7 +1466,7 @@ def build_gemini_knowledge(tree: SourceTree) -> tuple[list[tuple[str, str]], lis
         if kind == "generated" and stem == "rates":
             return None if not tree.rates else ("Rates", rates_markdown(tree))
         if kind == "generated" and stem == "engine":
-            return "Engine", engine_usage_markdown(tree)
+            return "Engine", engine_usage_markdown(tree, "src/engine", CLONE_LOCATION)
         return None
 
     files: list[tuple[str, str]] = []
@@ -1657,7 +1684,7 @@ def build_universal(tree: SourceTree) -> Bundle:
         Section(
             number,
             "Running the engine",
-            engine_usage_markdown(tree),
+            engine_usage_markdown(tree, "src/engine", CLONE_LOCATION),
             tuple(tree.engine) + tuple(tree.templates),
         )
     )
@@ -1908,9 +1935,15 @@ the first line of a root `CLAUDE.md`.
 
 
 def build_agents_md(tree: SourceTree) -> Bundle:
-    bundle = Bundle(target="agents-md", clean_dir=None)
+    """The root ``AGENTS.md`` (where the tools read it) and a copy under ``dist/``.
+
+    The copy is what the npm installer (`bin/takabooks.mjs`) ships and reads first; the
+    root file is the one Cursor, Codex and Copilot pick up in a checkout.  Same bytes.
+    """
+    bundle = Bundle(target="agents-md", clean_dir="dist/agents-md")
     document = agents_markdown(tree)
     bundle.add("AGENTS.md", document)
+    bundle.add("dist/agents-md/AGENTS.md", document)
     size = len(document.encode("utf-8"))
     bundle.checks.append(
         limit_check(
@@ -1983,8 +2016,15 @@ def write_bundle(bundle: Bundle, repo_root: Path) -> list[str]:
     written: list[str] = []
     if bundle.clean_dir:
         target_dir = _assert_inside(repo_root, Path(bundle.clean_dir))
-        if not str(target_dir).startswith(str((repo_root / "dist").resolve())):
-            raise BuildError(f"A target may only clean paths under dist/, not {target_dir}.")
+        dist_root = (repo_root / "dist").resolve()
+        try:
+            target_dir.relative_to(dist_root)
+        except ValueError as exc:
+            raise BuildError(
+                f"A target may only clean paths under dist/, not {target_dir}."
+            ) from exc
+        if target_dir == dist_root:
+            raise BuildError("A target may not clean all of dist/; that is what --clean is for.")
         if target_dir.exists():
             shutil.rmtree(target_dir)
 
@@ -2179,6 +2219,11 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--all",
+        action="store_true",
+        help="build every target — the default, spelled out for CI scripts.",
+    )
+    parser.add_argument(
         "--repo-root",
         default=str(Path(__file__).resolve().parents[1]),
         help="repository root that holds src/ (default: the parent of build/).",
@@ -2240,7 +2285,7 @@ def main(argv: list[str] | None = None) -> int:
                 "--check writes nothing, so --clean would be a contradiction. "
                 "Run them separately."
             )
-        targets = resolve_targets(args.target)
+        targets = resolve_targets(["all"] if args.all else args.target)
         repo_root = Path(args.repo_root).resolve()
 
         if args.check:

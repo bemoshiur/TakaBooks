@@ -1,0 +1,1248 @@
+# =========================================================================================
+# TakaBooks — হিসাব তালিকা / chart of accounts (default template)
+#
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# A starting chart for a Bangladeshi SME — a trading business or a service business.
+# init_books.py copies this file to books/accounts.toml; from then on it is yours.
+# Delete what you do not need, add what you do. Scripts only ever READ this file.
+#
+# HOW THE CODES WORK (spec §4.4)
+#   4 digits. The first digit is the class; the next digits are allocated in steps of 5 or
+#   10 so you can insert your own accounts without renumbering anything:
+#     1xxx সম্পদ / assets            2xxx দায় / liabilities        3xxx মূলধন / equity
+#     4xxx আয় / income              5xxx বিক্রীত পণ্যের ব্যয় / cost of goods sold
+#     6xxx পরিচালন ব্যয় / operating expenses               7xxx অন্যান্য আয় / other income
+#     8xxx অন্যান্য ব্যয় / other expenses                    9xxx কর হিসাব / tax & statutory
+#   No Bangladeshi authority prescribes account codes; the codes are ours, the NAMES carry
+#   the weight (the মূসক / VAT terms are the statutory ones). Keep the names, renumber freely.
+#
+# KEYS ON EVERY [[account]]  (any other key is rejected by the engine)
+#   code        "1100"                              unique, 4 digits
+#   name        English name
+#   name_bn     Bangla name (বাংলা নাম) — how the bookkeeper reads the voucher
+#   type        asset | liability | equity | income | expense
+#   normal      debit for asset/expense · credit for liability/equity/income (enforced)
+#   description one plain sentence an owner can act on — optional but every line here has one
+#   role        engine lookup key; the ten Bangladesh roles below MUST each sit on exactly
+#               one account, whatever code you give it:
+#                 vat_input · vat_output · tds_receivable · tds_payable · vds_payable ·
+#                 advance_income_tax · provident_fund_payable · gratuity_provision ·
+#                 wppf_payable · supplementary_duty_payable
+#   tags        free labels. Meaningful ones:
+#                 "contra"    balance runs opposite to its class (shown as a deduction)
+#                 "control"   one account for many parties — the journal `party` column
+#                             keeps the party-wise খতিয়ান / ledger, never one account per party
+#                 "cash" "bank" "mfs"   money accounts — every posting needs a doc_ref
+#                 "vds" "tds" "withholding"  tells validate.py the account is a tax control
+#                 "inactive"  retire an account you no longer post to (validate.py warns)
+#               Tally-era aliases (sundry-debtors, sundry-creditors, duties-and-taxes) are
+#               kept as tags so the assistant maps what the owner says to the right code.
+#
+# TWO RULES THAT FALL OUT OF THE 9xxx BLOCK
+#   1. Never net. 9100 is never netted against 9200 in the ledger, nor 9300 against 9320.
+#      মূসক ৯.১ / Mushak 9.1 and the income tax return both want the gross figures.
+#   2. Every 9xxx balance must be provable by a document: 9100 by a মূসক ৬.৩ / Mushak 6.3
+#      tax invoice entered in মূসক ৬.১ / Mushak 6.1; 9120 by a মূসক ৬.৬ / Mushak 6.6 received;
+#      9220 by a Mushak 6.6 issued plus a treasury challan; 9300 by a deduction certificate.
+#
+# NO RATE, THRESHOLD, DEADLINE OR SECTION NUMBER APPEARS IN THIS FILE — by design.
+# Those live in src/data/rates-AY<year>.toml with a source URL and a verified flag.
+# =========================================================================================
+
+
+# -----------------------------------------------------------------------------------------
+# 1xxx — সম্পদ / ASSETS  (normal = debit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "1100"
+name = "Cash in Hand"
+name_bn = "হাতে নগদ"
+type = "asset"
+normal = "debit"
+description = "Notes and coins in the till or the owner's drawer; the running balance must never go below zero on any day, and every movement needs a receipt or voucher number."
+tags = ["cash"]
+
+[[account]]
+code = "1110"
+name = "Petty Cash"
+name_bn = "খুচরা নগদান"
+type = "asset"
+normal = "debit"
+description = "A small float for tea, rickshaw fare and stationery, topped up from cash or bank against signed petty-cash vouchers."
+tags = ["cash"]
+
+[[account]]
+code = "1150"
+name = "Cash at Bank — Current Account"
+name_bn = "ব্যাংক হিসাব — চলতি"
+type = "asset"
+normal = "debit"
+description = "Your main business current account; reconcile it to the bank statement every month, not once a year before the audit."
+tags = ["bank"]
+
+[[account]]
+code = "1155"
+name = "Cash at Bank — STD / Savings"
+name_bn = "ব্যাংক হিসাব — এসটিডি/সঞ্চয়ী"
+type = "asset"
+normal = "debit"
+description = "Short-term deposit or savings accounts held in the business name; interest credited here is income (7100), not a deposit."
+tags = ["bank"]
+
+[[account]]
+code = "1160"
+name = "Mobile Financial Services (bKash / Nagad / Rocket)"
+name_bn = "মোবাইল আর্থিক সেবা হিসাব (বিকাশ/নগদ/রকেট)"
+type = "asset"
+normal = "debit"
+description = "Business wallet balances on bKash, Nagad, Rocket and similar; MFS money is not cash, so post every wallet movement here from the app statement, including money that ran through the owner's personal wallet."
+tags = ["mfs", "bank"]
+
+[[account]]
+code = "1170"
+name = "Fixed Deposit Receipt (FDR)"
+name_bn = "স্থায়ী আমানত (এফডিআর)"
+type = "asset"
+normal = "debit"
+description = "Term deposits with a bank; keep the FDR receipt number in doc_ref and post the interest to 7100 when the bank credits it."
+tags = ["bank", "investment"]
+
+[[account]]
+code = "1200"
+name = "Accounts Receivable — Trade"
+name_bn = "প্রাপ্য হিসাব — বাণিজ্যিক (দেনাদার)"
+type = "asset"
+normal = "debit"
+description = "What customers owe you for credit sales; one control account for every customer — the journal's party column keeps the customer-wise ledger (what Tally calls Sundry Debtors)."
+tags = ["control", "receivable", "sundry-debtors"]
+
+[[account]]
+code = "1210"
+name = "Receivable from Related Parties"
+name_bn = "সংশ্লিষ্ট পক্ষের নিকট প্রাপ্য"
+type = "asset"
+normal = "debit"
+description = "Amounts owed to you by sister concerns, directors or family businesses; reconcile the balance with the other side's books at every period end."
+tags = ["control", "related-party"]
+
+[[account]]
+code = "1220"
+name = "Other Receivables"
+name_bn = "অন্যান্য প্রাপ্য"
+type = "asset"
+normal = "debit"
+description = "Money owed to you that is not a trade sale — insurance claims, staff loans not yet recovered, refunds due."
+tags = ["control"]
+
+[[account]]
+code = "1290"
+name = "Provision for Doubtful Debts (contra)"
+name_bn = "অনাদায়ী পাওনার সংস্থান"
+type = "asset"
+normal = "debit"
+description = "Your estimate of customer balances that will never be collected; it carries a credit balance and is shown as a deduction from 1200, so it normally appears negative in the trial balance."
+tags = ["contra"]
+
+[[account]]
+code = "1300"
+name = "Advance to Suppliers"
+name_bn = "সরবরাহকারীকে প্রদত্ত অগ্রিম"
+type = "asset"
+normal = "debit"
+description = "Money paid to a supplier before the goods or service arrived; clear it against the supplier's bill when it comes, never net it against 2100."
+tags = ["control", "advance"]
+
+[[account]]
+code = "1310"
+name = "Advance against Salary"
+name_bn = "বেতন বাবদ অগ্রিম"
+type = "asset"
+normal = "debit"
+description = "Salary paid to staff ahead of the month, recovered from the next payroll."
+tags = ["control", "advance", "payroll"]
+
+[[account]]
+code = "1320"
+name = "Security Deposit"
+name_bn = "জামানত জমা"
+type = "asset"
+normal = "debit"
+description = "Refundable deposits you have paid — office rent security, utility connection deposits, tender security."
+tags = ["advance"]
+
+[[account]]
+code = "1330"
+name = "Prepaid Expenses"
+name_bn = "অগ্রিম প্রদত্ত খরচ"
+type = "asset"
+normal = "debit"
+description = "Costs paid now for a period that has not yet run — annual insurance, rent paid in advance, software subscriptions; release them to expense month by month."
+tags = ["advance"]
+
+[[account]]
+code = "1340"
+name = "LC Margin / Advance for Import"
+name_bn = "ঋণপত্র (এলসি) মার্জিন ও আমদানি অগ্রিম"
+type = "asset"
+normal = "debit"
+description = "Margin money blocked by the bank against a letter of credit and other advances for an import in progress; transfer it into the cost of the goods once they clear the port."
+tags = ["advance", "import"]
+
+[[account]]
+code = "1400"
+name = "Inventory — Stock in Trade"
+name_bn = "মজুদ পণ্য"
+type = "asset"
+normal = "debit"
+description = "Goods bought for resale and still on hand; keep quantities as well as value, because মূসক ৬.১ / ৬.২ registers need a running physical balance."
+tags = ["inventory"]
+
+[[account]]
+code = "1410"
+name = "Inventory — Raw Materials"
+name_bn = "মজুদ — কাঁচামাল"
+type = "asset"
+normal = "debit"
+description = "Materials waiting to go into production; the quantity here must tie to the input columns of the purchase register."
+tags = ["inventory"]
+
+[[account]]
+code = "1420"
+name = "Inventory — Work in Progress"
+name_bn = "মজুদ — উৎপাদনাধীন পণ্য"
+type = "asset"
+normal = "debit"
+description = "Partly finished goods on the factory floor at the count date."
+tags = ["inventory"]
+
+[[account]]
+code = "1430"
+name = "Inventory — Finished Goods"
+name_bn = "মজুদ — প্রস্তুত পণ্য"
+type = "asset"
+normal = "debit"
+description = "Completed goods not yet sold; the closing quantity and value must match the sales register's closing stock."
+tags = ["inventory"]
+
+[[account]]
+code = "1440"
+name = "Inventory — Packing Materials"
+name_bn = "মজুদ — মোড়কীকরণ সামগ্রী"
+type = "asset"
+normal = "debit"
+description = "Cartons, labels, bottles and wrapping held for use."
+tags = ["inventory"]
+
+[[account]]
+code = "1450"
+name = "Inventory — Spare Parts & Consumables"
+name_bn = "মজুদ — যন্ত্রাংশ ও ভোগ্য সামগ্রী"
+type = "asset"
+normal = "debit"
+description = "Machine spares, tools and consumables held in store, expensed as they are drawn."
+tags = ["inventory"]
+
+[[account]]
+code = "1600"
+name = "Land"
+name_bn = "জমি"
+type = "asset"
+normal = "debit"
+description = "Land owned by the business at cost including registration and transfer costs; land is not depreciated."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1610"
+name = "Building"
+name_bn = "দালানকোঠা"
+type = "asset"
+normal = "debit"
+description = "Buildings and structures owned by the business, at cost; depreciation accumulates in 1690, not here."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1620"
+name = "Plant & Machinery"
+name_bn = "কল-কারখানা ও যন্ত্রপাতি"
+type = "asset"
+normal = "debit"
+description = "Production machinery and generators at cost including installation and import charges."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1630"
+name = "Furniture & Fixtures"
+name_bn = "আসবাবপত্র ও সরঞ্জামাদি"
+type = "asset"
+normal = "debit"
+description = "Desks, chairs, shelving, partitions and fit-out that will serve for years."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1640"
+name = "Office Equipment"
+name_bn = "অফিস সরঞ্জাম"
+type = "asset"
+normal = "debit"
+description = "Air conditioners, photocopiers, generators for the office and similar durable equipment."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1650"
+name = "Computer & ICT Equipment"
+name_bn = "কম্পিউটার ও আইসিটি সরঞ্জাম"
+type = "asset"
+normal = "debit"
+description = "Computers, printers, servers, routers and phones bought for the business."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1660"
+name = "Motor Vehicles"
+name_bn = "মোটরযান"
+type = "asset"
+normal = "debit"
+description = "Vehicles registered in the business name; a car used mainly by the family belongs to the owner, not here."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1670"
+name = "Capital Work in Progress"
+name_bn = "নির্মাণাধীন সম্পদ"
+type = "asset"
+normal = "debit"
+description = "Building or machinery still being built or installed; move the total to the right asset account when it is ready for use."
+tags = ["fixed-asset"]
+
+[[account]]
+code = "1690"
+name = "Accumulated Depreciation (contra)"
+name_bn = "পুঞ্জীভূত অবচয়"
+type = "asset"
+normal = "debit"
+description = "Total depreciation charged to date on all fixed assets; it carries a credit balance and is shown as a deduction from the asset cost."
+tags = ["contra", "fixed-asset"]
+
+[[account]]
+code = "1700"
+name = "Intangible Assets — Software & Licences"
+name_bn = "অমূর্ত সম্পদ — সফটওয়্যার ও লাইসেন্স"
+type = "asset"
+normal = "debit"
+description = "Purchased software, ERP licences and similar rights that serve for more than a year."
+tags = ["fixed-asset", "intangible"]
+
+[[account]]
+code = "1790"
+name = "Accumulated Amortisation (contra)"
+name_bn = "পুঞ্জীভূত অবলোপন"
+type = "asset"
+normal = "debit"
+description = "Total amortisation charged to date on intangible assets; carries a credit balance and is shown as a deduction from 1700."
+tags = ["contra", "intangible"]
+
+
+# -----------------------------------------------------------------------------------------
+# 2xxx — দায় / LIABILITIES  (normal = credit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "2100"
+name = "Accounts Payable — Trade"
+name_bn = "প্রদেয় হিসাব — বাণিজ্যিক (পাওনাদার)"
+type = "liability"
+normal = "credit"
+description = "What you owe suppliers for goods and services bought on credit; one control account for every supplier — the party column keeps the supplier-wise ledger (Tally: Sundry Creditors). Never show it net of advances."
+tags = ["control", "payable", "sundry-creditors"]
+
+[[account]]
+code = "2110"
+name = "Payable to Related Parties"
+name_bn = "সংশ্লিষ্ট পক্ষকে প্রদেয়"
+type = "liability"
+normal = "credit"
+description = "Amounts you owe to sister concerns, directors or family businesses; reconcile with the other side's books at every period end."
+tags = ["control", "related-party"]
+
+[[account]]
+code = "2120"
+name = "Accrued Expenses"
+name_bn = "বকেয়া ব্যয়"
+type = "liability"
+normal = "credit"
+description = "Costs already incurred but not yet billed or paid at the period end — the audit fee, the last month's electricity, a contractor's unbilled work."
+
+[[account]]
+code = "2130"
+name = "Salary & Wages Payable"
+name_bn = "প্রদেয় বেতন ও মজুরি"
+type = "liability"
+normal = "credit"
+description = "Net pay owed to staff for a month already worked but not yet paid out."
+tags = ["payroll"]
+
+[[account]]
+code = "2140"
+name = "Advance from Customers"
+name_bn = "ক্রেতার নিকট হইতে অগ্রিম"
+type = "liability"
+normal = "credit"
+description = "Money a customer paid before you delivered; it is not a sale until the goods or service go out, and it is never netted against 1200."
+tags = ["control"]
+
+[[account]]
+code = "2150"
+name = "Utility Bills Payable"
+name_bn = "প্রদেয় ইউটিলিটি বিল"
+type = "liability"
+normal = "credit"
+description = "Electricity, gas, water, internet and phone bills received but not yet paid."
+
+[[account]]
+code = "2200"
+name = "Bank Overdraft"
+name_bn = "ব্যাংক জমাতিরিক্ত (ওডি)"
+type = "liability"
+normal = "credit"
+description = "A current account that has gone below zero under an overdraft facility; reconcile it to the bank statement like any bank account."
+tags = ["bank", "loan"]
+
+[[account]]
+code = "2210"
+name = "Short-term Bank Loan / CC (Hypo)"
+name_bn = "স্বল্পমেয়াদি ব্যাংক ঋণ / সিসি (হাইপো)"
+type = "liability"
+normal = "credit"
+description = "Working-capital borrowing such as a cash-credit facility against stock; interest goes to 8100, never into this balance."
+tags = ["loan"]
+
+[[account]]
+code = "2220"
+name = "Long-term Loan"
+name_bn = "দীর্ঘমেয়াদি ঋণ"
+type = "liability"
+normal = "credit"
+description = "Term loans repayable over more than a year; keep the bank's loan statement in doc_ref for every instalment."
+tags = ["loan"]
+
+[[account]]
+code = "2230"
+name = "Lease / Hire-purchase Liability"
+name_bn = "ইজারা ও কিস্তি-ক্রয় দায়"
+type = "liability"
+normal = "credit"
+description = "Outstanding instalments on vehicles or machinery bought on lease or hire-purchase."
+tags = ["loan"]
+
+[[account]]
+code = "2300"
+name = "Loan from Directors / Proprietor"
+name_bn = "পরিচালক/মালিকের নিকট হইতে ঋণ"
+type = "liability"
+normal = "credit"
+description = "Money the owner or a director has lent the business; every credit here needs a bank-channel document, and it must never become a dumping ground for receipts you cannot explain."
+tags = ["loan", "related-party", "owner"]
+
+[[account]]
+code = "2900"
+name = "Suspense Account"
+name_bn = "সাসপেন্স হিসাব"
+type = "liability"
+normal = "credit"
+description = "A temporary home for money you cannot yet identify; move it to the right account as soon as you know, and it must be zero at every period end."
+tags = ["suspense"]
+
+
+# -----------------------------------------------------------------------------------------
+# 3xxx — মালিকানা স্বত্ব / EQUITY  (normal = credit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "3100"
+name = "Share Capital / Owner's Capital"
+name_bn = "শেয়ার মূলধন / মালিকের মূলধন"
+type = "equity"
+normal = "credit"
+description = "Capital the owner or shareholders have put into the business; for a company, keep it equal to the paid-up capital on the RJSC record."
+tags = ["owner"]
+
+[[account]]
+code = "3110"
+name = "Share Money Deposit"
+name_bn = "শেয়ার মানি ডিপোজিট"
+type = "equity"
+normal = "credit"
+description = "Money received for shares that have not yet been formally allotted."
+tags = ["owner"]
+
+[[account]]
+code = "3200"
+name = "Retained Earnings"
+name_bn = "সংরক্ষিত আয় (অবণ্টিত মুনাফা)"
+type = "equity"
+normal = "credit"
+description = "Profits of earlier years kept in the business; the year-end closing moves 3210 into here."
+
+[[account]]
+code = "3210"
+name = "Profit / (Loss) for the Year"
+name_bn = "চলতি বছরের মুনাফা/(ক্ষতি)"
+type = "equity"
+normal = "credit"
+description = "The current year's result as computed by report.py; do not post to it by hand during the year."
+
+[[account]]
+code = "3300"
+name = "Drawings"
+name_bn = "উত্তোলন"
+type = "equity"
+normal = "credit"
+description = "The owner's personal spending and money taken out — house rent, family phone, school fees, personal bKash transfers; it carries a debit balance and is never an expense of the business."
+tags = ["owner", "contra"]
+
+[[account]]
+code = "3400"
+name = "Revaluation Reserve"
+name_bn = "পুনর্মূল্যায়ন সংরক্ষিত তহবিল"
+type = "equity"
+normal = "credit"
+description = "The uplift recorded when land or buildings are professionally revalued above cost; it is not distributable profit."
+
+
+# -----------------------------------------------------------------------------------------
+# 4xxx — আয় / INCOME  (normal = credit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "4100"
+name = "Sales — Local"
+name_bn = "বিক্রয় — স্থানীয়"
+type = "income"
+normal = "credit"
+description = "Goods sold inside Bangladesh, excluding মূসক / VAT; the মূসক ৬.৩ / Mushak 6.3 number goes in doc_ref and the tax goes to 9200."
+
+[[account]]
+code = "4110"
+name = "Sales — Export"
+name_bn = "বিক্রয় — রপ্তানি"
+type = "income"
+normal = "credit"
+description = "Goods shipped abroad; keep the export LC, EXP form and bill of export in doc_ref."
+
+[[account]]
+code = "4120"
+name = "Service Revenue"
+name_bn = "সেবা আয়"
+type = "income"
+normal = "credit"
+description = "Fees for services rendered — consultancy, software, repairs, freight, design — excluding মূসক / VAT."
+
+[[account]]
+code = "4130"
+name = "Commission Income"
+name_bn = "কমিশন আয়"
+type = "income"
+normal = "credit"
+description = "Commission or agency income earned on other people's sales."
+
+[[account]]
+code = "4190"
+name = "Sales Return & Discount Allowed (contra)"
+name_bn = "বিক্রয় ফেরত ও প্রদত্ত বাট্টা"
+type = "income"
+normal = "credit"
+description = "Goods returned by customers and discounts given after invoicing; each one needs its own মূসক ৬.৭ / Mushak 6.7 credit note, and the account carries a debit balance."
+tags = ["contra"]
+
+
+# -----------------------------------------------------------------------------------------
+# 5xxx — বিক্রীত পণ্যের ব্যয় / COST OF GOODS SOLD  (normal = debit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "5100"
+name = "Purchases — Local"
+name_bn = "ক্রয় — স্থানীয়"
+type = "expense"
+normal = "debit"
+description = "Goods bought in Bangladesh for resale or production, excluding rebateable মূসক / VAT; the supplier's মূসক ৬.৩ / Mushak 6.3 number goes in doc_ref."
+
+[[account]]
+code = "5110"
+name = "Purchases — Import"
+name_bn = "ক্রয় — আমদানি"
+type = "expense"
+normal = "debit"
+description = "Goods imported for resale or production at the invoice value; duty and clearing costs have their own lines below."
+tags = ["import"]
+
+[[account]]
+code = "5120"
+name = "Customs Duty & Regulatory Duty"
+name_bn = "আমদানি শুল্ক ও নিয়ন্ত্রণমূলক শুল্ক"
+type = "expense"
+normal = "debit"
+description = "Duty paid at the port on imported goods; it is part of the cost of those goods, not an office expense, so it stays in the 5xxx block."
+tags = ["import"]
+
+[[account]]
+code = "5130"
+name = "C&F, Port & Clearing Charges"
+name_bn = "সিএন্ডএফ, বন্দর ও খালাস ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Clearing-and-forwarding agent bills, port charges and demurrage on an import; part of landed cost."
+tags = ["import"]
+
+[[account]]
+code = "5140"
+name = "Carriage Inward / Freight-in"
+name_bn = "আগত পরিবহন ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Transport paid to bring purchased goods to your godown or factory."
+
+[[account]]
+code = "5190"
+name = "Purchase Return & Discount Received (contra)"
+name_bn = "ক্রয় ফেরত ও প্রাপ্ত বাট্টা"
+type = "expense"
+normal = "debit"
+description = "Goods sent back to suppliers and discounts received after billing; needs the supplier's credit note, and the account carries a credit balance."
+tags = ["contra"]
+
+[[account]]
+code = "5200"
+name = "Direct Wages"
+name_bn = "প্রত্যক্ষ মজুরি"
+type = "expense"
+normal = "debit"
+description = "Wages of workers who make the product; office salaries belong in 6100."
+tags = ["payroll"]
+
+[[account]]
+code = "5210"
+name = "Factory Overhead"
+name_bn = "কারখানা উপরিব্যয়"
+type = "expense"
+normal = "debit"
+description = "Factory power, consumables, maintenance and supervision that cannot be traced to one product."
+
+[[account]]
+code = "5220"
+name = "Contractual Manufacturing Charges"
+name_bn = "চুক্তিভিত্তিক উৎপাদন ব্যয়"
+type = "expense"
+normal = "debit"
+description = "What you pay a third party to make or process goods for you; the মূসক ৬.৪ / Mushak 6.4 invoice goes in doc_ref."
+
+[[account]]
+code = "5900"
+name = "Change in Inventory"
+name_bn = "মজুদের পরিবর্তন"
+type = "expense"
+normal = "debit"
+description = "The year-end adjustment that turns purchases into cost of goods sold: opening stock minus closing stock, from a physical count — never a figure chosen to produce a desired profit."
+tags = ["inventory"]
+
+
+# -----------------------------------------------------------------------------------------
+# 6xxx — পরিচালন ব্যয় / OPERATING EXPENSES  (normal = debit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "6100"
+name = "Salary & Allowances"
+name_bn = "বেতন ও ভাতাদি"
+type = "expense"
+normal = "debit"
+description = "Gross salary and allowances of office and sales staff; the tax deducted from it goes to 9325 and the net pay to 2130 or bank."
+tags = ["payroll"]
+
+[[account]]
+code = "6110"
+name = "Festival Bonus"
+name_bn = "উৎসব বোনাস"
+type = "expense"
+normal = "debit"
+description = "Eid and other festival bonuses paid to staff."
+tags = ["payroll"]
+
+[[account]]
+code = "6120"
+name = "Overtime"
+name_bn = "অতিরিক্ত সময়ের মজুরি"
+type = "expense"
+normal = "debit"
+description = "Overtime paid to staff, supported by attendance records."
+tags = ["payroll"]
+
+[[account]]
+code = "6130"
+name = "Staff Welfare"
+name_bn = "কর্মচারী কল্যাণ ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Staff meals, uniforms, medical help and similar benefits paid for by the business."
+tags = ["payroll"]
+
+[[account]]
+code = "6140"
+name = "Employer Contribution to Provident Fund"
+name_bn = "ভবিষ্য তহবিলে নিয়োগকর্তার চাঁদা"
+type = "expense"
+normal = "debit"
+description = "The business's own share of provident fund contributions; the staff share is a deduction from salary, not an expense, and both sit in 9400 until transferred to the fund."
+tags = ["payroll"]
+
+[[account]]
+code = "6150"
+name = "Gratuity Expense"
+name_bn = "আনুতোষিক (গ্র্যাচুইটি) ব্যয়"
+type = "expense"
+normal = "debit"
+description = "The gratuity your staff earn this year as they serve, charged now and accumulated in 9410 rather than absorbed in one lump when someone leaves."
+tags = ["payroll"]
+
+[[account]]
+code = "6200"
+name = "Office Rent"
+name_bn = "অফিস ভাড়া"
+type = "expense"
+normal = "debit"
+description = "Rent for office premises; if you must deduct tax from the landlord, the deduction goes to 9320 in the same entry."
+
+[[account]]
+code = "6210"
+name = "Godown / Warehouse Rent"
+name_bn = "গুদাম ভাড়া"
+type = "expense"
+normal = "debit"
+description = "Rent for storage space and depots."
+
+[[account]]
+code = "6220"
+name = "Electricity Bill"
+name_bn = "বিদ্যুৎ বিল"
+type = "expense"
+normal = "debit"
+description = "Electricity for the office and shop; factory power belongs in 5210."
+tags = ["utilities"]
+
+[[account]]
+code = "6230"
+name = "Gas & Water Bill"
+name_bn = "গ্যাস ও পানির বিল"
+type = "expense"
+normal = "debit"
+description = "Gas and water charges for business premises."
+tags = ["utilities"]
+
+[[account]]
+code = "6240"
+name = "Internet & Telephone"
+name_bn = "ইন্টারনেট ও টেলিফোন"
+type = "expense"
+normal = "debit"
+description = "Broadband, office phones and business mobile bills; the family's phone bills are drawings."
+tags = ["utilities"]
+
+[[account]]
+code = "6300"
+name = "Conveyance"
+name_bn = "যাতায়াত ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Local travel by staff on business — rickshaw, CNG, bus — usually paid from petty cash against a voucher."
+
+[[account]]
+code = "6310"
+name = "Travelling — Local & Foreign"
+name_bn = "ভ্রমণ ব্যয় — দেশি ও বিদেশি"
+type = "expense"
+normal = "debit"
+description = "Out-of-station and overseas business trips — tickets, hotels, daily allowance."
+
+[[account]]
+code = "6320"
+name = "Entertainment"
+name_bn = "আপ্যায়ন ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Hospitality for customers and visitors; keep the bill and the name of who was entertained, because this line is always examined closely."
+
+[[account]]
+code = "6330"
+name = "Vehicle Fuel & Maintenance"
+name_bn = "যানবাহনের জ্বালানি ও রক্ষণাবেক্ষণ"
+type = "expense"
+normal = "debit"
+description = "Fuel, servicing and repairs of business vehicles; the family car's costs are drawings."
+
+[[account]]
+code = "6400"
+name = "Printing & Stationery"
+name_bn = "মুদ্রণ ও মনিহারি"
+type = "expense"
+normal = "debit"
+description = "Paper, toner, printed invoice books, receipt books and office supplies."
+
+[[account]]
+code = "6410"
+name = "Postage & Courier"
+name_bn = "ডাক ও কুরিয়ার"
+type = "expense"
+normal = "debit"
+description = "Courier, parcel and postal charges for documents and deliveries."
+
+[[account]]
+code = "6420"
+name = "Repairs & Maintenance"
+name_bn = "মেরামত ও রক্ষণাবেক্ষণ"
+type = "expense"
+normal = "debit"
+description = "Repairs that keep equipment and premises working; an improvement that adds years of life is a fixed asset instead."
+
+[[account]]
+code = "6430"
+name = "Office Maintenance & Cleaning"
+name_bn = "অফিস রক্ষণাবেক্ষণ ও পরিচ্ছন্নতা"
+type = "expense"
+normal = "debit"
+description = "Cleaning, pest control, minor upkeep and service charges for the office."
+
+[[account]]
+code = "6440"
+name = "Security Service"
+name_bn = "নিরাপত্তা সেবা ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Guards and security agency bills; a security agency bill may carry withholding, so check the rates file."
+
+[[account]]
+code = "6500"
+name = "Advertisement & Publicity"
+name_bn = "বিজ্ঞাপন ও প্রচার"
+type = "expense"
+normal = "debit"
+description = "Newspaper, online and social-media advertising, signboards and banners."
+
+[[account]]
+code = "6510"
+name = "Sales Promotion & Sample"
+name_bn = "বিক্রয় প্রসার ও নমুনা"
+type = "expense"
+normal = "debit"
+description = "Free samples, trade fair costs and promotional gifts given to win sales."
+
+[[account]]
+code = "6600"
+name = "Audit Fee"
+name_bn = "নিরীক্ষা ফি"
+type = "expense"
+normal = "debit"
+description = "The statutory auditor's fee; accrue it in the year being audited, not the year the bill arrives."
+
+[[account]]
+code = "6610"
+name = "Legal & Professional Fees"
+name_bn = "আইন ও পেশাগত ফি"
+type = "expense"
+normal = "debit"
+description = "Lawyers, tax practitioners and other professionals; their bills usually require tax to be deducted at source."
+
+[[account]]
+code = "6620"
+name = "Consultancy Fee"
+name_bn = "পরামর্শ ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Consultants and advisers engaged for a project; check the withholding rules before paying."
+
+[[account]]
+code = "6700"
+name = "Bank Charges & Commission"
+name_bn = "ব্যাংক চার্জ ও কমিশন"
+type = "expense"
+normal = "debit"
+description = "Account maintenance, cheque book, transfer and LC commission charged by the bank; the excise duty the bank debits belongs in 9230, not here."
+
+[[account]]
+code = "6710"
+name = "Insurance Premium"
+name_bn = "বিমা প্রিমিয়াম"
+type = "expense"
+normal = "debit"
+description = "Fire, marine, vehicle and other business insurance for the period covered."
+
+[[account]]
+code = "6720"
+name = "Trade Licence, Renewal & Government Fees"
+name_bn = "ট্রেড লাইসেন্স, নবায়ন ও সরকারি ফি"
+type = "expense"
+normal = "debit"
+description = "City corporation or paurashava trade licence, renewals and other government fees for running the business."
+
+[[account]]
+code = "6730"
+name = "RJSC & Regulatory Filing Fees"
+name_bn = "আরজেএসসি ও নিয়ন্ত্রক দাখিল ফি"
+type = "expense"
+normal = "debit"
+description = "Annual return and other filing fees paid to RJSC and regulators."
+
+[[account]]
+code = "6740"
+name = "Donation & Subscription"
+name_bn = "অনুদান ও চাঁদা"
+type = "expense"
+normal = "debit"
+description = "Donations, trade association subscriptions and membership fees; keep receipts, as only some donations are recognised for tax."
+
+[[account]]
+code = "6750"
+name = "Training & Development"
+name_bn = "প্রশিক্ষণ ও উন্নয়ন ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Staff training courses, certifications and workshops."
+
+[[account]]
+code = "6800"
+name = "Depreciation"
+name_bn = "অবচয়"
+type = "expense"
+normal = "debit"
+description = "This year's wear-and-tear charge on fixed assets, credited to 1690; the tax depreciation schedule is kept separately and may differ."
+
+[[account]]
+code = "6810"
+name = "Amortisation"
+name_bn = "অবলোপন"
+type = "expense"
+normal = "debit"
+description = "This year's charge spreading the cost of software and licences over their useful life, credited to 1790."
+
+[[account]]
+code = "6900"
+name = "Miscellaneous Expenses"
+name_bn = "বিবিধ ব্যয়"
+type = "expense"
+normal = "debit"
+description = "Small costs that truly fit nowhere else; a large balance here means accounts are missing above, not that the business is unusual."
+
+
+# -----------------------------------------------------------------------------------------
+# 7xxx — অন্যান্য আয় / OTHER INCOME  (normal = credit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "7100"
+name = "Interest Income — Bank / FDR"
+name_bn = "সুদ আয় — ব্যাংক/এফডিআর"
+type = "income"
+normal = "credit"
+description = "Interest the bank credits on savings, STD and FDR balances; post the gross and put any tax the bank deducted in 9300."
+
+[[account]]
+code = "7110"
+name = "Rental Income"
+name_bn = "ভাড়া আয়"
+type = "income"
+normal = "credit"
+description = "Rent received on property or equipment you let out to others."
+
+[[account]]
+code = "7120"
+name = "Gain on Disposal of Fixed Asset"
+name_bn = "সম্পদ বিক্রয়জনিত মুনাফা"
+type = "income"
+normal = "credit"
+description = "The excess of sale price over written-down value when a fixed asset is sold."
+
+[[account]]
+code = "7130"
+name = "Foreign Exchange Gain"
+name_bn = "বৈদেশিক মুদ্রা বিনিময় লাভ"
+type = "income"
+normal = "credit"
+description = "Gains when a foreign-currency receivable or payable settles at a better rate than it was booked."
+
+[[account]]
+code = "7140"
+name = "Scrap Sale"
+name_bn = "উচ্ছিষ্ট বিক্রয়"
+type = "income"
+normal = "credit"
+description = "Proceeds from selling scrap, wastage and empty cartons."
+
+[[account]]
+code = "7190"
+name = "Sundry Income"
+name_bn = "বিবিধ আয়"
+type = "income"
+normal = "credit"
+description = "Small receipts that are genuinely not sales — forfeited deposits, recovered write-offs, minor refunds."
+
+
+# -----------------------------------------------------------------------------------------
+# 8xxx — অন্যান্য ব্যয় / OTHER EXPENSES  (normal = debit)
+# -----------------------------------------------------------------------------------------
+
+[[account]]
+code = "8100"
+name = "Interest on Loan"
+name_bn = "ঋণের সুদ"
+type = "expense"
+normal = "debit"
+description = "Interest and finance charges on bank loans, overdraft, CC and lease liabilities."
+
+[[account]]
+code = "8110"
+name = "Loss on Disposal of Fixed Asset"
+name_bn = "সম্পদ বিক্রয়জনিত ক্ষতি"
+type = "expense"
+normal = "debit"
+description = "The shortfall when a fixed asset is sold or scrapped for less than its written-down value."
+
+[[account]]
+code = "8120"
+name = "Foreign Exchange Loss"
+name_bn = "বৈদেশিক মুদ্রা বিনিময় ক্ষতি"
+type = "expense"
+normal = "debit"
+description = "Losses when a foreign-currency receivable or payable settles at a worse rate than it was booked."
+
+[[account]]
+code = "8130"
+name = "Bad Debt Written Off"
+name_bn = "অনাদায়ী পাওনা অবলোপন"
+type = "expense"
+normal = "debit"
+description = "A customer balance you have given up collecting, removed from 1200 with the owner's written approval."
+
+[[account]]
+code = "8140"
+name = "Fine & Penalty (non-deductible)"
+name_bn = "জরিমানা ও দণ্ড (অগ্রাহ্য)"
+type = "expense"
+normal = "debit"
+description = "Fines, penalties and late-payment surcharges imposed by any authority; kept apart because they are normally added back in the tax computation."
+tags = ["non-deductible"]
+
+[[account]]
+code = "8150"
+name = "Prior Year Adjustment"
+name_bn = "পূর্ববর্তী বছরের সমন্বয়"
+type = "expense"
+normal = "debit"
+description = "Corrections of errors that belong to an earlier year, shown separately so this year's result is not distorted."
+
+
+# -----------------------------------------------------------------------------------------
+# 9xxx — শুল্ক ও কর সংক্রান্ত হিসাব / TAX & STATUTORY ACCOUNTS
+# The 9xxx block may hold assets, liabilities and expenses. Every account here must be
+# provable by a document, and nothing here is ever netted against anything else.
+# -----------------------------------------------------------------------------------------
+
+# --- মূসক / VAT side — assets --------------------------------------------------------------
+
+[[account]]
+code = "9100"
+name = "VAT Input / Rebateable"
+name_bn = "উপকরণ কর (রেয়াতযোগ্য মূসক)"
+type = "asset"
+normal = "debit"
+role = "vat_input"
+description = "The মূসক / VAT you paid a supplier that you may set off against the VAT you collected — only while you hold a valid মূসক ৬.৩ / Mushak 6.3 showing both BINs and have entered it in your মূসক ৬.১ / Mushak 6.1 purchase register."
+tags = ["mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9105"
+name = "VAT Input — Non-rebateable"
+name_bn = "অরেয়াতযোগ্য উপকরণ কর"
+type = "expense"
+normal = "debit"
+description = "Input VAT the law does not let you rebate — a missing or defective Mushak 6.3, or a non-qualifying input; it is a cost of doing business and must not sit in 9100 as a fake receivable."
+tags = ["mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9110"
+name = "Advance Tax (AT) at Import"
+name_bn = "আমদানি পর্যায়ে অগ্রিম কর"
+type = "asset"
+normal = "debit"
+description = "VAT-side advance tax collected by Customs when you import, recovered through the VAT return; it is not advance income tax (9310), and confusing the two is the most common tax-account error."
+tags = ["mushak", "import", "duties-and-taxes"]
+
+[[account]]
+code = "9120"
+name = "VDS Deducted by Customers"
+name_bn = "গ্রাহক কর্তৃক উৎসে কর্তিত মূসক"
+type = "asset"
+normal = "debit"
+description = "Output VAT a withholding-entity customer held back and deposited for you; you still book the full output VAT in 9200 and recover this in the return on the strength of the মূসক ৬.৬ / Mushak 6.6 certificate they must give you — no certificate, no claim."
+tags = ["vds", "mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9130"
+name = "VAT Treasury Deposit / Current Account"
+name_bn = "মূসক চলতি হিসাব ও ট্রেজারি জমা"
+type = "asset"
+normal = "debit"
+description = "Money already banked to the government treasury against your VAT account, plus any closing balance carried forward from the last return; it is the balance the মূসক ৯.১ / Mushak 9.1 reconciles to, proven by treasury challans."
+tags = ["mushak", "duties-and-taxes"]
+
+# --- মূসক / VAT side — liabilities ---------------------------------------------------------
+
+[[account]]
+code = "9200"
+name = "VAT Output Payable"
+name_bn = "প্রদেয় উৎপাদ কর (মূসক)"
+type = "liability"
+normal = "credit"
+role = "vat_output"
+description = "The মূসক / VAT you charged your customers; it was never your money — you hold the government's cash until the return is filed and the balance deposited."
+tags = ["mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9210"
+name = "Supplementary Duty Payable"
+name_bn = "প্রদেয় সম্পূরক শুল্ক"
+type = "liability"
+normal = "credit"
+role = "supplementary_duty_payable"
+description = "Supplementary duty collected on SD-liable goods and services; it has its own column in every Mushak register, its own line in the return and its own treasury code, so never merge it into VAT."
+tags = ["mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9220"
+name = "VDS Payable"
+name_bn = "উৎসে কর্তিত মূসক (প্রদেয়)"
+type = "liability"
+normal = "credit"
+role = "vds_payable"
+description = "মূসক / VAT you withheld from a supplier's bill because you are a withholding entity; two duties sit in this balance — deposit it to the treasury, and issue the supplier a মূসক ৬.৬ / Mushak 6.6 so they can claim it."
+tags = ["mushak", "duties-and-taxes"]
+
+[[account]]
+code = "9230"
+name = "Excise Duty"
+name_bn = "আবগারি শুল্ক"
+type = "expense"
+normal = "debit"
+description = "The excise duty a bank debits against your account balance each year; it belongs here as a named line, not lost inside 6700 Bank Charges, because it has its own line in the VAT return."
+tags = ["duties-and-taxes"]
+
+[[account]]
+code = "9240"
+name = "Surcharges Payable (Development / ICT / Health Care / Environmental Protection)"
+name_bn = "উন্নয়ন, আইসিটি উন্নয়ন, স্বাস্থ্যসেবা ও পরিবেশ সুরক্ষা সারচার্জ"
+type = "liability"
+normal = "credit"
+description = "The statutory surcharges that ride alongside VAT or SD on specified goods and services; each has its own treasury code in Mushak 9.1, so keep them separable from VAT — most small traders will never post here."
+tags = ["mushak", "duties-and-taxes"]
+
+# --- আয়কর / income tax side ---------------------------------------------------------------
+
+[[account]]
+code = "9300"
+name = "TDS Receivable — deducted by customers"
+name_bn = "গ্রাহক কর্তৃক উৎসে কর্তিত আয়কর (প্রাপ্য)"
+type = "asset"
+normal = "debit"
+role = "tds_receivable"
+description = "উৎসে কর কর্তন / TDS your customer took out of your bill and deposited against your TIN; it reduces your final income tax bill only if you hold their deduction certificate, so chase every missing certificate before year-end."
+tags = ["duties-and-taxes"]
+
+[[account]]
+code = "9310"
+name = "Advance Income Tax (AIT)"
+name_bn = "অগ্রিম আয়কর"
+type = "asset"
+normal = "debit"
+role = "advance_income_tax"
+description = "Income tax you have already paid before assessment — advance instalments, AIT collected at import, AIT paid on vehicle registration and other statutory occasions — all set off against the year's assessed tax."
+tags = ["duties-and-taxes"]
+
+[[account]]
+code = "9320"
+name = "TDS Payable — deducted from vendors"
+name_bn = "সরবরাহকারী হইতে উৎসে কর্তিত আয়কর (প্রদেয়)"
+type = "liability"
+normal = "credit"
+role = "tds_payable"
+description = "উৎসে কর কর্তন / TDS you took out of a supplier's, contractor's or landlord's payment; until it is deposited, the expense that created it is exposed to disallowance, so an unpaid balance here also inflates your taxable profit."
+tags = ["duties-and-taxes"]
+
+[[account]]
+code = "9325"
+name = "TDS Payable — Salary"
+name_bn = "উৎসে কর্তিত আয়কর — বেতন (প্রদেয়)"
+type = "liability"
+normal = "credit"
+description = "Tax deducted from employees' salaries, kept apart from 9320 because it is deposited, reported and certified to employees separately."
+tags = ["tds", "withholding", "payroll", "duties-and-taxes"]
+
+[[account]]
+code = "9330"
+name = "Provision for Income Tax"
+name_bn = "আয়কর সংস্থান"
+type = "liability"
+normal = "credit"
+description = "Your best estimate of the year's income tax, charged to this year's profit so the P&L is honest before the assessment arrives."
+tags = ["duties-and-taxes"]
+
+[[account]]
+code = "9340"
+name = "Income Tax Payable (net of AIT/TDS)"
+name_bn = "প্রদেয় আয়কর (নীট)"
+type = "liability"
+normal = "credit"
+description = "What is actually left to pay once 9300 and 9310 are set against 9330 at assessment time."
+tags = ["duties-and-taxes"]
+
+# --- শ্রম আইন সংক্রান্ত দায় / payroll and labour-law statutory accounts ----------------------
+# Applicability, rates, split ratios and funding periods for these are statutory numbers.
+# They come from the rates file, never from this file.
+
+[[account]]
+code = "9400"
+name = "Provident Fund Payable"
+name_bn = "প্রদেয় ভবিষ্য তহবিল"
+type = "liability"
+normal = "credit"
+role = "provident_fund_payable"
+description = "The employees' deductions plus the employer's contribution, held only until transferred to the fund's own separate bank account; a growing balance here means the company is spending its staff's retirement money."
+tags = ["payroll", "duties-and-taxes"]
+
+[[account]]
+code = "9410"
+name = "Gratuity Provision"
+name_bn = "আনুতোষিক (গ্র্যাচুইটি) সংস্থান"
+type = "liability"
+normal = "credit"
+role = "gratuity_provision"
+description = "The end-of-service payment your staff earn as they serve, built up month by month so one year's profit does not absorb a decade of accrued liability when a long-serving employee leaves."
+tags = ["payroll", "duties-and-taxes"]
+
+[[account]]
+code = "9420"
+name = "WPPF Payable"
+name_bn = "শ্রমিক অংশগ্রহণ তহবিল (প্রদেয়)"
+type = "liability"
+normal = "credit"
+role = "wppf_payable"
+description = "The workers' share of the year's profit under the Workers' Profit Participation Fund — an appropriation that must be set aside and actually funded before the rest is treated as the owners'."
+tags = ["payroll", "duties-and-taxes"]
+
+[[account]]
+code = "9430"
+name = "Workers' Welfare Fund & WWF Payable"
+name_bn = "শ্রমিক কল্যাণ তহবিল ও শ্রমিক কল্যাণ ফাউন্ডেশন তহবিল (প্রদেয়)"
+type = "liability"
+normal = "credit"
+description = "The welfare-fund and Workers' Welfare Foundation portions of that same appropriation, kept separate because they are paid to different destinations from the participation fund."
+tags = ["payroll", "duties-and-taxes"]

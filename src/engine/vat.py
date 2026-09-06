@@ -21,15 +21,41 @@ Where the numbers come from
 2. **The ``tax_tag`` on each posting.**  The percentage in ``VAT:OUT:<rate>``,
    ``VAT:IN:<rate>`` and ``VDS:<rate>`` is the rate the bookkeeper recorded for that
    transaction.  TakaBooks uses it as written.
-3. **The rates TOML** (``src/data/rates-AY<year>.toml``) for every *statutory* figure —
-   the standard rate, thresholds and deadlines quoted for reference.
+3. **The rates TOML** (``src/data/rates-AY<year>.toml``, read through
+   :class:`takabooks.RatesTable`) for every *statutory* figure.  The dotted keys this
+   module reads, and nothing else, are:
+
+   ================================================  =========  ==============================
+   key                                               required   used for
+   ================================================  =========  ==============================
+   ``vat.rates.standard``                            always     every tagged rate is checked
+                                                                against the declared rates
+   ``deadlines.vat_return_monthly``                  always     when the return is due
+   ``vds.deposit.deadline``                          with VDS   when withheld VDS is due
+   ``vat.rates.zero_rated``                          optional   declared rate
+   ``vat.rates.reduced.<key>``                       optional   declared rates (one per node)
+   ``vds.services.<key>``                            optional   declared VDS rates
+   ``vat.thresholds.registration``                   optional   reference
+   ``vat.thresholds.turnover_tax_enlistment``        optional   reference
+   ``vat.turnover_tax.rate``                         optional   reference
+   ``vat.return_form.line``                          optional   NBR form line map (array)
+   ================================================  =========  ==============================
 
 **This module hardcodes no Bangladeshi rate, threshold or deadline** (spec §4.5, §6.2).
-If a reference figure is absent from the rates file, the report says so instead of
-supplying one; if it is present but ``verified = false``, the report carries a visible
-UNVERIFIED warning on every output format.  ``--strict`` turns any such warning, and any
-reconciliation difference, into a non-zero exit so that an unconfirmed figure set can
-never be mistaken for a filing-ready one.
+
+* A **required** key that is absent from the rates file is a :class:`takabooks.RatesError`
+  (exit 8) naming the key and the file.  TakaBooks never fills it in.
+* An **optional** key that is absent is reported as ``not in rates file`` on every output
+  format, and never guessed.
+* A figure present but not ``verified = true`` carries a visible **UNVERIFIED** warning;
+  a figure carrying ``placeholder = true`` (schema awaiting research) is reported as
+  **PLACEHOLDER** and is never compared against the journal.
+* When the file itself is a placeholder (``[meta] placeholder = true``), or any figure
+  read is unverified or missing, or any entry fails to reconcile, the whole output is
+  stamped **PROVISIONAL / অস্থায়ী — not for filing**.
+
+``--strict`` turns every warning, and any reconciliation difference, into a non-zero
+exit (7) so that an unconfirmed figure set can never be mistaken for a filing-ready one.
 
 Tagging convention this module reads
 ------------------------------------
@@ -71,8 +97,8 @@ import datetime
 import io
 import re
 import sys
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass, replace
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -89,13 +115,23 @@ __all__ = [
     "RATES_GLOB",
     "KIND_LABELS",
     "KIND_ROLE",
+    "REQUIRED_ALWAYS",
+    "REQUIRED_WITH_VDS",
+    "OPTIONAL",
+    "ReferenceSpec",
     "REFERENCE_SPECS",
-    "RETURN_FORM_KEYS",
+    "VAT_RATE_NODES",
+    "VAT_RATE_SECTIONS",
+    "VDS_RATE_SECTIONS",
+    "RETURN_FORM_KEY",
+    "STATUS_PROVISIONAL",
+    "STATUS_RECONCILED",
     "AccountMovement",
     "RateBucket",
     "ReconciliationIssue",
     "ControlAccount",
     "ReferenceFigure",
+    "DeclaredRate",
     "ReturnFigure",
     "ReturnFormLine",
     "VatPosition",
@@ -103,6 +139,9 @@ __all__ = [
     "resolve_period",
     "resolve_rates_path",
     "load_rates",
+    "rates_file_is_placeholder",
+    "reference_figures",
+    "declared_rates",
     "compute_vat_position",
     "render_markdown",
     "render_csv",
@@ -152,120 +191,118 @@ def rate_text(rate: Decimal) -> str:
 # ======================================================================================
 
 
-@dataclass(frozen=True)
-class _RefSpec:
-    """A statutory figure quoted for reference, and where to look for it.
+#: ``ReferenceSpec.required`` values.
+REQUIRED_ALWAYS = "always"
+REQUIRED_WITH_VDS = "with_vds"
+OPTIONAL = "optional"
 
-    ``candidates`` is searched in order, so a rates file may organise its keys either
-    flat (``vat.standard_rate``) or nested (``vat.rates.standard``) without this module
-    caring.  Nothing here asserts a value — only where a value would live.
+
+@dataclass(frozen=True)
+class ReferenceSpec:
+    """A statutory figure this module reads from the rates TOML, and where it lives.
+
+    ``rates_key`` is the *one* dotted key the figure is read from — the key paths are
+    documented in the rates file itself, so there is nothing to search for.  Nothing here
+    asserts a value, only where a value would live and why the return preparer needs it.
     """
 
     key: str
+    rates_key: str
     label_bn: str
     label_en: str
-    candidates: tuple[str, ...]
     kind: str  # "percent" | "money" | "text"
+    required: str  # REQUIRED_ALWAYS | REQUIRED_WITH_VDS | OPTIONAL
+    why: str
+
+    @property
+    def label(self) -> str:
+        return f"{self.label_bn} / {self.label_en}"
 
 
-#: Reference figures a VAT return preparer asks for.  Every one is optional: if the
-#: rates file does not carry it, the report says so.  TakaBooks never fills one in.
-REFERENCE_SPECS: tuple[_RefSpec, ...] = (
-    _RefSpec(
+#: Every figure vat.py reads from the rates file.  A required figure that is absent is a
+#: hard RatesError; an optional one is reported as ``not in rates file``.  TakaBooks never
+#: fills one in.
+REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
+    ReferenceSpec(
         "standard_rate",
-        "মূসক-এর আদর্শ হার",
+        "vat.rates.standard",
+        "প্রমিত মূসক হার",
         "Standard VAT rate",
-        (
-            "vat.standard_rate",
-            "vat.rate.standard",
-            "vat.rates.standard",
-            "vat.standard.rate",
-        ),
         "percent",
+        REQUIRED_ALWAYS,
+        "every rate written in a tax_tag is checked against the rates the file declares",
     ),
-    _RefSpec(
+    ReferenceSpec(
+        "zero_rate",
+        "vat.rates.zero_rated",
+        "শূন্যহার সরবরাহ",
+        "Zero-rated supplies",
+        "percent",
+        OPTIONAL,
+        "a declared rate; zero-rated output keeps input VAT rebateable",
+    ),
+    ReferenceSpec(
         "registration_threshold",
+        "vat.thresholds.registration",
         "মূসক নিবন্ধনের সীমা",
         "VAT registration threshold (annual turnover)",
-        (
-            "vat.registration_threshold",
-            "vat.thresholds.registration",
-            "vat.threshold.registration",
-            "vat.registration.threshold",
-        ),
         "money",
+        OPTIONAL,
+        "context for whether registration is obligatory",
     ),
-    _RefSpec(
-        "turnover_tax_threshold",
-        "টার্নওভার করের সীমা",
-        "Turnover tax threshold",
-        (
-            "vat.turnover_tax_threshold",
-            "vat.thresholds.turnover_tax",
-            "vat.turnover_tax.threshold",
-        ),
+    ReferenceSpec(
+        "turnover_tax_enlistment_threshold",
+        "vat.thresholds.turnover_tax_enlistment",
+        "টার্নওভার কর তালিকাভুক্তির সীমা",
+        "Turnover tax enlistment threshold (annual turnover)",
         "money",
+        OPTIONAL,
+        "context for enlisted (not registered) persons",
     ),
-    _RefSpec(
+    ReferenceSpec(
         "turnover_tax_rate",
+        "vat.turnover_tax.rate",
         "টার্নওভার করের হার",
         "Turnover tax rate",
-        (
-            "vat.turnover_tax_rate",
-            "vat.rates.turnover_tax",
-            "vat.turnover_tax.rate",
-        ),
         "percent",
+        OPTIONAL,
+        "context for enlisted (not registered) persons",
     ),
-    _RefSpec(
+    ReferenceSpec(
         "return_deadline",
-        "দাখিলপত্র জমার সময়সীমা",
+        "deadlines.vat_return_monthly",
+        "মাসিক মূসক দাখিলপত্র জমার সময়সীমা",
         "Monthly VAT return filing deadline",
-        (
-            "vat.return_deadline",
-            "vat.return.deadline",
-            "vat.return.due_day",
-            "vat.return_due_day",
-            "vat.deadlines.return",
-            "calendar.vat_return",
-        ),
         "text",
+        REQUIRED_ALWAYS,
+        "a return figure set must say when the return is due",
     ),
-    _RefSpec(
-        "input_rebate_time_limit",
-        "উপকরণ কর রেয়াতের সময়সীমা",
-        "Time limit to claim an input tax rebate",
-        (
-            "vat.input_rebate_time_limit",
-            "vat.rebate.time_limit",
-            "vat.input_tax.time_limit",
-            "vat.input_rebate.time_limit",
-        ),
-        "text",
-    ),
-    _RefSpec(
+    ReferenceSpec(
         "vds_deposit_deadline",
+        "vds.deposit.deadline",
         "উৎসে কর্তিত মূসক জমার সময়সীমা",
         "Deadline to deposit VDS withheld from suppliers",
-        (
-            "vds.deposit_deadline",
-            "vat.vds.deposit_deadline",
-            "vat.vds_deposit_deadline",
-            "vds.deadline",
-            "vat.deadlines.vds_deposit",
-        ),
         "text",
+        REQUIRED_WITH_VDS,
+        "withheld VDS is a deposit obligation with its own deadline",
     ),
 )
 
-#: Sections a rates file may use to carry an NBR return-form line map.  TakaBooks does
-#: not assert any form line number of its own (content rule §6.2).
-RETURN_FORM_KEYS: tuple[str, ...] = (
-    "vat.return_form",
-    "vat.mushak_9_1",
-    "vat.mushak.9_1",
-    "vat.return",
-)
+#: Single rate nodes that declare a VAT rate for the assessment year.
+VAT_RATE_NODES: tuple[str, ...] = ("vat.rates.standard", "vat.rates.zero_rated")
+#: Sections whose child tables (each carrying ``value``) each declare one VAT rate.
+VAT_RATE_SECTIONS: tuple[str, ...] = ("vat.rates.reduced",)
+#: Sections whose child tables each declare one VDS withholding rate.
+VDS_RATE_SECTIONS: tuple[str, ...] = ("vds.services",)
+
+#: Optional section carrying an NBR return-form line map as ``[[vat.return_form.line]]``
+#: tables (``line``, ``figure``, ``label_en``, ``label_bn``).  TakaBooks does not assert
+#: any form line number of its own (content rule §6.2).
+RETURN_FORM_KEY = "vat.return_form"
+
+#: Filing status stamped on every output format.
+STATUS_PROVISIONAL = "PROVISIONAL / অস্থায়ী — not for filing"
+STATUS_RECONCILED = "reconciled — every figure read is verified; confirm with an ITP/CA"
 
 
 # ======================================================================================
@@ -392,9 +429,11 @@ class ReferenceFigure:
     kind: str
     available: bool
     rates_key: str = ""
+    required: str = OPTIONAL
     raw_value: Any = None
     display: str = ""
     verified: bool = False
+    placeholder: bool = False
     source: str = ""
     as_of: str = ""
     note: str = ""
@@ -406,10 +445,52 @@ class ReferenceFigure:
         return f"{self.label_bn} / {self.label_en}"
 
     @property
+    def usable(self) -> bool:
+        """Present, readable, and not a placeholder — safe to compare the journal against."""
+        return self.available and not self.problem and not self.placeholder
+
+    @property
     def status(self) -> str:
         if not self.available:
             return "not in rates file"
+        if self.placeholder:
+            return "PLACEHOLDER"
         return "verified" if self.verified else "UNVERIFIED"
+
+
+@dataclass(frozen=True)
+class DeclaredRate:
+    """One rate the rates file declares for this assessment year (never one TakaBooks
+    asserts).  Tagged journal rates are checked against the set of these."""
+
+    scope: str  # "vat" | "vds"
+    rates_key: str
+    label_bn: str
+    label_en: str
+    rate: Decimal | None
+    verified: bool = False
+    placeholder: bool = False
+    problem: str = ""
+
+    @property
+    def label(self) -> str:
+        return f"{self.label_bn} / {self.label_en}".strip(" /")
+
+    @property
+    def usable(self) -> bool:
+        return self.rate is not None and not self.problem and not self.placeholder
+
+    @property
+    def status(self) -> str:
+        if self.problem:
+            return "UNREADABLE"
+        if self.placeholder:
+            return "PLACEHOLDER"
+        return "verified" if self.verified else "UNVERIFIED"
+
+    @property
+    def rate_text(self) -> str:
+        return rate_text(self.rate) + "%" if self.rate is not None else "—"
 
 
 @dataclass(frozen=True)
@@ -453,16 +534,30 @@ class VatPosition:
     rates_assessment_year: str | None
     rates_provenance: str
     rates_caveats: tuple[str, ...]
+    rates_file_placeholder: bool
+    rates_unverified_in_file: int
     buckets: Mapping[str, tuple[RateBucket, ...]]
     issues: tuple[ReconciliationIssue, ...]
     controls: tuple[ControlAccount, ...]
     references: tuple[ReferenceFigure, ...]
+    declared: tuple[DeclaredRate, ...]
     return_form: tuple[ReturnFormLine, ...]
     warnings: tuple[str, ...]
     notes: tuple[str, ...]
     posting_count: int
     entry_count: int
     tds_posting_count: int
+
+    # -- filing status -------------------------------------------------------------------
+
+    @property
+    def provisional(self) -> bool:
+        """True when anything stops this figure set from being filing-ready."""
+        return self.rates_file_placeholder or bool(self.warnings) or bool(self.issues)
+
+    @property
+    def filing_status(self) -> str:
+        return STATUS_PROVISIONAL if self.provisional else STATUS_RECONCILED
 
     # -- totals ------------------------------------------------------------------------
 
@@ -801,22 +896,6 @@ def _movements(
 # ======================================================================================
 
 
-def _split_lines(
-    postings: Iterable[tb.Posting], kind: str, tax_code: str | None
-) -> tuple[list[tb.Posting], list[tb.Posting]]:
-    """Split same-kind postings into (value lines, tax lines) by the control account."""
-    value_lines: list[tb.Posting] = []
-    tax_lines: list[tb.Posting] = []
-    for posting in postings:
-        if posting.tax_tag.kind != kind:
-            continue
-        if tax_code is not None and posting.account == tax_code:
-            tax_lines.append(posting)
-        else:
-            value_lines.append(posting)
-    return value_lines, tax_lines
-
-
 def _buckets_for_kind(
     postings: Sequence[tb.Posting],
     chart: tb.ChartOfAccounts,
@@ -942,14 +1021,125 @@ def _control_account(
     )
 
 
-def _reference_figures(rates: tb.RatesTable) -> tuple[tuple[ReferenceFigure, ...], list[str]]:
+def _rates_file_name(rates: tb.RatesTable) -> str:
+    return rates.source_path.name if rates.source_path else "the rates file"
+
+
+def _node_table(rates: tb.RatesTable, key: str) -> Mapping[str, Any] | None:
+    """The raw TOML table at ``key`` (so ``placeholder`` and labels can be read), or None
+    when the key is absent or is a bare scalar."""
+    try:
+        return rates.section(key)
+    except tb.RatesError:
+        return None
+
+
+def _is_placeholder(table: Mapping[str, Any] | None) -> bool:
+    """``placeholder = true`` on a node: schema awaiting research, not a figure."""
+    return table is not None and table.get("placeholder") is True
+
+
+def rates_file_is_placeholder(rates: tb.RatesTable) -> bool:
+    """True when ``[meta]`` declares the whole file to be unlanded schema."""
+    meta = rates.raw.get("meta")
+    if not isinstance(meta, Mapping):
+        return False
+    if meta.get("placeholder") is True:
+        return True
+    return str(meta.get("status", "")).strip().lower() == "placeholder"
+
+
+def _read_value(
+    rate: tb.Rate, kind: str, file_name: str, *, placeholder: bool
+) -> tuple[str, tb.Money | None, Decimal | None, str, str]:
+    """Render one :class:`takabooks.Rate` as ``(display, money, decimal, problem, warning)``.
+
+    ``kind`` is ``"percent"``, ``"money"`` or ``"text"``.  A TOML float is refused
+    outright (spec §4.2); a percentage outside 0–100 is a fraction/percent mix-up.
+    """
+    if isinstance(rate.value, float):
+        problem = (
+            "written as a TOML float, which cannot hold an exact decimal; "
+            "write it as a quoted string or an integer"
+        )
+        warning = (
+            f"UNUSABLE RATE: {rate.key} in {file_name} is a TOML float ({rate.value!r}). "
+            'TakaBooks refuses float money and rates — rewrite it as a string (value = "15") '
+            "or an integer."
+        )
+        return repr(rate.value), None, None, problem, warning
+    if isinstance(rate.value, bool):
+        problem = "a boolean is not a figure"
+        return repr(rate.value), None, None, problem, f"UNREADABLE: {rate.key} in {file_name}: {problem}."
+    if kind == "percent":
+        try:
+            dec = rate.as_decimal()
+        except tb.TakaBooksError as exc:
+            return (
+                str(rate.value),
+                None,
+                None,
+                exc.message,
+                f"UNREADABLE RATE: {rate.key} in {file_name}: {exc.message}",
+            )
+        if dec < 0 or dec > 100:
+            problem = f"{rate_text(dec)} is not a percentage between 0 and 100"
+            return (
+                rate_text(dec),
+                None,
+                None,
+                problem,
+                f"UNUSABLE RATE: {rate.key} in {file_name}: {problem} (write 15 for 15%, "
+                "never 0.15).",
+            )
+        return rate_text(dec) + "%", None, dec, "", ""
+    if kind == "money":
+        try:
+            money = rate.as_money()
+        except tb.TakaBooksError as exc:
+            return (
+                str(rate.value),
+                None,
+                None,
+                exc.message,
+                f"UNREADABLE AMOUNT: {rate.key} in {file_name}: {exc.message}",
+            )
+        return tb.format_bdt(money, symbol=True), money, None, "", ""
+    text = str(rate.value).strip()
+    if not text:
+        if placeholder:
+            return "(blank placeholder)", None, None, "", ""
+        problem = "blank"
+        return (
+            "(blank)",
+            None,
+            None,
+            problem,
+            f"BLANK: {rate.key} in {file_name} carries an empty value. State it as prose "
+            "with its source URL, or mark the node placeholder = true.",
+        )
+    return text, None, None, "", ""
+
+
+def reference_figures(
+    rates: tb.RatesTable, *, vds_present: bool = False
+) -> tuple[tuple[ReferenceFigure, ...], list[str]]:
+    """Read every :data:`REFERENCE_SPECS` figure from the rates file.
+
+    Returns the figures and the warnings they raise.  A **required** figure that is absent
+    raises :class:`takabooks.RatesError` naming every missing key — after the whole file
+    has been read, so one run reports everything that is wrong with it.
+    """
     figures: list[ReferenceFigure] = []
     warnings: list[str] = []
-    file_name = rates.source_path.name if rates.source_path else "the rates file"
+    missing_required: list[ReferenceSpec] = []
+    file_name = _rates_file_name(rates)
 
     for spec in REFERENCE_SPECS:
-        found_key = next((key for key in spec.candidates if rates.has(key)), "")
-        if not found_key:
+        needed = spec.required == REQUIRED_ALWAYS or (
+            spec.required == REQUIRED_WITH_VDS and vds_present
+        )
+        if not rates.has(spec.rates_key):
             figures.append(
                 ReferenceFigure(
                     key=spec.key,
@@ -957,50 +1147,47 @@ def _reference_figures(rates: tb.RatesTable) -> tuple[tuple[ReferenceFigure, ...
                     label_en=spec.label_en,
                     kind=spec.kind,
                     available=False,
+                    rates_key=spec.rates_key,
+                    required=spec.required,
                     display="not in rates file",
                 )
             )
-            warnings.append(
-                f"NOT IN RATES FILE: {spec.label_bn} / {spec.label_en} is absent from "
-                f"{file_name} (looked for {', '.join(spec.candidates)}). TakaBooks will "
-                "not supply a figure — obtain it from the National Board of Revenue (NBR) "
-                "before filing."
-            )
+            if needed:
+                missing_required.append(spec)
+            else:
+                warnings.append(
+                    f"NOT IN RATES FILE: {spec.label} is absent from {file_name} "
+                    f"(key {spec.rates_key}). TakaBooks will not supply a figure — obtain "
+                    "it from the National Board of Revenue (NBR) before filing."
+                )
             continue
 
-        rate = rates.rate(found_key)
-        display = ""
-        money: tb.Money | None = None
-        problem = ""
-        if isinstance(rate.value, float):
-            problem = (
-                "written as a TOML float, which cannot hold an exact decimal; "
-                "write it as a quoted string or an integer"
+        table = _node_table(rates, spec.rates_key)
+        try:
+            rate = rates.rate(spec.rates_key)
+        except tb.RatesError as exc:
+            figures.append(
+                ReferenceFigure(
+                    key=spec.key,
+                    label_bn=spec.label_bn,
+                    label_en=spec.label_en,
+                    kind=spec.kind,
+                    available=True,
+                    rates_key=spec.rates_key,
+                    required=spec.required,
+                    display="unreadable",
+                    problem=exc.message,
+                )
             )
-            display = repr(rate.value)
-            warnings.append(
-                f"UNUSABLE RATE: {found_key} in {file_name} is a TOML float "
-                f"({rate.value!r}). TakaBooks refuses float money and rates — rewrite it "
-                'as a string (value = "15") or an integer.'
-            )
-        elif spec.kind == "percent":
-            try:
-                display = rate_text(rate.as_decimal()) + "%"
-            except tb.TakaBooksError as exc:
-                problem = exc.message
-                display = str(rate.value)
-                warnings.append(f"UNREADABLE RATE: {found_key} in {file_name}: {exc.message}")
-        elif spec.kind == "money":
-            try:
-                money = rate.as_money()
-                display = tb.format_bdt(money, symbol=True)
-            except tb.TakaBooksError as exc:
-                problem = exc.message
-                display = str(rate.value)
-                warnings.append(f"UNREADABLE AMOUNT: {found_key} in {file_name}: {exc.message}")
-        else:
-            display = str(rate.value)
+            warnings.append(f"UNREADABLE: {spec.rates_key} in {file_name}: {exc.message}")
+            continue
 
+        placeholder = _is_placeholder(table)
+        display, money, _dec, problem, warning = _read_value(
+            rate, spec.kind, file_name, placeholder=placeholder
+        )
+        if warning:
+            warnings.append(warning)
         figures.append(
             ReferenceFigure(
                 key=spec.key,
@@ -1008,10 +1195,12 @@ def _reference_figures(rates: tb.RatesTable) -> tuple[tuple[ReferenceFigure, ...
                 label_en=spec.label_en,
                 kind=spec.kind,
                 available=True,
-                rates_key=found_key,
+                rates_key=spec.rates_key,
+                required=spec.required,
                 raw_value=rate.value,
                 display=display,
                 verified=rate.is_verified,
+                placeholder=placeholder,
                 source=rate.source,
                 as_of=rate.as_of,
                 note=rate.note,
@@ -1019,14 +1208,139 @@ def _reference_figures(rates: tb.RatesTable) -> tuple[tuple[ReferenceFigure, ...
                 problem=problem,
             )
         )
-        if not rate.is_verified:
+        if placeholder:
             warnings.append(
-                f"UNVERIFIED: {found_key} ({spec.label_bn} / {spec.label_en}) in "
-                f"{file_name} is not marked verified = true. It is unconfirmed against a "
-                "primary NBR source and must be checked with the National Board of "
-                "Revenue (NBR) before you file."
+                f"PLACEHOLDER: {spec.rates_key} ({spec.label}) in {file_name} is schema "
+                "awaiting research (placeholder = true), not a figure. Nothing may be filed "
+                "on it — obtain the real figure from the National Board of Revenue (NBR)."
             )
+        elif not rate.is_verified:
+            warnings.append(
+                f"UNVERIFIED: {spec.rates_key} ({spec.label}) in {file_name} is not marked "
+                "verified = true. It is unconfirmed against a primary NBR source and must be "
+                "checked with the National Board of Revenue (NBR) before you file."
+            )
+
+    if missing_required:
+        count = len(missing_required)
+        listing = "; ".join(
+            f"{spec.rates_key} ({spec.label}) — {spec.why}" for spec in missing_required
+        )
+        raise tb.RatesError(
+            f"{file_name} is missing {'a figure' if count == 1 else f'{count} figures'} that "
+            f"a {tb.term('vat')} return needs: {listing}. TakaBooks will not assume a value.",
+            hint="Add each key to the rates TOML as a table with value, source, as_of and "
+            "verified (= false with a note if unconfirmed), or pass --rates <path> to a "
+            "file that carries it.",
+        )
     return tuple(figures), warnings
+
+
+def declared_rates(rates: tb.RatesTable) -> tuple[tuple[DeclaredRate, ...], list[str]]:
+    """Every VAT and VDS rate the rates file declares for its assessment year.
+
+    Single nodes come from :data:`VAT_RATE_NODES`; one rate per child table under each of
+    :data:`VAT_RATE_SECTIONS` and :data:`VDS_RATE_SECTIONS`.  Warnings are raised only for
+    keys :func:`reference_figures` does not already report, so nothing is said twice.
+    """
+    file_name = _rates_file_name(rates)
+    already_reported = {spec.rates_key for spec in REFERENCE_SPECS}
+    declared: list[DeclaredRate] = []
+    warnings: list[str] = []
+
+    def add(scope: str, key: str) -> None:
+        table = _node_table(rates, key)
+        if table is None or "value" not in table:
+            return
+        rate = rates.rate(key)
+        placeholder = _is_placeholder(table)
+        _display, _money, dec, problem, warning = _read_value(
+            rate, "percent", file_name, placeholder=placeholder
+        )
+        label_bn = str(table.get("label_bn", "")).strip()
+        label_en = str(table.get("label_en", "")).strip()
+        declared.append(
+            DeclaredRate(
+                scope=scope,
+                rates_key=key,
+                label_bn=label_bn,
+                label_en=label_en,
+                rate=dec,
+                verified=rate.is_verified,
+                placeholder=placeholder,
+                problem=problem,
+            )
+        )
+        if key in already_reported:
+            return
+        label = f"{label_bn} / {label_en}".strip(" /") or key
+        if warning:
+            warnings.append(warning)
+        if placeholder:
+            warnings.append(
+                f"PLACEHOLDER: {key} ({label}) in {file_name} is schema awaiting research "
+                "(placeholder = true), not a declared rate."
+            )
+        elif not rate.is_verified:
+            warnings.append(
+                f"UNVERIFIED: {key} ({label}) in {file_name} is not marked verified = true "
+                "— confirm it with the National Board of Revenue (NBR) before you file."
+            )
+
+    for key in VAT_RATE_NODES:
+        add("vat", key)
+    for scope, sections in (("vat", VAT_RATE_SECTIONS), ("vds", VDS_RATE_SECTIONS)):
+        for section_key in sections:
+            table = _node_table(rates, section_key)
+            if table is None:
+                continue
+            for child, node in table.items():
+                if isinstance(node, Mapping) and "value" in node:
+                    add(scope, f"{section_key}.{child}")
+    return tuple(declared), warnings
+
+
+def _tag_rate_warnings(
+    buckets: Mapping[str, tuple[RateBucket, ...]],
+    declared: Sequence[DeclaredRate],
+    file_name: str,
+) -> list[str]:
+    """Check every rate written in a tax_tag against the rates the file declares.
+
+    TakaBooks asserts no rate of its own: a tagged rate is fine when the file declares it,
+    a warning when the file declares something else, and *uncheckable* — said out loud —
+    when the file declares nothing usable (every node a placeholder).
+    """
+    warnings: list[str] = []
+    vat_usable = {d.rate for d in declared if d.scope == "vat" and d.usable}
+    vds_usable = {d.rate for d in declared if d.scope == "vds" and d.usable} | vat_usable
+    checks = (
+        ("VAT", (tb.TAG_VAT_OUT, tb.TAG_VAT_IN), vat_usable, "vat.rates"),
+        ("VDS", (tb.TAG_VDS,), vds_usable, "vds.services or vat.rates"),
+    )
+    for name, kinds, usable, where in checks:
+        tagged = sorted({bucket.rate for kind in kinds for bucket in buckets.get(kind, ())})
+        if not tagged:
+            continue
+        tagged_text = ", ".join(f"{rate_text(rate)}%" for rate in tagged)
+        if not usable:
+            warnings.append(
+                f"RATE CHECK SKIPPED: {file_name} declares no usable {name} rate under "
+                f"{where} (every node is a placeholder or unreadable), so the {name} rates "
+                f"tagged in the journal ({tagged_text}) could not be checked against the "
+                "statutory table. Confirm each with the National Board of Revenue (NBR)."
+            )
+            continue
+        undeclared = [rate for rate in tagged if rate not in usable]
+        if undeclared:
+            declared_text = ", ".join(f"{rate_text(rate)}%" for rate in sorted(usable))
+            warnings.append(
+                f"RATE NOT DECLARED: postings are tagged at {name} "
+                + ", ".join(f"{rate_text(rate)}%" for rate in undeclared)
+                + f", but {file_name} declares only {declared_text} under {where}. Confirm "
+                "the reduced, truncated or special rate applies before filing."
+            )
+    return warnings
 
 
 def _return_form(rates: tb.RatesTable, figures: Mapping[str, ReturnFigure]) -> tuple[
@@ -1038,16 +1352,8 @@ def _return_form(rates: tb.RatesTable, figures: Mapping[str, ReturnFigure]) -> t
     this returns nothing and the caller says so.
     """
     notes: list[str] = []
-    section: Mapping[str, Any] | None = None
-    for key in RETURN_FORM_KEYS:
-        try:
-            candidate = rates.section(key)
-        except tb.RatesError:
-            continue
-        if isinstance(candidate.get("line"), list):
-            section = candidate
-            break
-    if section is None:
+    section = _node_table(rates, RETURN_FORM_KEY)
+    if section is None or not isinstance(section.get("line"), list):
         return (), notes
 
     lines: list[ReturnFormLine] = []
@@ -1133,10 +1439,26 @@ def compute_vat_position(
             _control_account(ledger, account, KIND_ROLE[kind], since, until, tagged)
         )
 
-    references, reference_warnings = _reference_figures(rates)
-    warnings.extend(reference_warnings)
+    # -- the rates file: every statutory figure, none of it asserted here -------------
+    file_name = _rates_file_name(rates)
+    rate_caveats: list[str] = []
+    file_placeholder = rates_file_is_placeholder(rates)
+    if file_placeholder:
+        rate_caveats.append(
+            f"PLACEHOLDER RATES FILE: {file_name} declares itself a schema awaiting "
+            "verified data ([meta] placeholder = true). Every figure quoted from it is "
+            "unlanded, and nothing computed with it may be filed with the NBR."
+        )
+    references, reference_warnings = reference_figures(
+        rates, vds_present=tb.TAG_VDS in kinds_present
+    )
+    rate_caveats.extend(reference_warnings)
+    declared, declared_warnings = declared_rates(rates)
+    rate_caveats.extend(declared_warnings)
+    rate_caveats.extend(_tag_rate_warnings(buckets, declared, file_name))
+    warnings.extend(rate_caveats)
 
-    position_stub = VatPosition(
+    position = VatPosition(
         config=config,
         books_dir=ledger.books_dir,
         assessment_year=assessment_year,
@@ -1146,11 +1468,14 @@ def compute_vat_position(
         rates_path=rates.source_path,
         rates_assessment_year=rates.assessment_year,
         rates_provenance=rates.provenance(),
-        rates_caveats=tuple(rates.caveats()),
+        rates_caveats=tuple(rate_caveats),
+        rates_file_placeholder=file_placeholder,
+        rates_unverified_in_file=len(rates.unverified_keys()),
         buckets=buckets,
         issues=tuple(issues),
         controls=tuple(controls),
         references=references,
+        declared=declared,
         return_form=(),
         warnings=(),
         notes=(),
@@ -1158,53 +1483,21 @@ def compute_vat_position(
         entry_count=len(period.entries),
         tds_posting_count=sum(1 for p in period if p.tax_tag.is_tds),
     )
-    return_form, form_notes = _return_form(rates, position_stub.figure_map())
+    return_form, form_notes = _return_form(rates, position.figure_map())
     notes.extend(form_notes)
 
     if not return_form:
         notes.append(
-            "FORM MAP: the rates file carries no NBR return-form line map (looked for "
-            f"{', '.join(RETURN_FORM_KEYS)}). TakaBooks does not assert Mushak form line "
-            "numbers — map the figures below onto the current NBR form yourself."
+            "FORM MAP: the rates file carries no NBR return-form line map "
+            f"([[{RETURN_FORM_KEY}.line]] tables). TakaBooks does not assert মূসক-৯.১ / "
+            "Mushak 9.1 line numbers — map the figures above onto the current NBR form "
+            "yourself."
         )
 
     # Observations that help the preparer, drawn only from the data at hand.
-    standard = next(
-        (
-            figure
-            for figure in references
-            if figure.key == "standard_rate" and figure.available and not figure.problem
-        ),
-        None,
-    )
-    if standard is not None:
-        try:
-            standard_rate = tb.RatesTable(
-                {"v": {"value": standard.raw_value}}
-            ).rate("v").as_decimal()
-        except tb.TakaBooksError:
-            standard_rate = None
-        if standard_rate is not None:
-            odd = sorted(
-                {
-                    bucket.rate
-                    for kind in (tb.TAG_VAT_OUT, tb.TAG_VAT_IN)
-                    for bucket in buckets[kind]
-                    if bucket.rate != standard_rate
-                }
-            )
-            if odd:
-                notes.append(
-                    "NON-STANDARD RATE: postings are tagged at "
-                    + ", ".join(f"{rate_text(rate)}%" for rate in odd)
-                    + f", which differs from the standard rate {standard.display} in "
-                    f"{rates.source_path.name if rates.source_path else 'the rates file'}. "
-                    "Confirm the reduced, truncated or special rate applies."
-                )
-
-    if position_stub.tds_posting_count:
+    if position.tds_posting_count:
         notes.append(
-            f"OUT OF SCOPE: {position_stub.tds_posting_count} posting(s) in this period "
+            f"OUT OF SCOPE: {position.tds_posting_count} posting(s) in this period "
             f"carry a {tb.term('tds')} tag. Withholding tax is reported by tax.py, not "
             "here."
         )
@@ -1233,27 +1526,11 @@ def compute_vat_position(
             + "."
         )
 
-    return VatPosition(
-        config=config,
-        books_dir=ledger.books_dir,
-        assessment_year=assessment_year,
-        period_start=since,
-        period_end=until,
-        period_label=period_label or "every posting in the books",
-        rates_path=rates.source_path,
-        rates_assessment_year=rates.assessment_year,
-        rates_provenance=rates.provenance(),
-        rates_caveats=tuple(rates.caveats()),
-        buckets=buckets,
-        issues=tuple(issues),
-        controls=tuple(controls),
-        references=references,
+    return replace(
+        position,
         return_form=return_form,
         warnings=tuple(warnings),
         notes=tuple(notes),
-        posting_count=len(period),
-        entry_count=len(period.entries),
-        tds_posting_count=position_stub.tds_posting_count,
     )
 
 
@@ -1378,9 +1655,32 @@ def render_markdown(position: VatPosition) -> str:
         add(f"- **Books:** `{position.books_dir}`")
     add(f"- **{position.rates_provenance}**")
     add(f"- **Postings read:** {position.posting_count} in {position.entry_count} entries")
+    add(f"- **Filing status:** {position.filing_status}")
     add("")
     add(f"_{tb.ATTRIBUTION}_")
     add("")
+
+    if position.provisional:
+        if position.rates_file_placeholder:
+            reason = (
+                "The rates file is a placeholder schema awaiting verified data, so every "
+                "statutory figure quoted below is unlanded."
+            )
+        elif position.issues:
+            reason = (
+                "At least one entry does not reconcile, or a figure read from the rates "
+                "file is unverified or missing — see the warnings."
+            )
+        else:
+            reason = (
+                "A figure read from the rates file is unverified, a placeholder, or "
+                "missing — see the warnings."
+            )
+        add(
+            f"> **PROVISIONAL / অস্থায়ী — NOT FOR FILING.** {reason} Confirm every flagged "
+            "item with the National Board of Revenue (NBR) before this figure set is used."
+        )
+        add("")
 
     if position.warnings:
         add("## সতর্কতা / Warnings")
@@ -1617,9 +1917,41 @@ def render_markdown(position: VatPosition) -> str:
     add("")
     add(
         "TakaBooks hardcodes no Bangladeshi rate, threshold or deadline. Anything marked "
-        "`UNVERIFIED` or `not in rates file` must be confirmed with the NBR before you "
-        "rely on it."
+        "`PLACEHOLDER`, `UNVERIFIED` or `not in rates file` must be confirmed with the NBR "
+        "before you rely on it."
     )
+    add("")
+    add("### হার তালিকা / Rates declared in the rates file")
+    add("")
+    if position.declared:
+        add(
+            "Every rate written in a `tax_tag` is checked against this set. A tagged rate "
+            "the file does not declare is flagged under warnings."
+        )
+        add("")
+        declared_rows = [
+            [
+                declared.scope.upper(),
+                declared.rate_text,
+                declared.label or "—",
+                declared.status,
+                f"`{declared.rates_key}`",
+            ]
+            for declared in position.declared
+        ]
+        add(
+            tb.markdown_table(
+                ["Scope", "হার / Rate", "Label", "Status", "Key"],
+                declared_rows,
+                aligns=["l", "r", "l", "l", "l"],
+            )
+        )
+    else:
+        add(
+            "_The rates file declares no VAT or VDS rate "
+            f"({', '.join(VAT_RATE_NODES + VAT_RATE_SECTIONS + VDS_RATE_SECTIONS)}), so "
+            "tagged rates could not be checked._"
+        )
     add("")
     section_number += 1
 
@@ -1712,6 +2044,14 @@ def render_csv(position: VatPosition) -> str:
     row("meta", "rates_provenance", detail=position.rates_provenance)
     row("meta", "postings", detail=str(position.posting_count))
     row("meta", "entries", detail=str(position.entry_count))
+    row("meta", "filing_status", detail=position.filing_status)
+    row("meta", "provisional", detail="true" if position.provisional else "false")
+    row(
+        "meta",
+        "rates_file_placeholder",
+        detail="true" if position.rates_file_placeholder else "false",
+    )
+    row("meta", "rates_unverified_keys_in_file", detail=str(position.rates_unverified_in_file))
 
     for figure in position.return_figures():
         row("figure", figure.key, figure.label_bn, figure.label_en,
@@ -1762,8 +2102,13 @@ def render_csv(position: VatPosition) -> str:
     for figure in position.references:
         row("reference", figure.key, figure.label_bn, figure.label_en,
             amount=figure.money,
-            detail=f"{figure.display} | status={figure.status} | key={figure.rates_key} | "
-            f"source={figure.source} | as_of={figure.as_of}")
+            detail=f"{figure.display} | status={figure.status} | required={figure.required} | "
+            f"key={figure.rates_key} | source={figure.source} | as_of={figure.as_of}")
+
+    for declared in position.declared:
+        row("declared_rate", declared.rates_key, declared.label_bn, declared.label_en,
+            rate_text(declared.rate) if declared.rate is not None else "",
+            detail=f"scope={declared.scope} | status={declared.status}")
 
     for line in position.return_form:
         row("return_form", line.line or line.figure_key, line.label_bn, line.label_en,
@@ -1843,11 +2188,15 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
             "start": position.period_start,
             "end": position.period_end,
         },
+        "filing_status": position.filing_status,
+        "provisional": position.provisional,
         "rates": {
             "path": str(position.rates_path) if position.rates_path else None,
             "file": position.rates_path.name if position.rates_path else None,
             "assessment_year": position.rates_assessment_year,
             "provenance": position.rates_provenance,
+            "file_placeholder": position.rates_file_placeholder,
+            "unverified_keys_in_file": position.rates_unverified_in_file,
             "caveats": list(position.rates_caveats),
         },
         "counts": {
@@ -1922,10 +2271,13 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
                 "label_en": f.label_en,
                 "kind": f.kind,
                 "available": f.available,
+                "required": f.required,
                 "rates_key": f.rates_key,
                 "value": f.raw_value if not isinstance(f.raw_value, float) else str(f.raw_value),
                 "display": f.display,
                 "verified": f.verified,
+                "placeholder": f.placeholder,
+                "usable": f.usable,
                 "status": f.status,
                 "source": f.source,
                 "as_of": f.as_of,
@@ -1933,6 +2285,21 @@ def position_payload(position: VatPosition) -> dict[str, Any]:
                 "problem": f.problem,
             }
             for f in position.references
+        ],
+        "declared_rates": [
+            {
+                "scope": d.scope,
+                "rates_key": d.rates_key,
+                "label_bn": d.label_bn,
+                "label_en": d.label_en,
+                "rate_percent": rate_text(d.rate) if d.rate is not None else None,
+                "verified": d.verified,
+                "placeholder": d.placeholder,
+                "usable": d.usable,
+                "status": d.status,
+                "problem": d.problem,
+            }
+            for d in position.declared
         ],
         "return_form": [
             {
@@ -1968,8 +2335,15 @@ tax_tag convention
 
 rates
   Every statutory figure is read from the rates TOML for the assessment year; none is
-  hardcoded here. Missing figures are reported as missing; figures that are not
-  verified = true are reported as UNVERIFIED. --strict makes either fatal.
+  hardcoded here. Keys read: vat.rates.standard and deadlines.vat_return_monthly
+  (required), vds.deposit.deadline (required when VDS postings exist),
+  vat.rates.zero_rated, vat.rates.reduced.<key>, vds.services.<key>,
+  vat.thresholds.registration, vat.thresholds.turnover_tax_enlistment and
+  vat.turnover_tax.rate (optional), and an optional [[vat.return_form.line]] map.
+  A missing required key exits 8. Optional keys that are missing are reported as
+  "not in rates file"; figures not verified = true are reported as UNVERIFIED, and
+  placeholder = true nodes as PLACEHOLDER. Any of those stamps the output PROVISIONAL;
+  --strict makes them fatal (exit 7).
 
 {tb.ATTRIBUTION}
 """

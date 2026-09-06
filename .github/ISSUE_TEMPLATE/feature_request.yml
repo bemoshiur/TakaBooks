@@ -1,0 +1,89 @@
+# .github/ISSUE_TEMPLATE/feature_request.yml
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+name: "Feature request / নতুন সুবিধার প্রস্তাব"
+description: "Propose a new capability, report, check, form or bundle target."
+title: "[feature] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ধন্যবাদ / Thank you. TakaBooks is Bangladesh-specific, SME-focused and deliberately
+        small: a stdlib-only engine plus cited reference material that any LLM can use.
+        The best requests describe a real bookkeeping or compliance moment an SME owner,
+        bookkeeper or ITP/CA actually faces.
+
+        Non-goals (spec §1): a general-purpose accounting suite, an e-filing robot, or a
+        replacement for a licensed ITP/CA. A new rate or deadline is a *Tax rule update*, not
+        a feature.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: "What kind of feature?"
+      options:
+        - "New engine capability (a script, a report, a computation)"
+        - "New validate.py check"
+        - "New Mushak form or register output"
+        - "Chart of accounts / templates"
+        - "Reference material (references/*.md, glossary)"
+        - "New LLM platform / bundle target"
+        - "Installer or build tooling"
+        - "Bangla language / bilingual output"
+        - "Other"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "The moment this solves"
+      description: "Describe the real situation: who is sitting at the laptop, what they are trying to do, and what goes wrong or takes too long today."
+      placeholder: "At month-end the bookkeeper has to … and today they …"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "What you would like TakaBooks to do"
+      description: "The behaviour, the command line, the columns of the report, the check that should fire. Bangla / English term pairs welcome."
+    validations:
+      required: true
+
+  - type: textarea
+    id: numbers
+    attributes:
+      label: "Does it depend on any tax figure, form or statute?"
+      description: "If yes, name it and where a maintainer can read it (nbr.gov.bd URL, SRO, circular). Figures go into rates-AY<year>.toml with a source and a verified flag; nothing is hardcoded (spec §4.5)."
+      placeholder: "Needs the … rate from …; form Mushak-…"
+
+  - type: textarea
+    id: example
+    attributes:
+      label: "Example input and expected output (optional)"
+      description: "A tiny journal / config snippet with fake amounts, and what you expect to see."
+      render: csv
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: "Who is it for?"
+      multiple: true
+      options:
+        - "SME owner"
+        - "Bookkeeper"
+        - "ITP / CA firm"
+        - "Developer integrating TakaBooks"
+        - "LLM assistant behaviour"
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: "Confirm"
+      options:
+        - label: "This fits TakaBooks' scope: Bangladesh, SME, deterministic Python owns every number, no invented figures."
+          required: true
+        - label: "This issue contains no real TIN, BIN, bank data or real party names."
+          required: true
+        - label: "I am willing to help test it (optional)."

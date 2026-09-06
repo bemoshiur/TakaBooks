@@ -1,0 +1,137 @@
+# =========================================================================================
+# TakaBooks — books/config.toml (template)
+#
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+# WHO THIS IS FOR: the owner or bookkeeper of a Bangladeshi SME. You do not need to be an
+# accountant to fill this in. Every field is explained beside it.
+#
+# HOW IT IS USED: init_books.py copies this file into your books/ folder and asks you the
+# questions below; you can also edit books/config.toml by hand at any time. TakaBooks
+# scripts only ever READ this file — they never change it.
+#
+# EVERY VALUE HERE IS A PLACEHOLDER. Nothing in this template is a real business, a real
+# TIN or BIN, or a real tax fact. Two fields — fiscal_year_start and assessment_year — are
+# left commented out on purpose: TakaBooks never guesses a Bangladeshi tax fact for you
+# (spec §6.2), so you must type them yourself.
+#
+# NO RATE, THRESHOLD OR DEADLINE LIVES IN THIS FILE. Those are in
+# src/data/rates-AY<year>.toml, each with a source URL and a verified flag.
+# =========================================================================================
+
+
+[business]
+# Legal name exactly as it appears on your trade licence / RJSC certificate (English).
+name = "Example Traders"
+
+# The same name in Bangla (বাংলা নাম) — as printed on your Bangla vouchers and signboard.
+name_bn = "উদাহরণ ট্রেডার্স"
+
+# What kind of entity you are. One of:
+#   proprietorship  — একক মালিকানা: one owner, no separate legal person
+#   partnership     — অংশীদারি: two or more owners under a partnership deed
+#   company         — কোম্পানি: private or public limited, registered with RJSC
+#   ngo             — এনজিও / non-profit
+#   other           — anything else (co-operative, trust, branch of a foreign company…)
+type = "proprietorship"
+
+# করদাতা সনাক্তকরণ নম্বর / Taxpayer's Identification Number, exactly as printed on your
+# NBR e-TIN certificate. Leave blank until you have it — never type a guess.
+tin = ""
+
+# ব্যবসা সনাক্তকরণ নম্বর / Business Identification Number from your মূসক / VAT registration
+# (or turnover-tax enlistment) certificate. Leave blank if you are not registered.
+bin = ""
+
+# Registered business address (one line is fine).
+address = ""
+
+# Trade licence number and the city corporation / paurashava that issued it. Informational.
+trade_licence = ""
+
+# RJSC registration / incorporation number for companies and partnerships. Informational.
+registration_no = ""
+
+
+[books]
+# TakaBooks keeps books in Bangladeshi Taka only. Do not change this.
+currency = "BDT"
+
+# --- Financial year / আয় বছর -------------------------------------------------------------
+# The day your income year OPENS, written MM-DD (month-day). TakaBooks will NOT assume
+# this for you: every report that needs a period refuses to run until it is set.
+# Many Bangladeshi businesses run July to June; some run January to December; yours is
+# whatever your tax return and audited accounts say. Check before you type it.
+#   Example of the format only:  fiscal_year_start = "07-01"
+# fiscal_year_start = "MM-DD"
+
+# The day your income year CLOSES, written MM-DD. Informational: the engine reads only
+# fiscal_year_start and treats the year as closing the day before the next opening. Write
+# it here so the assistant and your accountant can see both ends at a glance.
+# fiscal_year_end = "MM-DD"
+
+# করবর্ষ / assessment year, as printed on your NBR return, written YYYY-YY.
+# Every tax output must state it, so tax scripts refuse to run without it.
+# assessment_year = "YYYY-YY"
+
+# The machine-readable rates file for that assessment year, e.g. "rates-AY2026-27.toml".
+# The name must contain the assessment year above. No rate is ever written into this
+# config file, into prose or into code — it all lives in that one rates file.
+# rates_file = "rates-AY<year>.toml"
+
+# Where the chart of accounts and the monthly journal CSVs live, relative to books/.
+# You should not need to change these.
+accounts_file = "accounts.toml"
+journal_dir = "journal"
+
+
+[locale]
+# Language the assistant should reply in: "en" English · "bn" Bangla · "bn-en" both.
+# (Bangla / English statutory term pairs are always shown regardless of this setting.)
+language = "en"
+
+# Digit grouping for amounts in reports:
+#   "bd"            লাখ/কোটি grouping, 12,34,567.89  (the Bangladeshi convention, default)
+#   "international" thousands grouping, 1,234,567.89
+grouping = "bd"
+
+# Numerals used in reports: "latin" 0-9 · "bangla" ০-৯
+digits = "latin"
+
+
+[compliance]
+# Recorded for your own reference and so the assistant asks the right questions.
+# TakaBooks attaches NO rate, threshold or deadline to any label in this section; whether
+# a label changes any figure in a given assessment year is decided by the rates file.
+
+# মূসক নিবন্ধন / VAT registration: are you registered for VAT with a BIN?
+#   "yes" · "no" · "unknown"  — "unknown" is an honest answer and beats a guess.
+vat_registered = "unknown"
+
+# টার্নওভার কর তালিকাভুক্তি / turnover-tax enlistment: enlisted (not registered) persons
+# issue মূসক ৬.৯ / Mushak 6.9 instead of Mushak 6.3 and file a different return.
+#   "yes" · "no" · "unknown"
+turnover_tax_enlisted = "unknown"
+
+# Withholding entity / উৎসে কর্তনকারী: must you deduct VDS and TDS from suppliers'
+# payments and issue them certificates? Government bodies, companies, NGOs and some
+# other entities usually must; ask your ITP/CA if unsure.
+#   "yes" · "no" · "unknown"
+withholding_entity = "unknown"
+
+# Where the business is located. A LABEL ONLY — it carries no amount. Whether location
+# affects any tax figure (for example a minimum tax) in your assessment year is decided
+# by the rates file, not by this line.
+#   "unspecified"            অনির্দিষ্ট / not stated
+#   "dhaka-chattogram-city"  ঢাকা বা চট্টগ্রাম সিটি কর্পোরেশন এলাকা
+#   "other-city"             অন্যান্য সিটি কর্পোরেশন এলাকা / other city corporation area
+#   "other-area"             অন্যান্য এলাকা / any other area
+city_tier = "unspecified"
+
+# How you keep your books day to day.
+#   "accrual"  income and expenses are recorded when earned or incurred (what the law and
+#              your auditor expect, and what TakaBooks maintains)
+#   "cash"     you record only money in and money out during the year and convert at
+#              year-end — say so here, so the assistant reminds you about accruals
+#              (audit fee, last month's salary, utility bills) before any report.
+accounting_basis = "accrual"

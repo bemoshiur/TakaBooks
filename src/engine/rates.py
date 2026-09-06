@@ -755,11 +755,15 @@ def resolve_rates(
 
 
 def _load_config_if_present(books_dir: "Path | str") -> "tb.Config | None":
-    """Read ``books/config.toml`` when there is one; a calculator may run without books."""
-    try:
-        return tb.Config.load(books_dir)
-    except tb.ConfigError:
+    """Read ``books/config.toml`` when there is one; a calculator may run without books.
+
+    Only a *missing* config is skipped.  A config that exists but is broken raises
+    :class:`takabooks.ConfigError` — silently ignoring it could pick the wrong year's
+    rates file.
+    """
+    if not tb.config_path(books_dir).is_file():
         return None
+    return tb.Config.load(books_dir)
 
 
 # --------------------------------------------------------------------------------------
