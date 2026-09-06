@@ -17,36 +17,46 @@
   </g>
   <g font-family="'Noto Sans Bengali','Kohinoor Bangla','Bangla Sangam MN','Bangla MN',SolaimanLipi,'Nirmala UI',Vrinda,sans-serif">
     <text x="332" y="302" font-size="46" fill="#4FD1A1">টাকাবুকস</text>
-    <text x="332" y="424" font-size="26" fill="#9DB0A8">মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger</text>
+    <text x="332" y="420" font-size="26" fill="#9DB0A8">মূসক / VAT · উৎসে কর কর্তন / TDS · খতিয়ান / Ledger</text>
   </g>
   <g font-family="-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans',sans-serif">
     <text x="332" y="374" font-size="36" font-weight="600" fill="#F4F8F5">Bangladeshi bookkeeping &amp; taxation for any LLM</text>
     <g font-size="20" font-weight="600" text-anchor="middle">
       <g fill="none" stroke="#F4F8F5" stroke-opacity=".35" stroke-width="1.5">
-        <rect x="90" y="468" width="122" height="40" rx="20"/>
-        <rect x="224" y="468" width="140" height="40" rx="20"/>
-        <rect x="376" y="468" width="122" height="40" rx="20"/>
-        <rect x="510" y="468" width="96" height="40" rx="20"/>
-        <rect x="618" y="468" width="140" height="40" rx="20"/>
-        <rect x="770" y="468" width="108" height="40" rx="20"/>
-        <rect x="890" y="468" width="118" height="40" rx="20"/>
+        <rect x="90" y="458" width="122" height="40" rx="20"/>
+        <rect x="224" y="458" width="140" height="40" rx="20"/>
+        <rect x="376" y="458" width="122" height="40" rx="20"/>
+        <rect x="510" y="458" width="96" height="40" rx="20"/>
+        <rect x="618" y="458" width="140" height="40" rx="20"/>
+        <rect x="770" y="458" width="108" height="40" rx="20"/>
+        <rect x="890" y="458" width="118" height="40" rx="20"/>
       </g>
-      <rect x="1020" y="468" width="140" height="40" rx="20" fill="#4FD1A1"/>
+      <rect x="1020" y="458" width="140" height="40" rx="20" fill="#4FD1A1"/>
       <g fill="#F4F8F5">
-        <text x="151" y="495">Claude</text>
-        <text x="294" y="495">ChatGPT</text>
-        <text x="437" y="495">Gemini</text>
-        <text x="558" y="495">Kimi</text>
-        <text x="688" y="495">DeepSeek</text>
-        <text x="824" y="495">Llama</text>
-        <text x="949" y="495">Cursor</text>
+        <text x="151" y="485">Claude</text>
+        <text x="294" y="485">ChatGPT</text>
+        <text x="437" y="485">Gemini</text>
+        <text x="558" y="485">Kimi</text>
+        <text x="688" y="485">DeepSeek</text>
+        <text x="824" y="485">Llama</text>
+        <text x="949" y="485">Cursor</text>
       </g>
-      <text x="1090" y="495" fill="#0B2E24">any LLM</text>
+      <text x="1090" y="485" fill="#0B2E24">any LLM</text>
+    </g>
+    <g>
+      <rect x="90" y="528" width="1100" height="46" rx="10" fill="#F4F8F5" fill-opacity=".06"/>
+      <text x="112" y="558" font-size="21" font-weight="700" fill="#4FD1A1">474</text>
+      <text x="152" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".9">rates verified against primary NBR sources</text>
+      <text x="586" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".35">·</text>
+      <text x="608" y="558" font-size="21" font-weight="700" fill="#4FD1A1">867</text>
+      <text x="648" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".9">tests</text>
+      <text x="716" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".35">·</text>
+      <text x="738" y="558" font-size="21" fill="#F4F8F5" fill-opacity=".9">every figure carries its source</text>
     </g>
     <g font-size="20" fill="#F4F8F5" fill-opacity=".8">
-      <text x="90" y="568">Ticon Sys · ticonsys.com</text>
-      <text x="640" y="568" text-anchor="middle">Python 3.11+ · zero dependencies · MIT</text>
-      <text x="1190" y="568" text-anchor="end">github.com/bemoshiur/TakaBooks</text>
+      <text x="90" y="608">Ticon Sys · ticonsys.com</text>
+      <text x="640" y="608" text-anchor="middle">Python 3.11+ · zero dependencies · MIT</text>
+      <text x="1190" y="608" text-anchor="end">github.com/bemoshiur/TakaBooks</text>
     </g>
   </g>
 </svg>
