@@ -10,7 +10,11 @@ http://bdlaws.minlaw.gov.bd/act-1106.html, which is current through the Finance 
 carries an amendment footnote on every section; the VAT & SD Rules 2016 gazette,
 **SRO No. 333-Ain/2016/1-Mushak** dated 3 November 2016, at
 https://nbr.gov.bd/uploads/rules/VATR2016.pdf; the consolidated Schedules PDF generated
-27 August 2026 and linked from the act-1106 page under "তফসিল"; and NBR's VAT-2012 forms index
+27 August 2026 and linked from the act-1106 page under "তফসিল"; the Bangladesh Gazette
+Extraordinary of 22 January 2025 for **S.R.O. 39-Ain/2025/275-Mushak** (p.448),
+**S.R.O. 40-Ain/2025/276-Mushak** (p.449) and **S.R.O. 41-Ain/2025/277-Mushak** (p.450), and the
+FY2026-27 exemption gazette **S.R.O. 127-Ain/2026/332-Mushak**, all from NBR's VAT-SRO index at
+https://nbr.gov.bd/regulations/sros/vat-sros/eng; and NBR's VAT-2012 forms index
 at https://nbr.gov.bd/form/vat/vat-2012/eng. Secondary summaries (PwC Bangladesh, KPMG /
 Rahman Rahman Huq, Tuhin & Partners) are used only where marked, and only to locate or
 corroborate — never to state a figure as settled.
@@ -143,34 +147,91 @@ and that challan serves as **both** the tax invoice and the input tax credit doc
 but **s.46(1)(kha) denies the credit if the recipient does not separately show the output tax in
 the return**. **✔**
 
-### 4.1 ⚠️ Two traps in the Third Schedule — read this before quoting any reduced rate
+### 4.1 Two traps in the Third Schedule — read this before quoting any reduced rate
 
-**Trap 1 — several headline rates no longer live in the Schedule at all.** The Schedule shows
-**S001** (hotel and restaurant), **S014** (indenting), **S022** and **S078** as **deleted** in
-January 2025. Yet restaurant, non-AC hotel, motor garage and sweetmeat rates are genuinely
-current — because **SRO 39-Ain/2025/275-Mushak dated 22 January 2025 re-instated them by
-notification**, and **SRO 40-Ain/2025/276-Mushak of the same date restored medicines** after the
-January 2025 ordinance had raised them. **⚠ Neither SRO's text was ever opened.** They are absent
-from NBR's SRO index, and a targeted search of nbr.gov.bd on 6 September 2026 returned nothing.
-TakaBooks therefore carries those four rates as `placeholder = true` — the engine **refuses**
-them, which is the correct failure. **Anyone citing the Schedule alone will get these wrong; and
-anyone reading them off a VDS chart is reading a withholding rate, not a VAT rate.**
+Both traps are real and both are now **resolved against primary text**, on 6 September 2026. The
+resolution needed one technique worth recording, because it will be needed again: **the Bangla in
+both source documents does not text-extract, but it renders perfectly.** The consolidated
+Schedules PDF uses a broken legacy font mapping, and NBR's SRO scans carry an OCR text layer that
+is Latin gibberish. Both were therefore **rendered to high-resolution images and read from the
+rendering** rather than from `pdftotext`. Anything below marked **✔** was read that way.
 
-**Trap 2 — the local trader rate may have moved.** Footnote 121 of the consolidated Schedules
-PDF confirms that **paragraph (3) of the Third Schedule was substituted by Act 77 of 2026
-s.4(ছ)**, and the readable fragments show a different leading digit from the old text. **⚠ The
-complete paragraph could not be decoded**, so every paragraph-3 figure — the general trading
-stage, building construction at either size band, medicines at the trading stage, fuel at the
-trading stage, and land developers — is `placeholder = true` in the TOML, as is the paragraph-4
-wholesale rate. A trading business must settle this in writing with its VAT circle before it
-files. This is not a rounding difference; it is the rate on the whole turnover.
+**Trap 1 — several headline rates do not live in the Schedule at all.** The Schedule shows
+**S001** (hotel and restaurant), **S014** (indenting), **S022** (sweetmeat shop) and **S078**
+(ready-made garment marketing) as **deleted** — S001 from Table-1 Part খ (footnote 71) and from
+Table-2 Part খ (footnote 87), S022 by footnote 89 and S078 by footnote 94, all by **Act 77 of
+2026 s.4**. Restaurant, non-AC hotel, motor garage and sweetmeat rates are nevertheless current,
+because **S.R.O. 39-Ain/2025/275-Mushak of 22 January 2025** sets them by notification under
+**s.126(1)**, and **S.R.O. 40-Ain/2025/276-Mushak of the same date** caps medicines at the trader
+stage. **Both S.R.O.s have now been opened and read in full** from NBR's gazette scans
+(https://nbr.gov.bd/uploads/sros/IMG_20250213_0014.pdf and `…IMG_20250213_00151.pdf`), and all
+five rates are landed as `verified = true`. **✔**
 
-**What *is* verified.** The consolidated Schedules PDF's text layer is broken for Bangla
-**goods descriptions**, but **service codes, rate figures and amendment footnotes extract
-cleanly**. So the four-Table structure, the service codes and their rates, and the deletion
-footnotes are read from primary text — those nodes are `verified = true`. The **goods** lists are
-not, and the illustrative goods examples that circulate (newsprint, thread, bricks, SIM cards)
-come from a secondary pre-Finance Act 2026 chart and are **deliberately not held** in TakaBooks.
+> **Finding them took a trick.** NBR's VAT-SRO listing at
+> `https://nbr.gov.bd/regulations/sros/vat-sro/eng` — the path in general circulation, and the one
+> earlier TakaBooks research used — returns a **PHP error page with an empty table**, which is why
+> a targeted search found nothing and the rates sat unverified. The working path is the **plural**
+> `https://nbr.gov.bd/regulations/sros/vat-sros/eng`, paginated as `/vat-sros/<offset>/eng`. All
+> 17 pages and 664 rows were crawled.
+
+> ⚠️ **Two service codes in wide circulation are wrong, including in earlier TakaBooks drafts.**
+> **Motor garage and workshop is S003.10, not S022.00.** **The sweetmeat shop is S022.00, not
+> S078.00** — S078.00 is *ready-made garment marketing*. The S003.10 attribution is confirmed
+> three times: the S.R.O. 39 row, S.R.O. 41-Ain/2025/277-Mushak of the same date (which
+> substitutes the matching VDS serial), and serial 03 of the current VDS gazette. Note also that
+> **S003.20 (dockyard) is a different service at the standard rate**, and that a **restaurant
+> inside a three-star-or-above listed residential hotel, a restaurant inside a hotel with a liquor
+> bar, and any restaurant with a liquor bar are excluded** from the reduced restaurant rate.
+> Keys: `vat.rates.reduced.restaurant`, `.hotel_non_air_conditioned`,
+> `.motor_garage_and_workshop`, `.sweetmeat_shop` — all **✔**.
+
+> ⚠️ **An air-conditioned hotel gets no reduction.** S.R.O. 39 lists only the *non-AC* hotel; the
+> VDS gazette draws the same distinction, carrying AC and non-AC as two separate lines under the
+> one code S001.10. The code alone does not tell you the rate.
+
+**Trap 2 — the local trader rate has moved, and one item has silently left the reduced list.**
+Footnote 121 of the consolidated Schedules PDF confirms **paragraph (3) of the Third Schedule was
+substituted by Act 77 of 2026 s.4(ছ)**, and the paragraph has now been read in full from a
+rendering of page 86. The **local trading stage rate rose from 5% to 7.5%**. Every paragraph-3
+figure, and the paragraph-4 wholesale figure, is now `verified = true`: general trading stage,
+building sale at either size band, medicines, the fuel list, land developers, and wholesale.
+Keys: `vat.rates.reduced.local_trading_stage`, `.building_construction_small`,
+`.building_construction_large`, `.medicine_local_trading`, `.petroleum_local_trading`,
+`.land_developer`, `.wholesale_business` — all **✔**. This is not a rounding difference; it is the
+rate on a trading business's whole turnover, and a business still charging the old figure is
+under-collecting.
+
+> ⚠️ **LP gas has been dropped from the reduced fuel list.** Footnote 121 prints both texts. The
+> superseded one read "ডিজেল, কেরোসিন, অকটেন, পেট্রোল, ফার্নেস অয়েল ও **এলপি গ্যাস**"; the
+> substituted one omits LP gas. So an LP gas trader is **no longer on the low fuel rate** — LP gas
+> now takes the general local-trading rate. Any chart still listing LP gas with the other fuels is
+> quoting repealed text. See `vat.rates.reduced.petroleum_local_trading`.
+
+> ⚠️ **The Schedule and the S.R.O. disagree on medicines, and the S.R.O. wins.** Paragraph (3) as
+> substituted sets a *higher* trader-stage rate for medicines than S.R.O. 40 allows to be
+> collected; S.R.O. 40 is a standing s.126(1) exemption that caps the charge, and nothing repeals
+> it. The FY2026-27 exemption gazette **S.R.O. 127-Ain/2026/332-Mushak of 7 June 2026 was opened
+> and read**, and its clause 5 repeals only S.R.O. 160-Ain/2025/288-Mushak. The TOML holds the
+> capped figure and its note carries the Schedule figure beside it, so that if the S.R.O. is ever
+> withdrawn a reader knows what it reverts to. See `vat.rates.reduced.medicine_local_trading`.
+
+> ⚠️ **The land developer rate is lower than the figure in circulation**, and **re-registration of
+> a building of any size takes the small-building rate, not the large-building rate** — a resale
+> of a large flat is not at the large-building rate. Both points are read from the
+> paragraph itself. See `vat.rates.reduced.land_developer` and `.building_construction_small`.
+
+**What is still NOT verified.** Service codes, rate figures, amendment footnotes, paragraph (3)
+and paragraph (4) are all read. The item-by-item **goods** lists are **not** — they do not text-
+extract, and the page-by-page rendering that recovered the rates above was not carried through the
+goods tables, which run to dozens of pages and were not needed for any rate node. So the goods
+lists remain a known gap, and it is a gap of effort rather than of possibility: the same rendering
+technique would recover them. The illustrative goods examples that circulate (newsprint, thread,
+bricks, SIM cards) come from a secondary pre-Finance Act 2026 chart and are **deliberately not
+held** in TakaBooks. One more gap is named on
+`vat.rates.reduced.wholesale_business`: **the rate is certified but the entitlement is not** —
+paragraph (4) applies it to *certain* wholesale businesses "subject to compliance with the
+prescribed conditions and procedure", and neither the qualifying class nor the conditions were
+traced. Do not assume a wholesale business qualifies.
 
 **Finance Act 2026 s.22 — read in clean Unicode from bdlaws, unusually for this Act.** It deleted
 heading S026 from Table-1 Part খ, inserted new fixed amounts into Table-4 Part ক (foreign liquor,
@@ -194,9 +255,13 @@ jewellery amounts, and deleted the Explanation at the end of paragraph (3). Keys
 
 ### 4.2 ⚠️ Announced measures that are not in any gazette
 
-A post-budget SRO wave exists that **NBR has not uploaded**. NBR's VAT-SRO index tops out at
-SRO 148-Ain/2026/353-Mushak of 11 June 2026, and PwC cites **SRO 255-Ain/2026/355-Mushak of
-30 June 2026**, inside the un-served range. Four announced VAT measures are therefore **not
+A post-budget SRO wave exists that **NBR has not uploaded**. NBR's VAT-SRO index was crawled in
+full on 6 September 2026 — all 17 pages and 664 rows of the working plural path
+`https://nbr.gov.bd/regulations/sros/vat-sros/eng` — and the newest VAT SRO published on it is
+**SRO 148-Ain/2026/353-Mushak of 11 June 2026**. PwC cites **SRO 255-Ain/2026/355-Mushak of
+30 June 2026**; it is not there, and neither is anything else in the gap above SRO 148. This is
+now a *complete* search of NBR's own index rather than a failed one, so the absence is a fact
+about NBR's publishing, not about the search. Four announced VAT measures are therefore **not
 traceable to any gazette**:
 
 1. the **digital-advertising 5% rate and its claimed service code S007.20** — the VDS rules,
@@ -524,11 +589,20 @@ Stated plainly, so nobody assumes silence means zero:
 - **The Third Schedule goods lists.** The consolidated PDF's Bangla text layer does not decode
   goods descriptions. The illustrative goods examples in circulation (newsprint, thread, bricks,
   SIM cards) come from a secondary pre-Finance Act 2026 chart and are not held.
-- **Paragraph 3 and 4 rates** — trading stage, wholesale, building construction, medicines, fuel,
-  land developers. Recorded as `placeholder = true`; the engine refuses them.
-- **Restaurant, non-AC hotel, motor garage and sweetmeat rates.** Recorded as `placeholder = true`
-  because SRO 39-Ain/2025/275-Mushak and SRO 40-Ain/2025/276-Mushak were never opened.
-- **The digital-advertising rate and service code S007.20.** Announced, not gazetted.
+- **Which wholesale businesses qualify for the paragraph-4 rate, and on what conditions.** The
+  rate itself is now held and verified, but paragraph (4) grants it only to *certain*
+  wholesale businesses "subject to compliance with the prescribed conditions and procedure", and
+  the instrument that prescribes them was not traced. TakaBooks holds the rate and **not** the
+  entitlement test. See `vat.rates.reduced.wholesale_business`.
+- **A node for ready-made garment marketing (S078.00).** S.R.O. 39-Ain/2025/275-Mushak gives it
+  two rates — one for own-brand marketing and a lower one for non-own-brand — and both were read,
+  but no TOML node exists for them yet. Take them from the S.R.O. directly.
+- **A node for re-registration of a building**, which paragraph (3) sets at the small-building
+  rate irrespective of size. The figure is quoted in the note on
+  `vat.rates.reduced.building_construction_small`; there is no key of its own.
+- **The digital-advertising rate and service code S007.20.** Announced, not gazetted. Still
+  `placeholder = true`; the engine refuses it, and an advertising supply stays at the standard
+  rate until the notification is sighted.
 - **The exemption list.** The FY2026-27 exemption SRO is **SRO 127-AIN/2026/332-Musak dated
   7 June 2026** (replacing SRO 160-AIN/2025/288-Musak of 27 May 2025), amended by
   **SRO 255-Ain/2026/355-Mushak dated 30 June 2026** — and SRO 255 has not been uploaded by NBR,

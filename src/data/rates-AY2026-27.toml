@@ -2113,23 +2113,28 @@ the output tax in the return.
 # exact. The consolidated Schedules PDF cited on the nodes below was generated 27 August 2026
 # with amendment footnotes.
 #
-#   ⚠️ TWO TRAPS, BOTH LIVE FOR FY2026-27
+#   ⚠️ TWO TRAPS, BOTH LIVE FOR FY2026-27 — both now RESOLVED against primary text
 #
-#   (1) SEVERAL HEADLINE RATES NO LONGER LIVE IN THE SCHEDULE AT ALL. The Schedule shows
-#       S001 (hotel and restaurant), S014 (indenting), S022 and S078 as DELETED in January
-#       2025 — yet restaurant 5%, non-AC hotel 10%, motor garage 10% and sweetmeat 10% are
-#       genuinely current, because SRO 39-Ain/2025/275-Mushak of 22 January 2025 re-instated
-#       them by notification, and SRO 40-Ain/2025/276-Mushak of the same date restored
-#       medicines to 2.4%. TakaBooks could NOT open either SRO — they are not on NBR's SRO
-#       index and no gazette URL was found — so those rates are carried below as
-#       placeholder = true. Anyone citing the Schedule alone will get them wrong; anyone
-#       citing TakaBooks alone will get a refusal, which is the correct failure.
+#   (1) SEVERAL HEADLINE RATES DO NOT LIVE IN THE SCHEDULE AT ALL. The Schedule shows
+#       S001 (hotel and restaurant), S014 (indenting), S022 (sweetmeat shop) and S078
+#       (ready-made garment marketing) as DELETED — yet restaurant 5%, non-AC hotel 10%,
+#       motor garage 10% and sweetmeat 10% are genuinely current, because
+#       SRO 39-Ain/2025/275-Mushak of 22 January 2025 sets them by notification under
+#       s.126(1), and SRO 40-Ain/2025/276-Mushak of the same date caps medicines at 2.4%.
+#       BOTH SROs WERE OPENED AND READ on 6 September 2026 from NBR's gazette scans, and
+#       every one of those rates is landed below with the SRO as its source. Anyone citing
+#       the Schedule alone will still get them wrong. Two service codes in wide circulation
+#       are also wrong: motor garage is S003.10, NOT S022.00, and the sweetmeat shop is
+#       S022.00, NOT S078.00.
 #
-#   (2) THE LOCAL TRADER RATE MAY HAVE MOVED FROM 5% TO 7.5%. Footnote 121 of the
-#       consolidated PDF confirms that paragraph (3) was SUBSTITUTED by Act 77 of 2026
-#       s.4(ছ), and the readable fragments show "7." where the old text read "5" — but the
-#       complete paragraph could not be decoded. Every paragraph-3 figure below is therefore
-#       placeholder = true. A trading business must confirm 5% vs 7.5% before it files.
+#   (2) THE LOCAL TRADER RATE HAS MOVED FROM 5% TO 7.5%. Footnote 121 of the consolidated
+#       PDF confirms paragraph (3) was SUBSTITUTED by Act 77 of 2026 s.4(ছ), and the whole
+#       paragraph has now been read: the PDF's Bangla text layer is broken, so page 86 was
+#       RENDERED to a 600 dpi image and read from the rendering. Local trading is 7.5%,
+#       medicines in the Schedule 3% (capped to 2.4% by SRO 40), the five listed fuels 2%,
+#       land developer 2%, building sale 2% up to 1,600 sq ft and 4.5% above, re-registration
+#       2% at any size, and paragraph (4) wholesale 1.5% on prescribed conditions. ⚠️ LP GAS
+#       WAS DROPPED from the 2% fuel list by the same substitution — it is now at 7.5%.
 #
 # Deletions verified from the Schedule's own footnotes 71–76: S001 and S014 by Act 77 of 2026
 # s.4(ছ); S026 by Finance Act 2026 s.22(1); S036 by Finance Act 2020 s.81; S099.60 by Act 89
@@ -2326,207 +2331,279 @@ Third Schedule, Table-3, Part খ. Code and rate read from the consolidated Sche
 S036.20 row survives here at 10%. Names are renderings.
 """
 
-  # --- Third Schedule paragraph (3) and (4) — NOT CERTIFIED, see trap (2) above ----------
+  # --- Third Schedule paragraph (3) and (4) — READ FROM PRIMARY TEXT ---------------------
   #
-  # Every node in this block is placeholder = true. The paragraph was substituted by Act 77
-  # of 2026 s.4(ছ) — that much is confirmed from footnote 121 — but the paragraph text could
-  # not be decoded, so no line-by-line figure below is certified. rates.py will refuse them.
+  # RESOLVED on 6 September 2026. The consolidated Schedules PDF has a broken legacy Bangla
+  # text layer, so paragraph (3) does not text-extract. It was instead RENDERED to a 600 dpi
+  # image (page 86 of 86) and read from the rendering, which is fully legible. Paragraph (3),
+  # paragraph (4) and amendment footnotes 121, 122 and 123 are quoted on the nodes below.
+  # Every figure in this block is now primary-verified. Two figures that circulate widely are
+  # WRONG and are corrected here: the land developer rate is 2%, not 3%, and LP gas is no
+  # longer in the 2% fuel list.
 
   [vat.rates.reduced.local_trading_stage]
-  label_en = "Local trading stage — general (Third Schedule para 3) — NOT CERTIFIED"
-  label_bn = "স্থানীয় ব্যবসায় পর্যায় — সাধারণ (তৃতীয় তফসিল, অনুচ্ছেদ ৩) — অনিশ্চিত"
+  label_en = "Local trading stage — supply of all goods, general rate (Third Schedule para 3)"
+  label_bn = "স্থানীয় ব্যবসায়ী পর্যায়ে সকল পণ্যের সরবরাহ — সাধারণ হার (তৃতীয় তফসিল, অনুচ্ছেদ ৩)"
   value = "7.5"
   unit = "percent"
   source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  as_of = "2026-01-09"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. The trader rate at the local trading stage appears to have risen
-from 5% to 7.5%, but it could not be certified. What IS confirmed: footnote 121 of the
-consolidated Schedules PDF says paragraph (3) was SUBSTITUTED by Act 77 of 2026 s.4(ছ), and
-the readable fragments of the substituted paragraph show "7." where the old text read "5".
-What is NOT confirmed: the complete paragraph, because the PDF's Bangla text layer uses a
-broken legacy mapping. So the choice between 5% and 7.5% is open. To confirm: read paragraph
-(3) of the Third Schedule in the printed gazette of Act 77 of 2026, or ask your VAT circle
-for the current trading-stage rate in writing. This is a large difference on a trading
-business's whole turnover — it is worth the phone call.
+7.5%, read from the Third Schedule itself. Paragraph (3) opens:
+"অনুচ্ছেদ (১) এ যাহা কিছুই উল্লিখিত থাকুক না কেন, স্থানীয় ব্যবসায়ী পর্যায়ে সকল পণ্যের সরবরাহের
+ক্ষেত্রে মূসক হার হইবে ৭.৫ শতাংশ।" — whatever paragraph (1) says, the rate on a supply of any
+goods at the local trading stage is 7.5 per cent.
+It RISEN FROM 5%. Footnote 121 prints both texts: the words "…মূসক হার হইবে ৫ শতাংশ…" were
+substituted by the words "…মূসক হার হইবে ৭.৫ শতাংশ…" by the মূল্য সংযোজন কর ও সম্পূরক শুল্ক
+(সংশোধন) আইন, ২০২৬ (Act 77 of 2026) s.4(ছ). The footnote gives the commencement as
+"৯ জানুয়ারি, ২০২৬ তারিখ হইতে কার্যকর", which is the as_of above. ⚠️ Read that date with care:
+the same Act's s.2 amendments are recorded elsewhere as effective 9 January 2025, and the two
+S.R.O.s that answer this amendment are dated 22 January 2025. One of the two years is a
+printing error in the source. The 7.5% FIGURE is not affected by which.
+HOW IT WAS READ: this PDF's Bangla text layer uses a broken legacy mapping and paragraph (3)
+extracts as fragments. Page 86 was rendered to a 600 dpi image and read from the rendering.
+Consequences worth knowing: s.46(1)(তহ) denies input tax credit on inputs to a below-15%
+supply, and s.15(3) second proviso lets a registered trader ELECT to pay 15% instead and keep
+full credit. For many traders the election is cheaper than 7.5% without credit — do the sum.
 """
 
   [vat.rates.reduced.wholesale_business]
-  label_en = "Wholesale business (Third Schedule para 4) — NOT CERTIFIED"
-  label_bn = "পাইকারি ব্যবসা (তৃতীয় তফসিল, অনুচ্ছেদ ৪) — অনিশ্চিত"
+  label_en = "Wholesale business — certain wholesalers, on conditions (Third Schedule para 4)"
+  label_bn = "কতিপয় পাইকারি ব্যবসা — শর্তসাপেক্ষে (তৃতীয় তফসিল, অনুচ্ছেদ ৪)"
   value = "1.5"
   unit = "percent"
   source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
   as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. Paragraph (4) of the Third Schedule — the wholesale rate — was
-INSERTED by Finance Act 2022 s.83(চ); that provenance is confirmed from the Schedule's own
-footnotes. The 1.5% value itself sits in the same undecodable paragraph block as paragraph
-(3), so it is not certified, and the conditions attached to the wholesale rate could not be
-read at all. To confirm: read paragraph (4) of the Third Schedule in the printed gazette.
+1.5%, read from the Third Schedule. Paragraph (4) in full:
+"নির্ধারিত শর্ত ও পদ্ধতি পরিপালন সাপেক্ষে কতিপয় পাইকারি ব্যবসায়ের ক্ষেত্রে মূসক হার হইবে
+১.৫ শতাংশ।" — subject to compliance with the prescribed conditions and procedure, the rate for
+CERTAIN wholesale businesses is 1.5 per cent. Footnote 123: paragraph (4) was inserted after
+paragraph (3) by the Finance Act 2022 (Act 13 of 2022) s.83(চ); the footnote states no
+commencement date, so as_of is the date on the face of the consolidated PDF read.
+⚠️ THE RATE IS CERTIFIED; YOUR ENTITLEMENT TO IT IS NOT. The paragraph says "কতিপয়" — some,
+not all — wholesale businesses, and leaves both the qualifying list and the conditions to be
+"নির্ধারিত" (prescribed) elsewhere, in rules or an S.R.O. that TakaBooks has not traced. Do not
+assume a wholesale business gets 1.5% merely because it is wholesale. Absent a written
+confirmation from your VAT circle that you are inside the prescribed class and are meeting the
+prescribed procedure, the paragraph-3 rate of 7.5% is the one to charge.
 """
 
   [vat.rates.reduced.building_construction_large]
-  label_en = "Building construction, 1,601 sq ft and above (Third Schedule para 3) — NOT CERTIFIED"
-  label_bn = "ভবন নির্মাণ, ১,৬০১ বর্গফুট ও তদূর্ধ্ব (তৃতীয় তফসিল, অনুচ্ছেদ ৩) — অনিশ্চিত"
+  label_en = "Building construction — sale or transfer of a building, 1,601 sq ft and above (Third Schedule para 3)"
+  label_bn = "ভবন নির্মাণ সংস্থা — ভবন বিক্রয় বা হস্তান্তর, ১,৬০১ বর্গফুট ও তদূর্ধ্ব (তৃতীয় তফসিল, অনুচ্ছেদ ৩)"
   value = "4.5"
   unit = "percent"
   source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
   as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. Part of the paragraph-3 block of the Third Schedule that could
-not be decoded (see vat.rates.reduced.local_trading_stage). Both the 4.5% rate and the
-1,601 sq ft boundary are uncertified. To confirm: read paragraph (3) in the printed gazette
-of Act 77 of 2026. Note this is the rate on the SALE of a constructed building — it is a
-different thing from the S004.00 construction-firm service rate.
+4.5%, read from the Third Schedule. Paragraph (3) continues: "…ভবন বিক্রয় বা হস্তান্তরে নিয়োজিত
+ভবন নির্মাণ সংস্থার ক্ষেত্রে মূসকের হার হইবে যথাক্রমে ১-১৬০০ বর্গফুটের জন্য ২ শতাংশ, ১৬০১ বর্গফুট
+হইতে তদূর্ধ্ব সাইজের ক্ষেত্রে ৪.৫ শতাংশ এবং যে কোন সাইজের পুন:রেজিস্ট্রেশনের ক্ষেত্রে ২ শতাংশ।"
+So: a building-construction organisation engaged in SELLING or TRANSFERRING a building charges
+4.5% on 1,601 sq ft and above. This sentence sits outside the footnote-121 substitution and
+carries no amendment footnote of its own, so the document states no commencement date for it;
+as_of is the date on the face of the consolidated PDF read.
+⚠️ Do not confuse this with vat.rates.reduced.construction_firm (S004.00, 10%). That is the
+service rate a contractor charges for construction WORK. This is the rate on the SALE of the
+finished building by the developer.
 """
 
   [vat.rates.reduced.building_construction_small]
-  label_en = "Building construction, 1 to 1,600 sq ft (Third Schedule para 3) — NOT CERTIFIED"
-  label_bn = "ভবন নির্মাণ, ১–১,৬০০ বর্গফুট (তৃতীয় তফসিল, অনুচ্ছেদ ৩) — অনিশ্চিত"
+  label_en = "Building construction — sale or transfer of a building, 1 to 1,600 sq ft (Third Schedule para 3)"
+  label_bn = "ভবন নির্মাণ সংস্থা — ভবন বিক্রয় বা হস্তান্তর, ১–১,৬০০ বর্গফুট (তৃতীয় তফসিল, অনুচ্ছেদ ৩)"
   value = 2
   unit = "percent"
   source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
   as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. Part of the undecodable paragraph-3 block of the Third Schedule
-(see vat.rates.reduced.local_trading_stage). To confirm: read paragraph (3) in the printed
-gazette of Act 77 of 2026.
+2%, read from the Third Schedule — "১-১৬০০ বর্গফুটের জন্য ২ শতাংশ" in the paragraph (3) sentence
+quoted in full on vat.rates.reduced.building_construction_large. The boundary is 1,600 sq ft
+inclusive; 1,601 sq ft and above is 4.5%.
+The SAME sentence sets a third figure TakaBooks has no node for: "যে কোন সাইজের
+পুন:রেজিস্ট্রেশনের ক্ষেত্রে ২ শতাংশ" — RE-REGISTRATION of a building of ANY size is 2%, so a
+resale of a 2,000 sq ft flat is 2%, not 4.5%. Charge that from the Schedule directly.
+No amendment footnote attaches to this sentence, so the document states no commencement date;
+as_of is the date on the face of the consolidated PDF read.
 """
 
   [vat.rates.reduced.medicine_local_trading]
-  label_en = "Medicines, local trading stage — NOT CERTIFIED"
-  label_bn = "ঔষধ, স্থানীয় ব্যবসায় পর্যায় — অনিশ্চিত"
+  label_en = "Medicines, all kinds — trader stage (S.R.O. ceiling)"
+  label_bn = "সকল প্রকার ঔষধ — ব্যবসায়ী পর্যায় (এস.আর.ও. দ্বারা সীমিত)"
   value = "2.4"
   unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  source = "https://nbr.gov.bd/uploads/sros/IMG_20250213_00151.pdf"
+  as_of = "2025-01-22"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. Two separate reasons it is uncertified. First, it sits in the
-undecodable paragraph-3 block of the Third Schedule. Second, the January 2025 ordinance had
-pushed medicines to 3% and the 2.4% figure rests on SRO 40-Ain/2025/276-Mushak dated
-22 January 2025 restoring it — and that SRO's TEXT WAS NEVER OPENED. It is not on NBR's SRO
-index and no gazette URL for it could be found. To confirm: obtain SRO 40-Ain/2025/276-Mushak
-from your VAT circle or the Bangladesh Gazette, and read paragraph (3) of the Third Schedule.
+2.4%, read from the gazette of S.R.O. No. 40-Ain/2025/276-Mushak, dated ০৮ মাঘ ১৪৩১ /
+22 January 2025, Bangladesh Gazette Extraordinary p.449. Its whole operative text, under
+s.126(1) of the VAT & SD Act 2012: "সকল প্রকার ঔষধের ব্যবসায়ী পর্যায়ে ২.৪ (দুই দশমিক চার)
+শতাংশের অতিরিক্ত মূল্য সংযোজন কর হইতে অব্যাহতি প্রদান করিল" — VAT above 2.4 per cent at the
+trader stage of medicines of every kind is exempted. Clause 2: "ইহা অবিলম্বে কার্যকর হইবে."
+⚠️ THE THIRD SCHEDULE ITSELF NOW SAYS 3%. Paragraph (3) reads "স্থানীয় ব্যবসায়ী পর্যায়ে ঔষধের
+ক্ষেত্রে মূসক হার হইবে ৩ শতাংশ", substituted from 2.4% by Act 77 of 2026 s.4(ছ) (footnote 121).
+2.4% is nevertheless the operative rate, because this S.R.O. is a standing s.126(1) exemption
+that caps the charge and no later instrument withdraws it: NBR's VAT-S.R.O. index was crawled
+in full on 6 September 2026 (17 pages, 664 rows) and nothing after January 2025 amends or
+repeals S.R.O. 40; the FY2026-27 exemption gazette S.R.O. 127-Ain/2026/332-Mushak of 7 June
+2026 was opened and read, and its clause 5 repeals only S.R.O. 160-Ain/2025/288-Mushak.
+If S.R.O. 40 is ever withdrawn, the rate reverts to the Schedule's 3%. Check before you file.
 """
 
   [vat.rates.reduced.petroleum_local_trading]
-  label_en = "Diesel, kerosene, octane, petrol, furnace oil, LP gas — local trading stage — NOT CERTIFIED"
-  label_bn = "ডিজেল, কেরোসিন, অকটেন, পেট্রোল, ফার্নেস অয়েল, এলপি গ্যাস — স্থানীয় ব্যবসায় পর্যায় — অনিশ্চিত"
+  label_en = "Diesel, kerosene, octane, petrol and furnace oil — local trading stage (Third Schedule para 3)"
+  label_bn = "ডিজেল, কেরোসিন, অকটেন, পেট্রোল ও ফার্নেস অয়েল — স্থানীয় ব্যবসায়ী পর্যায় (তৃতীয় তফসিল, অনুচ্ছেদ ৩)"
+  value = 2
+  unit = "percent"
+  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
+  as_of = "2026-01-09"
+  verified = true
+  placeholder = false
+  note = """
+2%, read from the Third Schedule. Paragraph (3): "…এবং ডিজেল, কেরোসিন, অকটেন, পেট্রোল ও
+ফার্নেস অয়েল এর ক্ষেত্রে মূসক হার হইবে ২ শতাংশ।" Five fuels, at the local trading stage, 2%.
+⚠️ LP GAS HAS BEEN DROPPED FROM THIS LIST — this is the trap on this node. Footnote 121 prints
+the superseded text, which read "ডিজেল, কেরোসিন, অকটেন, পেট্রোল, ফার্নেস অয়েল ও এলপি গ্যাস";
+the substituted text (Act 77 of 2026 s.4(ছ), commencement printed as 9 January 2026) omits
+এলপি গ্যাস. Both texts were read from the rendered page. So an LP GAS TRADER IS NO LONGER AT 2%
+— LP gas falls into the general local-trading rate of 7.5% under the same paragraph. Any chart
+that still lists LP gas at 2% is quoting the repealed text.
+On the as_of, see the commencement caveat on vat.rates.reduced.local_trading_stage.
+"""
+
+  [vat.rates.reduced.land_developer]
+  label_en = "Land developer (Third Schedule para 3)"
+  label_bn = "ভূমি উন্নয়ন সংস্থা (তৃতীয় তফসিল, অনুচ্ছেদ ৩)"
   value = 2
   unit = "percent"
   source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
   as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE. Part of the undecodable paragraph-3 block of the Third Schedule
-(see vat.rates.reduced.local_trading_stage). The list of fuels it covers is itself a
-secondary rendering. To confirm: read paragraph (3) in the printed gazette of Act 77 of 2026.
+2%, read from the Third Schedule: "এতদ্ব্যতীত, ভূমি উন্নয়ন সংস্থার ক্ষেত্রে মূসকের হার হইবে
+২ শতাংশ" — apart from the foregoing, the rate for a land development organisation is 2 per cent.
+⚠️ CORRECTION TO A FIGURE THAT CIRCULATES WIDELY, INCLUDING IN EARLIER TAKABOOKS DRAFTS: this
+is TWO per cent, not three. The Schedule sentence was read from a 600 dpi rendering of page 86
+and the digit is unambiguous. Anyone charging 3% is over-collecting.
+The sentence carries no amendment footnote, so the document states no commencement date for it;
+as_of is the date on the face of the consolidated PDF read.
 """
 
-  [vat.rates.reduced.land_developer]
-  label_en = "Land developer — NOT CERTIFIED"
-  label_bn = "ভূমি উন্নয়নকারী — অনিশ্চিত"
-  value = 3
-  unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
-  note = """
-DO NOT FILE ON THIS FIGURE. Part of the undecodable paragraph-3 block of the Third Schedule
-(see vat.rates.reduced.local_trading_stage). To confirm: read paragraph (3) in the printed
-gazette of Act 77 of 2026.
-"""
-
-  # --- Rates re-instated by SRO after deletion from the Schedule — see trap (1) above ----
+  # --- Rates that live in an S.R.O., not in the Schedule ---------------------------------
   #
-  # These four are almost certainly the operative rates. TakaBooks still refuses them,
-  # because the instrument that creates them was never read. The source URL on each node is
-  # the document that shows the code DELETED — it is cited so you can see the deletion for
-  # yourself, NOT as authority for the rate.
+  # RESOLVED on 6 September 2026. These four rates were carried as placeholders because
+  # S.R.O. 39-Ain/2025/275-Mushak had never been opened. It has now been read in full from
+  # NBR's own gazette scan and every rate below is quoted from it. Two SERVICE CODES that
+  # earlier TakaBooks drafts and most published charts get wrong are corrected here: motor
+  # garage is S003.10 (not S022.00) and sweetmeat shop is S022.00 (not S078.00).
+  #
+  # Finding the S.R.O. took one trick worth recording. NBR's VAT-S.R.O. listing at
+  # https://nbr.gov.bd/regulations/sros/vat-sro/eng — the path in general circulation — returns
+  # a PHP error page with an empty table. The working path is the PLURAL
+  # https://nbr.gov.bd/regulations/sros/vat-sros/eng , paginated at /vat-sros/<offset>/eng.
+  # The scans are also OCR'd into a garbage Latin text layer, so pdftotext is worthless on
+  # them; they were rendered to 300 dpi images and read.
 
   [vat.rates.reduced.restaurant]
-  label_en = "Restaurant (former service code S001.20) — RATE NOT TRACED TO ITS SRO"
-  label_bn = "রেস্তোরাঁ (পূর্বতন সেবা কোড S001.20) — এসআরও পাওয়া যায়নি"
+  label_en = "Restaurant (service code S001.20)"
+  label_bn = "রেস্তোরাঁ (সেবা কোড S001.20)"
   value = 5
   unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  source = "https://nbr.gov.bd/uploads/sros/IMG_20250213_0014.pdf"
+  as_of = "2025-01-22"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE WITHOUT SIGHTING THE SRO. The cited Schedules PDF shows heading
-S001 (hotel and restaurant) as DELETED from Table-1 Part খ by Act 77 of 2026 s.4(ছ) in
-January 2025 — the URL above is evidence of the DELETION, not authority for the 5%. The 5%
-restaurant rate is genuinely current in practice and is the rate the VDS SRO uses, because
-SRO 39-Ain/2025/275-Mushak dated 22 January 2025 re-instated it by notification. TakaBooks
-never opened that SRO: it is absent from NBR's SRO index and a targeted search of nbr.gov.bd
-on 6 September 2026 returned nothing. To confirm: obtain SRO 39-Ain/2025/275-Mushak from
-your VAT circle or the Bangladesh Gazette. Do not derive this rate from the VDS rate table —
-the VDS SRO has a single withholding-rate column and is not a statement of the VAT rate.
+5%, read from the gazette of S.R.O. No. 39-Ain/2025/275-Mushak, dated ০৮ মাঘ ১৪৩১ /
+22 January 2025, Bangladesh Gazette Extraordinary p.448. Issued under s.126(1), it exempts VAT
+above the column (4) rate for the listed service codes. Row S001 / S001.20 / ৫%.
+⚠️ THREE KINDS OF RESTAURANT ARE EXCLUDED and are NOT at 5%. The Bangla entry reads:
+"রেস্তোরাঁ (বেসামরিক বিমান পরিবহণ ও পর্যটন মন্ত্রণালয়ের তালিকাভুক্ত তিন তারকা বা তদূর্ধ্ব মানের
+আবাসিক হোটেলে অবস্থিত রেস্টুরেন্ট, মদের বার সম্বলিত আবাসিক হোটেলে অবস্থিত রেস্টুরেন্ট এবং মদের
+বার আছে এমন রেস্টুরেন্ট ব্যতীত)" — excluding a restaurant inside a residential hotel listed by
+the Ministry of Civil Aviation and Tourism at three stars or above, a restaurant inside a
+residential hotel that has a liquor bar, and any restaurant that has a liquor bar. An excluded
+restaurant falls outside the exemption and is at the standard 15%.
+WHY THE SCHEDULE DOES NOT HELP: heading S001 has no surviving row in the Third Schedule. It was
+deleted from Table-1 Part খ (footnote 71) and from Table-2 Part খ (footnote 87), both by Act 77
+of 2026 s.4, commencement printed as 9 January 2026. This S.R.O. is the whole authority.
+CORROBORATION: S.R.O. 41-Ain/2025/277-Mushak of the same date puts S001.20 at 5% in the VDS
+rules, and the current VDS gazette S.R.O. 182-Ain/2025/310-Mushak serial 01 carries S001.20 at
+5% — but note that a VDS rate is a withholding rate, not a statement of the VAT rate, so the
+authority above is the S.R.O. 39 row, not the VDS table.
 """
 
   [vat.rates.reduced.hotel_non_air_conditioned]
-  label_en = "Non-air-conditioned hotel (former service code S001.10) — RATE NOT TRACED TO ITS SRO"
-  label_bn = "শীতাতপ নিয়ন্ত্রণহীন আবাসিক হোটেল (পূর্বতন সেবা কোড S001.10) — এসআরও পাওয়া যায়নি"
+  label_en = "Non-air-conditioned hotel (service code S001.10)"
+  label_bn = "নন-এসি হোটেল (সেবা কোড S001.10)"
   value = 10
   unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  source = "https://nbr.gov.bd/uploads/sros/IMG_20250213_0014.pdf"
+  as_of = "2025-01-22"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE WITHOUT SIGHTING THE SRO. Same position as
-vat.rates.reduced.restaurant: heading S001 was deleted from the Schedule in January 2025 and
-the rate rests on SRO 39-Ain/2025/275-Mushak of 22 January 2025, whose text TakaBooks could
-not obtain. The cited URL evidences the deletion only. To confirm: obtain that SRO from your
-VAT circle or the Bangladesh Gazette.
+10%, read from the gazette of S.R.O. No. 39-Ain/2025/275-Mushak of 22 January 2025, p.448 —
+row S001 / S001.10 / নন-এসি হোটেল / ১০%. Same instrument and same s.126(1) mechanism as
+vat.rates.reduced.restaurant; heading S001 has no surviving Third Schedule row.
+⚠️ AN AIR-CONDITIONED HOTEL IS NOT IN THIS S.R.O. and therefore gets no reduction — it is at
+the standard 15%. The distinction is real and is drawn the same way in the VDS gazette
+S.R.O. 182-Ain/2025/310-Mushak, whose serial 01 lists S001.10 এসি হোটেল at 15% and S001.10
+নন এসি হোটেল at 10% as two separate lines under one code. Decide which line a property is on
+before you invoice; the code alone does not tell you the rate.
 """
 
   [vat.rates.reduced.motor_garage_and_workshop]
-  label_en = "Motor garage and workshop (former service code S022.00) — RATE NOT TRACED TO ITS SRO"
-  label_bn = "মোটর গাড়ির গ্যারেজ ও ওয়ার্কশপ (পূর্বতন সেবা কোড S022.00) — এসআরও পাওয়া যায়নি"
+  label_en = "Motor garage and workshop (service code S003.10)"
+  label_bn = "মোটর গাড়ীর গ্যারেজ এবং ওয়ার্কশপ (সেবা কোড S003.10)"
   value = 10
   unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  source = "https://nbr.gov.bd/uploads/sros/IMG_20250213_0014.pdf"
+  as_of = "2025-01-22"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE WITHOUT SIGHTING THE SRO. S022 shows as deleted from the Third
-Schedule in January 2025; the 10% rate is understood to have been re-instated by
-SRO 39-Ain/2025/275-Mushak of 22 January 2025, which TakaBooks could not obtain. The cited
-URL evidences the deletion only. To confirm: obtain that SRO from your VAT circle or the
-Bangladesh Gazette.
+10%, read from the gazette of S.R.O. No. 39-Ain/2025/275-Mushak of 22 January 2025, p.448 —
+row S003 / S003.10 / মোটর গাড়ীর গ্যারেজ এবং ওয়ার্কশপ / ১০%. s.126(1) exemption above 10%.
+⚠️ SERVICE CODE CORRECTION. This service is S003.10. Earlier TakaBooks drafts recorded it as
+S022.00, which is wrong — S022.00 is the sweetmeat shop. The S003.10 attribution is confirmed
+three times over: the S.R.O. 39 row itself, S.R.O. 41-Ain/2025/277-Mushak of the same date
+(which substitutes serial 03 of the VDS rules with "S003.10 মোটর গাড়ির গ্যারেজ ও ওয়ার্কশপ ১০%"),
+and serial 03 of the current VDS gazette S.R.O. 182-Ain/2025/310-Mushak.
+Note the neighbouring code: S003.20 ডকইয়ার্ড (dockyard) is a DIFFERENT service and is at 15%.
+S003 has no surviving row in the Third Schedule, so this S.R.O. is the authority.
 """
 
   [vat.rates.reduced.sweetmeat_shop]
-  label_en = "Sweetmeat shop (former service code S078.00) — RATE NOT TRACED TO ITS SRO"
-  label_bn = "মিষ্টান্ন ভান্ডার (পূর্বতন সেবা কোড S078.00) — এসআরও পাওয়া যায়নি"
+  label_en = "Sweetmeat shop (service code S022.00)"
+  label_bn = "মিষ্টান্ন ভান্ডার (সেবা কোড S022.00)"
   value = 10
   unit = "percent"
-  source = "http://bdlaws.minlaw.gov.bd/upload/act/2026-08-27-12-19-29-মূল্য-সংযোজন-কর-ও-সম্পূরক-শুল্ক-আইন,-২০১২-(1st,-2nd,-3rd-schedule).pdf"
-  as_of = "2026-08-27"
-  verified = false
-  placeholder = true
+  source = "https://nbr.gov.bd/uploads/sros/IMG_20250213_0014.pdf"
+  as_of = "2025-01-22"
+  verified = true
+  placeholder = false
   note = """
-DO NOT FILE ON THIS FIGURE WITHOUT SIGHTING THE SRO. S078 shows as deleted from the Third
-Schedule in January 2025; the 10% rate is understood to have been re-instated by
-SRO 39-Ain/2025/275-Mushak of 22 January 2025, which TakaBooks could not obtain. The cited
-URL evidences the deletion only. To confirm: obtain that SRO from your VAT circle or the
-Bangladesh Gazette.
+10%, read from the gazette of S.R.O. No. 39-Ain/2025/275-Mushak of 22 January 2025, p.448 —
+row S022 / S022.00 / মিষ্টান্ন ভান্ডার / ১০%. s.126(1) exemption above 10%.
+⚠️ SERVICE CODE CORRECTION. The sweetmeat shop is S022.00. Earlier TakaBooks drafts recorded it
+as S078.00, which is wrong: S078.00 is READY-MADE GARMENT MARKETING (তৈরি পোশাক বিপণন), and the
+same S.R.O. gives it two rates that TakaBooks has no node for yet — (ক) নিজস্ব ব্র্যান্ড সম্বলিত
+তৈরি পোশাক বিপণন at 10%, and (খ) নিজস্ব ব্র্যান্ড ব্যতীত তৈরি পোশাক বিপণন at 7.5%. A garment
+retailer should take those two figures from the S.R.O. directly, not from this node.
+Heading S022 was deleted from Table-2 Part খ of the Third Schedule by Act 77 of 2026 s.4(ঘ)(আ)
+(footnote 89), and S078 by s.4(ঘ)(ঈ) (footnote 94), so this S.R.O. is the authority for both.
 """
 
   # --- Announced but not traceable to any gazette ----------------------------------------
@@ -2541,17 +2618,31 @@ Bangladesh Gazette.
   verified = false
   placeholder = true
   note = """
-DO NOT TREAT THIS AS IN FORCE. A new service code S007.20 for online advertisement at 5% was
-announced when the Finance Bill 2026 was passed, but it is NOT traceable to any gazette on
-nbr.gov.bd. NBR's VAT-SRO index tops out at SRO 148-Ain/2026/353-Mushak of 11 June 2026, and
-a post-budget SRO wave — PwC cites SRO 255-Ain/2026/355-Mushak of 30 June 2026 — has not
-been uploaded. The VDS rules, which WERE read from the gazette, still carry a single S007.00
-advertising-agency entry at 15% and no S007.20 anywhere. Three other announced measures are
-in the same untraceable state: the double-cabin pickup / microbus cut from 15% to 5%, the
-BTRC revenue-sharing VDS exemption, and the input-output-coefficient relaxation. The source
-above is PwC's summary — a professional summary, not the instrument. To confirm: sight
-SRO 255-Ain/2026/355-Mushak, or the notification that creates S007.20, before charging 5%.
-Until then an advertising supply is at the standard 15%.
+DO NOT TREAT THIS AS IN FORCE. CHARGE 15% ON AN ADVERTISING SUPPLY UNTIL YOU HAVE SIGHTED THE
+NOTIFICATION. A new service code S007.20 for online advertisement at 5% was announced when the
+Finance Bill 2026 was passed. The instrument that would create it is S.R.O. 255-Ain/2026/
+355-Mushak of 30 June 2026, cited by PwC. That instrument does not exist anywhere TakaBooks can
+reach, and the 5% above rests on PwC's summary — a professional summary, not the instrument.
+
+WHAT WAS TRIED, 6 September 2026, so you do not repeat it:
+  1. NBR's VAT-S.R.O. index was crawled IN FULL — all 17 pages, 664 rows, at
+     https://nbr.gov.bd/regulations/sros/vat-sros/eng (the singular /vat-sro/eng path returns a
+     PHP error page with an empty table, which is why earlier searches found nothing at all).
+     The newest VAT S.R.O. published there is S.R.O. 148-Ain/2026/353-Mushak of 11 June 2026.
+     There is NO S.R.O. 255-Ain/2026/355-Mushak and nothing else anywhere in the gap between
+     S.R.O. 148 of 11 June 2026 and the end of the list. The post-budget wave is simply not up.
+  2. S.R.O. 127-Ain/2026/332-Mushak of 7 June 2026, the FY2026-27 "exemption at different
+     stages" gazette, was downloaded and read: 30 pages of HS-coded goods, no S007.20, no
+     advertisement entry, and its clause 5 repeals only S.R.O. 160-Ain/2025/288-Mushak.
+  3. The VDS gazette S.R.O. 182-Ain/2025/310-Mushak was re-read: one S007.00 advertising-agency
+     entry at 15%, no S007.20 anywhere.
+
+Three other announced VAT measures are in the same untraceable state: the double-cabin pickup /
+microbus cut from 15% to 5%, the BTRC revenue-sharing VDS exemption, and the input-output-
+coefficient relaxation. TO CONFIRM: ask your VAT circle for a copy of S.R.O. 255-Ain/2026/
+355-Mushak, or watch https://nbr.gov.bd/regulations/sros/vat-sros/eng for the post-budget
+upload. Do not take the rate from a practitioner chart or from NBR's VAT FAQ page — that FAQ is
+years out of date and still prints pre-2019 figures.
 """
 
 # -----------------------------------------------------------------------------------------
