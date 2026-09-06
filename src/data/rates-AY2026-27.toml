@@ -1,0 +1,1112 @@
+# =========================================================================================
+# TakaBooks — src/data/rates-AY2026-27.toml
+# Machine-readable rates, thresholds and policy switches for করবর্ষ / assessment year 2026-27
+#
+# TakaBooks — Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com
+#
+#   ####################################################################################
+#   ##                                                                                ##
+#   ##   THIS FILE CONTAINS NO REAL BANGLADESHI TAX FIGURE.                           ##
+#   ##   IT IS A SCHEMA AWAITING VERIFIED DATA.                                       ##
+#   ##                                                                                ##
+#   ##   Every `value` below is a placeholder (`placeholder = true`, `verified =      ##
+#   ##   false`). A separate research pass is producing the real figures from          ##
+#   ##   primary sources. Nothing computed from this file may be filed with NBR.       ##
+#   ##                                                                                ##
+#   ####################################################################################
+#
+# While the placeholders stand:
+#   * src/engine/rates.py REFUSES to hand a placeholder value to a calculator unless the
+#     caller explicitly opts in (tax.py: --allow-placeholder-rates).
+#   * Any output produced from this file is stamped PROVISIONAL / অস্থায়ী.
+#
+# -----------------------------------------------------------------------------------------
+# HOW TO LAND A REAL FIGURE — this is the entire update procedure (spec §4.5, §6.1, §6.2)
+# -----------------------------------------------------------------------------------------
+#   1. Replace `value` with the figure read from a primary source.
+#   2. Replace `source` with the exact URL of that primary source — the Finance Act, the SRO,
+#      the NBR circular, or the NBR page publishing it. Not a news article. Not a blog.
+#   3. Set `as_of` to the ISO date (YYYY-MM-DD) on which you read that source.
+#   4. Set `verified = true` and DELETE the `placeholder = true` line.
+#   5. Rewrite `note` to say exactly what the figure covers and every condition attached.
+#   If you could not confirm it from a primary source, leave `verified = false` and say so in
+#   `note`. Absent beats wrong: a figure nobody checked must never look checked.
+#
+# Updating TakaBooks for a new Finance Act = copy this file to rates-AY<next>.toml, land the
+# new figures, add one compliance-calendar entry. No Python changes (spec §4.5).
+#
+# -----------------------------------------------------------------------------------------
+# FILE FORMAT RULES — enforced by src/engine/rates.py, not merely conventions
+# -----------------------------------------------------------------------------------------
+#   * A "rate node" is any table carrying a `value` key. Everything else is metadata and is
+#     not audited for verification.
+#   * MONEY is in taka (BDT), never paisa. Whole taka as an integer (400000); anything with
+#     decimals as a QUOTED string ("400000.50").
+#   * PERCENTAGES are percent, never fractions: 15 means 15%. A value above 100 in a
+#     `unit = "percent"` node is rejected as a fraction/percent mix-up.
+#   * NEVER write a bare TOML float. `7.5` becomes a binary float and TakaBooks refuses to do
+#     money arithmetic with floats (spec §4.2). Write "7.5". rates.py raises RatesError on any
+#     float it finds in a rate node.
+#   * Extra descriptive keys (label_en, label_bn, allowed, condition, applies_to …) are always
+#     permitted and are preserved for display.
+#   * `unit` is free text; the units used here are "percent", "BDT", "date", "policy", "count".
+#
+# -----------------------------------------------------------------------------------------
+# KEY PATHS — what the engine modules read (dotted keys, as passed to rates.py)
+# -----------------------------------------------------------------------------------------
+#   tax.py   income_tax.individual.default_category        (bare string)
+#            income_tax.individual.default_location        (bare string)
+#            income_tax.individual.thresholds.<category>   (BDT — tax-free threshold)
+#            income_tax.individual.slabs                   (array of slab tables)
+#            income_tax.individual.rebate.rate             (percent of eligible investment)
+#            income_tax.individual.rebate.income_cap_percent   (percent of taxable income)
+#            income_tax.individual.rebate.absolute_cap     (BDT)
+#            income_tax.individual.minimum_tax.applies_when    (policy switch)
+#            income_tax.individual.minimum_tax.by_location.<tier>  (BDT)
+#            income_tax.individual.minimum_tax.on_gross_receipts.rate         (percent)
+#            income_tax.individual.minimum_tax.on_gross_receipts.applies_above (BDT)
+#            income_tax.individual.surcharge.base          (policy switch)
+#            income_tax.individual.surcharge.bands         (array of band tables)
+#            income_tax.individual.surcharge.minimum       (BDT)
+#   vat.py   vat.rates.standard, vat.rates.reduced.<key>, vat.thresholds.<key>,
+#            vat.turnover_tax.rate, vds.services.<key>.rate
+#   post.py / report.py read no rate at all — they only move money that already exists.
+#
+# Corporate figures live under [income_tax.corporate]. tax.py computes the INDIVIDUAL
+# liability only; the corporate block is schema for a later module, not dead data.
+# =========================================================================================
+
+[meta]
+assessment_year = "2026-27"
+income_year = ""              # PLACEHOLDER — fill with the income year this AY assesses.
+currency = "BDT"
+schema_version = 1
+status = "placeholder"
+placeholder = true            # rates.py reads this: the WHOLE FILE is unlanded data.
+verified = false
+authority = "National Board of Revenue (NBR), Bangladesh — জাতীয় রাজস্ব বোর্ড"
+authority_url = "https://nbr.gov.bd/"
+maintainer = "Moshiur Rahman (@bemoshiur) · Ticon Sys — https://ticonsys.com"
+note = """
+Structure complete, figures pending. Every rate node below carries placeholder = true.
+Land the real figures per the procedure at the top of this file. Do not delete the schema.
+"""
+
+# =========================================================================================
+# INCOME TAX — INDIVIDUAL / ব্যক্তি করদাতার আয়কর
+# =========================================================================================
+
+[income_tax.individual]
+default_category = "general"
+default_location = "other_area"
+note = """
+The tax-free threshold varies by taxpayer category; the slab WIDTHS above the threshold do
+not. That is why slab 1 takes its width from the selected category threshold
+(width_source = "category_threshold") and the remaining slabs carry their own width.
+"""
+
+# -----------------------------------------------------------------------------------------
+# Tax-free thresholds by taxpayer category / করদাতার শ্রেণিভেদে করমুক্ত আয়সীমা
+# -----------------------------------------------------------------------------------------
+# One node per category. The KEY is the id `tax.py --category` accepts; tax.py hardcodes no
+# category, so adding a category here is enough to make it selectable.
+# BOTH the existence of a category AND its threshold are pending verification.
+
+[income_tax.individual.thresholds.general]
+label_en = "General taxpayer"
+label_bn = "সাধারণ করদাতা"
+value = 0
+unit = "BDT"
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — general tax-free threshold for AY 2026-27 is not yet verified."
+
+[income_tax.individual.thresholds.female]
+label_en = "Female taxpayer"
+label_bn = "নারী করদাতা"
+value = 0
+unit = "BDT"
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified. Confirm the category still exists for this AY."
+
+[income_tax.individual.thresholds.senior_citizen]
+label_en = "Senior citizen"
+label_bn = "প্রবীণ নাগরিক"
+value = 0
+unit = "BDT"
+condition = ""
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified. The qualifying age belongs in `condition`."
+
+[income_tax.individual.thresholds.person_with_disability]
+label_en = "Person with disability"
+label_bn = "প্রতিবন্ধী ব্যক্তি"
+value = 0
+unit = "BDT"
+condition = ""
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified, nor the certification required to claim it."
+
+[income_tax.individual.thresholds.parent_or_guardian_of_person_with_disability]
+label_en = "Parent or legal guardian of a person with disability"
+label_bn = "প্রতিবন্ধী ব্যক্তির পিতা-মাতা বা আইনানুগ অভিভাবক"
+value = 0
+unit = "BDT"
+condition = ""
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified. Note how it interacts with the other categories."
+
+[income_tax.individual.thresholds.gazetted_war_wounded_freedom_fighter]
+label_en = "Gazetted war-wounded freedom fighter"
+label_bn = "গেজেটভুক্ত যুদ্ধাহত মুক্তিযোদ্ধা"
+value = 0
+unit = "BDT"
+condition = ""
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified."
+
+[income_tax.individual.thresholds.third_gender]
+label_en = "Third gender taxpayer"
+label_bn = "তৃতীয় লিঙ্গের করদাতা"
+value = 0
+unit = "BDT"
+condition = ""
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = "PLACEHOLDER — threshold not verified. Confirm the category exists for this AY."
+
+# -----------------------------------------------------------------------------------------
+# Progressive slabs / করহার ধাপ
+# -----------------------------------------------------------------------------------------
+# An ORDERED list. Each slab consumes `width` taka of taxable income at `rate` percent.
+#   * slab 1 sets width_source = "category_threshold": its width IS the selected category's
+#     tax-free threshold, so one slab table serves every category.
+#   * every middle slab carries its own `width` rate node (unit = "BDT").
+#   * the LAST slab omits both `width` and `width_source`: it is open-ended and takes all
+#     remaining income. Exactly one open-ended slab is allowed and it must be last.
+# tax.py validates that shape and refuses to guess if it is violated.
+
+[[income_tax.individual.slabs]]
+order = 1
+label_en = "Tax-free threshold"
+label_bn = "করমুক্ত আয়সীমা"
+width_source = "category_threshold"
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER, though the value is structural: the tax-free slab is 0% by construction and it
+is the WIDTH (the category threshold) that varies. Mark it verified once you have confirmed
+that this AY still has a nil first slab.
+"""
+
+[[income_tax.individual.slabs]]
+order = 2
+label_en = "Second slab"
+label_bn = "দ্বিতীয় ধাপ"
+
+  [income_tax.individual.slabs.width]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab width not verified."
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab rate not verified."
+
+[[income_tax.individual.slabs]]
+order = 3
+label_en = "Third slab"
+label_bn = "তৃতীয় ধাপ"
+
+  [income_tax.individual.slabs.width]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab width not verified."
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab rate not verified."
+
+[[income_tax.individual.slabs]]
+order = 4
+label_en = "Fourth slab"
+label_bn = "চতুর্থ ধাপ"
+
+  [income_tax.individual.slabs.width]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab width not verified."
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab rate not verified."
+
+[[income_tax.individual.slabs]]
+order = 5
+label_en = "Fifth slab"
+label_bn = "পঞ্চম ধাপ"
+
+  [income_tax.individual.slabs.width]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab width not verified. Delete this slab if the AY has fewer slabs."
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — slab rate not verified."
+
+[[income_tax.individual.slabs]]
+order = 6
+label_en = "Top slab (balance of income)"
+label_bn = "সর্বোচ্চ ধাপ (অবশিষ্ট আয়)"
+# No `width` and no `width_source`: open-ended, takes the remaining income.
+
+  [income_tax.individual.slabs.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — top marginal rate not verified."
+
+# -----------------------------------------------------------------------------------------
+# Investment rebate / বিনিয়োগজনিত কর রেয়াত
+# -----------------------------------------------------------------------------------------
+# tax.py computes:
+#     eligible = min(investment claimed, taxable_income x income_cap_percent, absolute_cap)
+#     rebate   = eligible x rate           (then capped at the gross tax — a rebate can
+#                                           never turn a liability negative)
+# If this AY uses a different construction (e.g. a different set of caps), change the nodes
+# here and say so in `formula`; tax.py reads `formula` and refuses any value it does not
+# implement rather than silently computing the wrong thing.
+
+[income_tax.individual.rebate]
+formula = "min_of_three_caps"       # allowed: "min_of_three_caps"
+formula_note = """
+"min_of_three_caps": eligible investment is the least of (a) the amount actually invested,
+(b) income_cap_percent of taxable income, (c) absolute_cap. Rebate = rate x eligible.
+"""
+
+  [income_tax.individual.rebate.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rebate rate on eligible investment is not verified."
+
+  [income_tax.individual.rebate.income_cap_percent]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — percentage of taxable income that caps eligible investment."
+
+  [income_tax.individual.rebate.absolute_cap]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — absolute ceiling on eligible investment, in taka."
+
+# Instruments that count as allowable investment. Descriptive only — tax.py does not police
+# what the user invested in; it takes the claimed amount and applies the caps. Land one entry
+# per instrument class so the assistant can tell a user what qualifies.
+[[income_tax.individual.rebate.allowable_investments]]
+key = "placeholder_instrument"
+label_en = "PLACEHOLDER — instrument class pending research"
+label_bn = "প্লেসহোল্ডার — গবেষণার অপেক্ষায়"
+source = "https://nbr.gov.bd/"
+as_of = ""
+verified = false
+placeholder = true
+note = """
+PLACEHOLDER entry showing the shape only. Replace with one table per allowable instrument
+class, each carrying its own per-instrument ceiling if the law imposes one.
+"""
+
+# -----------------------------------------------------------------------------------------
+# Minimum tax / ন্যূনতম কর
+# -----------------------------------------------------------------------------------------
+
+[income_tax.individual.minimum_tax]
+note = """
+Two independent floors: a flat amount that depends on where the taxpayer is located, and a
+percentage of gross receipts for taxpayers with business turnover. tax.py takes the greater
+of the two applicable floors and then the greater of (tax after rebate, that floor).
+"""
+
+  [income_tax.individual.minimum_tax.applies_when]
+  value = "taxable_income_above_threshold"
+  unit = "policy"
+  allowed = ["always", "taxable_income_above_threshold", "never"]
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER policy switch, NOT a rate. It decides whether the location floor bites for a
+taxpayer whose income sits below the tax-free threshold. Confirm the rule, then set one of
+the allowed values and mark it verified. tax.py rejects any other value.
+"""
+
+# Flat minimum tax by location tier / এলাকাভেদে ন্যূনতম কর.
+# The KEY is the tier id `tax.py --location` accepts. WHICH AREAS FALL IN WHICH TIER is
+# itself pending verification — put the definition in `covers` when you land the figure.
+
+  [income_tax.individual.minimum_tax.by_location.city_corporation_tier_1]
+  label_en = "City corporation — tier 1"
+  label_bn = "সিটি কর্পোরেশন — স্তর ১"
+  covers = ""
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — neither the amount nor the list of areas in this tier is verified."
+
+  [income_tax.individual.minimum_tax.by_location.city_corporation_tier_2]
+  label_en = "City corporation — tier 2"
+  label_bn = "সিটি কর্পোরেশন — স্তর ২"
+  covers = ""
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — neither the amount nor the list of areas in this tier is verified."
+
+  [income_tax.individual.minimum_tax.by_location.other_city_area]
+  label_en = "Other city / municipal area"
+  label_bn = "অন্যান্য শহর/পৌর এলাকা"
+  covers = ""
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — amount and tier definition both unverified."
+
+  [income_tax.individual.minimum_tax.by_location.other_area]
+  label_en = "Any other area"
+  label_bn = "অন্য যেকোনো এলাকা"
+  covers = ""
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — amount and tier definition both unverified."
+
+# Minimum tax as a percentage of gross receipts / মোট প্রাপ্তির উপর ন্যূনতম কর.
+# tax.py applies it only when the user supplies --gross-receipts AND those receipts exceed
+# `applies_above`. Without --gross-receipts this floor is reported as "not applicable".
+
+  [income_tax.individual.minimum_tax.on_gross_receipts.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — percentage of gross receipts. Confirm whether it varies by sector."
+
+  [income_tax.individual.minimum_tax.on_gross_receipts.applies_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — gross receipts above which this floor engages."
+
+# -----------------------------------------------------------------------------------------
+# Surcharge / সারচার্জ
+# -----------------------------------------------------------------------------------------
+# Bands on net wealth. tax.py picks the LAST band whose `wealth_above` is <= the taxpayer's
+# net wealth, then applies that band's percentage to the base named in `base`.
+
+[income_tax.individual.surcharge]
+wealth_basis = "net_wealth"      # descriptive: what the bands are measured against
+note = """
+Band 1 carries no `wealth_above` node: it starts at zero. Every later band declares the net
+wealth it starts above, exclusive. Bands must be listed in ascending order of wealth_above.
+"""
+
+  [income_tax.individual.surcharge.base]
+  value = "tax_after_minimum"
+  unit = "policy"
+  allowed = ["tax_after_rebate", "tax_after_minimum"]
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER policy switch, NOT a rate. Which figure the surcharge percentage multiplies.
+Confirm it, then set one of the allowed values. tax.py rejects any other value.
+"""
+
+  [income_tax.individual.surcharge.minimum]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER — a floor applied to a NON-ZERO computed surcharge. Set value = 0 if this AY has
+no such floor; a zero floor never raises anything and is therefore always safe.
+"""
+
+[[income_tax.individual.surcharge.bands]]
+order = 1
+label_en = "Below the first surcharge band"
+label_bn = "সারচার্জের প্রথম ধাপের নিচে"
+# No `wealth_above` node: this band starts at zero net wealth.
+
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER, though the value is structural: no surcharge is due below the first band. Its
+ceiling is band 2's wealth_above. Mark it verified once the band structure is confirmed.
+"""
+
+[[income_tax.individual.surcharge.bands]]
+order = 2
+label_en = "Second surcharge band"
+label_bn = "সারচার্জের দ্বিতীয় ধাপ"
+
+  [income_tax.individual.surcharge.bands.wealth_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — net wealth above which this band applies."
+
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — surcharge percentage for this band."
+
+[[income_tax.individual.surcharge.bands]]
+order = 3
+label_en = "Third surcharge band"
+label_bn = "সারচার্জের তৃতীয় ধাপ"
+
+  [income_tax.individual.surcharge.bands.wealth_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — net wealth above which this band applies."
+
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — surcharge percentage for this band."
+
+[[income_tax.individual.surcharge.bands]]
+order = 4
+label_en = "Fourth surcharge band"
+label_bn = "সারচার্জের চতুর্থ ধাপ"
+
+  [income_tax.individual.surcharge.bands.wealth_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — net wealth above which this band applies."
+
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — surcharge percentage for this band."
+
+[[income_tax.individual.surcharge.bands]]
+order = 5
+label_en = "Top surcharge band"
+label_bn = "সারচার্জের সর্বোচ্চ ধাপ"
+
+  [income_tax.individual.surcharge.bands.wealth_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — net wealth above which the top band applies. Add or remove bands to match the AY."
+
+  [income_tax.individual.surcharge.bands.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — top surcharge percentage."
+
+# =========================================================================================
+# INCOME TAX — CORPORATE AND OTHER ENTITIES / কোম্পানি ও অন্যান্য সত্তার আয়কর
+# =========================================================================================
+# Schema for a later module. tax.py computes the individual liability only and never reads
+# this block. One node per entity class; the KEY is the entity id a caller will pass.
+# The EXISTENCE of each class, its conditions, and its rate are all pending verification.
+
+[income_tax.corporate]
+note = """
+`conditions` carries anything that changes the headline rate (listing status, transaction
+routing requirements, sector carve-outs). Land it as prose; do not encode it as a number
+until a module needs to compute with it.
+"""
+
+  [income_tax.corporate.rates.publicly_traded_company]
+  label_en = "Publicly traded company"
+  label_bn = "তালিকাভুক্ত কোম্পানি"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.non_publicly_traded_company]
+  label_en = "Non-publicly traded company"
+  label_bn = "অতালিকাভুক্ত কোম্পানি"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.one_person_company]
+  label_en = "One person company (OPC)"
+  label_bn = "এক ব্যক্তি কোম্পানি"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.publicly_traded_bank_insurance_nbfi]
+  label_en = "Publicly traded bank, insurer or non-bank financial institution"
+  label_bn = "তালিকাভুক্ত ব্যাংক, বিমা বা আর্থিক প্রতিষ্ঠান"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.non_publicly_traded_bank_insurance_nbfi]
+  label_en = "Non-publicly traded bank, insurer or non-bank financial institution"
+  label_bn = "অতালিকাভুক্ত ব্যাংক, বিমা বা আর্থিক প্রতিষ্ঠান"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.merchant_bank]
+  label_en = "Merchant bank"
+  label_bn = "মার্চেন্ট ব্যাংক"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.tobacco_products_manufacturer]
+  label_en = "Manufacturer of tobacco products"
+  label_bn = "তামাকজাত পণ্য উৎপাদনকারী"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.publicly_traded_mobile_operator]
+  label_en = "Publicly traded mobile phone operator"
+  label_bn = "তালিকাভুক্ত মোবাইল ফোন অপারেটর"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.non_publicly_traded_mobile_operator]
+  label_en = "Non-publicly traded mobile phone operator"
+  label_bn = "অতালিকাভুক্ত মোবাইল ফোন অপারেটর"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.association_of_persons]
+  label_en = "Association of persons / firm"
+  label_bn = "ব্যক্তিসংঘ / ফার্ম"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified. Confirm whether the individual slabs apply instead."
+
+  [income_tax.corporate.rates.private_education_or_health_institution]
+  label_en = "Private university, medical, dental or engineering institution"
+  label_bn = "বেসরকারি বিশ্ববিদ্যালয়, মেডিকেল, ডেন্টাল বা প্রকৌশল প্রতিষ্ঠান"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.cooperative_society]
+  label_en = "Cooperative society"
+  label_bn = "সমবায় সমিতি"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+  [income_tax.corporate.rates.trust_or_fund]
+  label_en = "Trust, fund or other artificial juridical person"
+  label_bn = "ট্রাস্ট, তহবিল বা অন্য কৃত্রিম ব্যক্তিসত্তা"
+  conditions = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate not verified."
+
+# Corporate minimum tax on gross receipts / turnover.
+  [income_tax.corporate.minimum_tax.on_gross_receipts.rate]
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — general corporate minimum tax rate on gross receipts, not verified."
+
+  [income_tax.corporate.minimum_tax.on_gross_receipts.applies_above]
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — gross receipts above which the corporate floor engages."
+
+# Sector-specific overrides of the corporate minimum tax, keyed by sector id.
+  [income_tax.corporate.minimum_tax.by_sector.placeholder_sector]
+  label_en = "PLACEHOLDER sector"
+  label_bn = "প্লেসহোল্ডার খাত"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER showing the shape only. Replace with one node per sector that carries its own
+minimum-tax rate on gross receipts.
+"""
+
+# =========================================================================================
+# VAT / মূসক (মূল্য সংযোজন কর)
+# =========================================================================================
+# Read by src/engine/vat.py. The journal tax_tag grammar writes the rate that was actually
+# charged (VAT:OUT:<rate> / VAT:IN:<rate>); these nodes are what the assistant quotes when a
+# user asks which rate applies, and what vat.py checks a tagged rate against.
+
+[vat]
+note = """
+`rates.reduced` holds every rate below the standard rate, keyed by the supply it applies to.
+Bangladesh's reduced/truncated structure changes often — land one node per rate that this AY
+actually has, and delete the placeholder.
+"""
+
+  [vat.rates.standard]
+  label_en = "Standard VAT rate"
+  label_bn = "প্রমিত মূসক হার"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — standard মূসক / VAT rate is not verified."
+
+  [vat.rates.zero_rated]
+  label_en = "Zero-rated supplies (exports)"
+  label_bn = "শূন্যহার সরবরাহ (রপ্তানি)"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER — a zero-rated supply carries 0% output VAT while input VAT stays rebateable.
+Confirm the scope of zero-rating before relying on this node.
+"""
+
+  [vat.rates.reduced.placeholder_supply]
+  label_en = "PLACEHOLDER reduced-rate supply"
+  label_bn = "প্লেসহোল্ডার হ্রাসকৃত হারের সরবরাহ"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER showing the shape only. Replace with one node per reduced/truncated rate, keyed
+by the supply it covers, each citing the SRO or Act provision that sets it.
+"""
+
+  [vat.thresholds.registration]
+  label_en = "VAT registration threshold (annual turnover)"
+  label_bn = "মূসক নিবন্ধনের সীমা (বার্ষিক টার্নওভার)"
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — annual turnover at or above which VAT registration is required."
+
+  [vat.thresholds.turnover_tax_enlistment]
+  label_en = "Turnover tax enlistment threshold (annual turnover)"
+  label_bn = "টার্নওভার কর তালিকাভুক্তির সীমা (বার্ষিক টার্নওভার)"
+  value = 0
+  unit = "BDT"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — annual turnover at or above which turnover-tax enlistment is required."
+
+  [vat.turnover_tax.rate]
+  label_en = "Turnover tax rate"
+  label_bn = "টার্নওভার করের হার"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — rate charged on turnover by an enlisted (not registered) person."
+
+# Supplementary duty / সম্পূরক শুল্ক — keyed by goods or service class.
+  [vat.supplementary_duty.placeholder_class]
+  label_en = "PLACEHOLDER supplementary duty class"
+  label_bn = "প্লেসহোল্ডার সম্পূরক শুল্ক শ্রেণি"
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER showing the shape only. Supplementary duty is levied per goods/service class;
+land one node per class that a Bangladeshi SME realistically deals in.
+"""
+
+# =========================================================================================
+# TDS — উৎসে কর কর্তন (tax deducted at source)
+# =========================================================================================
+# The journal tax_tag grammar is TDS:<section>:<rate>. The KEY of each node below is the
+# section identifier EXACTLY as it is written in that tag, so `TDS:52:5` looks up
+# `tds.sections."52"`.
+#
+# No section number is asserted here. The single node below is a SHAPE EXAMPLE keyed with a
+# deliberately impossible identifier. The research pass replaces it with one table per real
+# section, each citing the provision that creates it.
+
+[tds]
+tag_grammar = "TDS:<section>:<rate>"
+note = """
+Land one [tds.sections.<id>] table per section. `<id>` must match what the journal writes
+(e.g. "52", "52AA", "53A"). Sections with a rate that depends on a condition (TIN held or
+not, amount band, sector) carry extra rate nodes named for the condition, plus `condition`
+prose that the assistant reads aloud to the user.
+"""
+
+  [tds.sections.PLACEHOLDER_SECTION]
+  section = "PLACEHOLDER_SECTION"
+  label_en = "PLACEHOLDER — section pending research"
+  label_bn = "প্লেসহোল্ডার — ধারা গবেষণার অপেক্ষায়"
+  applies_to = ""
+  deducted_by = ""
+  condition = ""
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+SHAPE EXAMPLE ONLY. This key is not a real section number and must be deleted once real
+sections land. Do not compute anything from it.
+"""
+
+    [tds.sections.PLACEHOLDER_SECTION.rate]
+    value = 0
+    unit = "percent"
+    source = "https://nbr.gov.bd/"
+    as_of = ""
+    verified = false
+    placeholder = true
+    note = "PLACEHOLDER — base deduction rate for this section."
+
+    [tds.sections.PLACEHOLDER_SECTION.rate_without_tin]
+    value = 0
+    unit = "percent"
+    source = "https://nbr.gov.bd/"
+    as_of = ""
+    verified = false
+    placeholder = true
+    note = """
+PLACEHOLDER — the higher rate that applies when the payee holds no TIN, where the section
+provides one. Delete this node for sections that have no such uplift.
+"""
+
+    [tds.sections.PLACEHOLDER_SECTION.threshold]
+    value = 0
+    unit = "BDT"
+    source = "https://nbr.gov.bd/"
+    as_of = ""
+    verified = false
+    placeholder = true
+    note = "PLACEHOLDER — payment value at or above which deduction is required, if any."
+
+# When deducted tax must reach the government treasury.
+  [tds.deposit.deadline]
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = """
+PLACEHOLDER — describe the deposit deadline as prose (e.g. "by the Nth day of the month
+following deduction"), plus any different rule for the final month of the income year.
+"""
+
+# =========================================================================================
+# VDS — উৎসে মূসক কর্তন (VAT deducted at source)
+# =========================================================================================
+# The journal tax_tag grammar is VDS:<rate>. One node per service class that carries a
+# withholding obligation.
+
+[vds]
+tag_grammar = "VDS:<rate>"
+note = """
+Land one [vds.services.<id>] node per service class. The withholding entity list (who must
+deduct) belongs in `deducted_by`; whether a given supply is caught belongs in `applies_to`.
+"""
+
+  [vds.services.placeholder_service]
+  label_en = "PLACEHOLDER service class"
+  label_bn = "প্লেসহোল্ডার সেবা শ্রেণি"
+  applies_to = ""
+  deducted_by = ""
+  value = 0
+  unit = "percent"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "SHAPE EXAMPLE ONLY — replace with one node per service class that requires VDS."
+
+  [vds.deposit.deadline]
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — when deducted মূসক / VAT must be deposited to the treasury."
+
+# =========================================================================================
+# DEADLINES / সময়সীমা
+# =========================================================================================
+# Deadlines carry a source URL and an as-of date exactly like a rate (spec §6.1). The prose
+# compliance calendar lives in src/references/compliance-calendar.md and must agree with this.
+
+[deadlines]
+note = "Dates are prose so that 'the 15th of the following month' can be stated exactly."
+
+  [deadlines.income_tax_return_individual]
+  label_en = "Individual income tax return filing deadline"
+  label_bn = "ব্যক্তি করদাতার আয়কর রিটার্ন দাখিলের সময়সীমা"
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — filing deadline for this assessment year is not verified."
+
+  [deadlines.income_tax_return_company]
+  label_en = "Company income tax return filing deadline"
+  label_bn = "কোম্পানির আয়কর রিটার্ন দাখিলের সময়সীমা"
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — filing deadline is not verified."
+
+  [deadlines.vat_return_monthly]
+  label_en = "Monthly VAT return (Mushak 9.1) filing deadline"
+  label_bn = "মাসিক মূসক দাখিলপত্র (মূসক ৯.১) দাখিলের সময়সীমা"
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — monthly মূসক / VAT return deadline is not verified."
+
+  [deadlines.advance_income_tax_instalments]
+  label_en = "Advance income tax instalment dates"
+  label_bn = "অগ্রিম আয়কর কিস্তির তারিখ"
+  value = ""
+  unit = "date"
+  source = "https://nbr.gov.bd/"
+  as_of = ""
+  verified = false
+  placeholder = true
+  note = "PLACEHOLDER — instalment dates and the liability threshold are not verified."
