@@ -95,7 +95,7 @@ __all__ = [
 # ======================================================================================
 
 PROJECT_NAME = "TakaBooks"
-PROJECT_VERSION = "1.0.0"
+PROJECT_VERSION = "1.1.1"
 REPO_URL = "https://github.com/bemoshiur/TakaBooks"
 COMPANY = "TICON SYSTEM LTD"
 COMPANY_URL = "https://ticonsys.com"

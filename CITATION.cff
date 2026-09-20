@@ -19,8 +19,8 @@ abstract: >-
   ChatGPT, Gemini, AGENTS.md-aware coding agents and any other LLM. It is not
   professional advice; figures must be verified with a licensed Income Tax
   Practitioner or Chartered Accountant before filing.
-version: "1.0.0"
-date-released: 2026-09-06
+version: "1.1.1"
+date-released: 2026-09-20
 license: MIT
 repository-code: "https://github.com/bemoshiur/TakaBooks"
 url: "https://ticonsys.com"

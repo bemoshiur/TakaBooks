@@ -1,6 +1,6 @@
 {
   "name": "@bemoshiur/takabooks",
-  "version": "0.0.0",
+  "version": "1.1.1",
   "description": "Installer for TakaBooks — LLM-agnostic Bangladeshi bookkeeping & taxation: VAT/মূসক, TDS/উৎসে কর কর্তন, income tax, double-entry books. Zero dependencies.",
   "keywords": [
     "bangladesh",
