@@ -32,7 +32,9 @@ Where the numbers come from
    ================================================  =========  ==============================
    ``vat.rates.standard``                            always     every tagged rate is checked
                                                                 against the declared rates
-   ``deadlines.vat_return_monthly``                  always     when the return is due
+   ``deadlines.vat_return_quarterly``                always     when the return is due
+   ``deadlines.vat_return_monthly``                  optional   the s.64(2) monthly election
+   ``deadlines.vat_legacy_settlement_s137a``         optional   the s.137A window, closes 31 Dec 2026
    ``vds.deposit.deadline``                          with VDS   when withheld VDS is due
    ``vat.rates.zero_rated``                          optional   declared rate
    ``vat.rates.reduced.<key>``                       optional   declared rates (one per node)
@@ -66,7 +68,7 @@ absent (required)          refuse, exit 8, key named         refuse, exit 8, key
 =========================  ================================  ==============================
 
 "The answer needs it" here means a **required** reference figure (``vat.rates.standard``,
-``deadlines.vat_return_monthly``, and ``vds.deposit.deadline`` when VDS was withheld), or
+``deadlines.vat_return_quarterly``, and ``vds.deposit.deadline`` when VDS was withheld), or
 a rates file that declares itself unlanded in ``[meta]``.  A placeholder *optional* figure
 does not stop the return being computed — but its value is never printed, because an
 unlanded figure that is shown as a number is exactly the harm the placeholder flag exists
@@ -305,12 +307,39 @@ REFERENCE_SPECS: tuple[ReferenceSpec, ...] = (
     ),
     ReferenceSpec(
         "return_deadline",
-        "deadlines.vat_return_monthly",
-        "মাসিক মূসক দাখিলপত্র জমার সময়সীমা",
-        "Monthly VAT return filing deadline",
+        "deadlines.vat_return_quarterly",
+        "ত্রৈমাসিক মূসক দাখিলপত্র জমার সময়সীমা",
+        "Quarterly VAT return filing deadline",
         "text",
         REQUIRED_ALWAYS,
         "a return figure set must say when the return is due",
+    ),
+    # From 1 July 2026 the return is QUARTERLY — VAT Act s.64(1) as substituted by the
+    # Finance Act 2026, within 15 days of the end of every three tax periods.  vat.py
+    # used to read only deadlines.vat_return_monthly, so a registered person filing the
+    # default return was shown a full month when the statute gives 15 days.  The monthly
+    # node stays, because s.64(2) keeps monthly filing alive as a voluntary election —
+    # but it is an election, not the deadline, so it is optional here.
+    ReferenceSpec(
+        "return_deadline_monthly_election",
+        "deadlines.vat_return_monthly",
+        "মাসিক দাখিলের স্বেচ্ছা সুযোগ (ধারা ৬৪(২))",
+        "Voluntary monthly filing election (s.64(2))",
+        "text",
+        OPTIONAL,
+        "monthly filing survives only as an election; it is not the default deadline",
+    ),
+    # The only dated obligation in the compliance calendar that expires inside
+    # AY 2026-27.  It lived solely as prose, so no tool could surface it.  Optional:
+    # once the window shuts this must not start failing anybody's run.
+    ReferenceSpec(
+        "legacy_settlement_window",
+        "deadlines.vat_legacy_settlement_s137a",
+        "পুরনো মূসক দাবি নিষ্পত্তির সুযোগ",
+        "Legacy VAT settlement window (s.137A) — closes 31 December 2026",
+        "text",
+        OPTIONAL,
+        "a one-off interest waiver that expires inside this assessment year",
     ),
     ReferenceSpec(
         "vds_deposit_deadline",
@@ -2726,7 +2755,7 @@ tax_tag convention
 
 rates
   Every statutory figure is read from the rates TOML for the assessment year; none is
-  hardcoded here. Keys read: vat.rates.standard and deadlines.vat_return_monthly
+  hardcoded here. Keys read: vat.rates.standard and deadlines.vat_return_quarterly
   (required), vds.deposit.deadline (required when VDS postings exist),
   vat.rates.zero_rated, vat.rates.reduced.<key>, vds.services.<key>,
   vat.thresholds.registration, vat.thresholds.turnover_tax_enlistment and

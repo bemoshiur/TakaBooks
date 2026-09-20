@@ -249,6 +249,20 @@ def rates_toml(
             "দাখিলের সময়সীমা",
         )
         + node(
+            "deadlines.vat_return_quarterly",
+            '"FIXTURE: within N days of the end of every three tax periods"',
+            "date",
+            "Quarterly return deadline",
+            "ত্রৈমাসিক দাখিলের সময়সীমা",
+        )
+        + node(
+            "deadlines.vat_legacy_settlement_s137a",
+            '"FIXTURE: legacy settlement window closes on a fixture date"',
+            "date",
+            "Legacy VAT settlement window",
+            "পুরনো মূসক দাবি নিষ্পত্তির সুযোগ",
+        )
+        + node(
             "vds.deposit.deadline",
             '"FIXTURE: within N days of deduction"',
             "date",
@@ -387,11 +401,13 @@ class TestModuleSurface(unittest.TestCase):
     def test_reference_specs_read_canonical_keys(self):
         keys = {spec.rates_key for spec in vat.REFERENCE_SPECS}
         self.assertIn("vat.rates.standard", keys)
+        self.assertIn("deadlines.vat_return_quarterly", keys)
         self.assertIn("deadlines.vat_return_monthly", keys)
+        self.assertIn("deadlines.vat_legacy_settlement_s137a", keys)
         self.assertIn("vds.deposit.deadline", keys)
         self.assertIn("vat.thresholds.turnover_tax_enlistment", keys)
         required = {s.rates_key for s in vat.REFERENCE_SPECS if s.required == vat.REQUIRED_ALWAYS}
-        self.assertEqual(required, {"vat.rates.standard", "deadlines.vat_return_monthly"})
+        self.assertEqual(required, {"vat.rates.standard", "deadlines.vat_return_quarterly"})
 
     def test_shipped_rates_file_keys_are_the_ones_vat_reads(self):
         """The real ``src/data/rates-AY2026-27.toml`` must carry every key vat.py reads,
@@ -545,11 +561,11 @@ class TestReferenceFigures(VatFixture):
         self.assertEqual(ctx.exception.exit_code, 8)
 
     def test_every_missing_required_key_is_listed_at_once(self):
-        table = self.table(rates_toml(omit=("vat.rates.standard", "deadlines.vat_return_monthly")))
+        table = self.table(rates_toml(omit=("vat.rates.standard", "deadlines.vat_return_quarterly")))
         with self.assertRaises(tb.RatesError) as ctx:
             vat.reference_figures(table)
         self.assertIn("vat.rates.standard", str(ctx.exception))
-        self.assertIn("deadlines.vat_return_monthly", str(ctx.exception))
+        self.assertIn("deadlines.vat_return_quarterly", str(ctx.exception))
         self.assertIn("2 figures", str(ctx.exception))
 
     def test_vds_deadline_required_only_with_vds_postings(self):
@@ -581,7 +597,7 @@ class TestReferenceFigures(VatFixture):
             vat.reference_figures(table)
         self.assertEqual(ctx.exception.exit_code, 8)
         self.assertIn("vat.rates.standard", str(ctx.exception))
-        self.assertIn("deadlines.vat_return_monthly", str(ctx.exception))
+        self.assertIn("deadlines.vat_return_quarterly", str(ctx.exception))
         self.assertIn("still a placeholder", str(ctx.exception))
         self.assertIn("--allow-placeholder-rates", ctx.exception.hint)
 
@@ -638,7 +654,8 @@ class TestReferenceFigures(VatFixture):
 
     def test_blank_text_value_is_flagged_unless_placeholder(self):
         blank = rates_toml().replace(
-            'value = "FIXTURE: the Nth day of the following month"', 'value = ""'
+            'value = "FIXTURE: within N days of the end of every three tax periods"',
+            'value = ""',
         )
         figures, warnings = vat.reference_figures(self.table(blank))
         figure = {f.key: f for f in figures}["return_deadline"]
@@ -1640,6 +1657,81 @@ label_en = "No surcharge (FIXTURE)"
   verified = false
   placeholder = true
 """
+
+
+class DeadlinesSurfacedTests(VatFixture):
+    """Which filing deadline vat.py puts in front of the return preparer.
+
+    Two defects are pinned here.
+
+    **The quarterly return.**  From 1 July 2026 the মূসক return is QUARTERLY —
+    VAT Act s.64(1), within 15 days of the end of every three tax periods.  Monthly
+    filing survives only as a voluntary election under s.64(2).  vat.py used to read
+    ``deadlines.vat_return_monthly`` and nothing else, so a registered person filing
+    the default return was told they had a full month when the statute gives 15 days.
+    The monthly node's own text already said "Monthly filing is NO LONGER THE DEFAULT".
+
+    **The s.137A legacy-settlement window.**  New VAT Act s.137A (১৩৭ক) opens an
+    interest-waiver scheme for legacy demands for six months from 1 July 2026, closing
+    31 December 2026.  It lived only as prose in ``compliance-calendar.md`` and inside
+    another node's ``note``, so no engine could surface it and ``rates.py --all`` never
+    listed it — in the very quarter the calendar calls "the last quarter to use it".
+    """
+
+    def test_quarterly_deadline_is_the_required_return_deadline(self):
+        keys = {spec.rates_key for spec in vat.REFERENCE_SPECS}
+        self.assertIn("deadlines.vat_return_quarterly", keys)
+        required = {s.rates_key for s in vat.REFERENCE_SPECS if s.required == vat.REQUIRED_ALWAYS}
+        self.assertIn(
+            "deadlines.vat_return_quarterly",
+            required,
+            "the statutory default return deadline must be a required figure",
+        )
+
+    def test_monthly_deadline_is_retained_but_only_as_an_election(self):
+        """The monthly node is still read — it is a real s.64(2) election — but it is
+        no longer what a preparer is shown as *the* deadline."""
+        by_key = {s.rates_key: s for s in vat.REFERENCE_SPECS}
+        self.assertIn("deadlines.vat_return_monthly", by_key)
+        self.assertEqual(by_key["deadlines.vat_return_monthly"].required, vat.OPTIONAL)
+
+    def test_legacy_settlement_window_is_a_reference_figure(self):
+        by_key = {s.rates_key: s for s in vat.REFERENCE_SPECS}
+        self.assertIn("deadlines.vat_legacy_settlement_s137a", by_key)
+        spec = by_key["deadlines.vat_legacy_settlement_s137a"]
+        self.assertEqual(spec.required, vat.OPTIONAL, "a closed window must not break a run")
+        self.assertEqual(spec.kind, "text")
+
+    def test_both_deadlines_reach_the_rendered_report(self):
+        position = self.position()
+        figures = {f.key: f for f in position.references}
+        self.assertIn("return_deadline", figures)
+        self.assertIn("legacy_settlement_window", figures)
+        text = vat.render_markdown(position)
+        self.assertIn("ত্রৈমাসিক", text)
+        self.assertIn("পুরনো মূসক দাবি নিষ্পত্তির সুযোগ", text)
+
+    def test_the_shipped_rates_file_carries_the_s137a_node(self):
+        """Not a fixture assertion — the real AY 2026-27 file must carry the window,
+        so `rates.py --key deadlines.vat_legacy_settlement_s137a` can print it."""
+        real = REPO_ROOT / "src" / "data" / "rates-AY2026-27.toml"
+        table = tb.RatesTable.from_toml_path(real)
+        entry = table.raw["deadlines"]["vat_legacy_settlement_s137a"]
+        self.assertIn("31 December 2026", entry["value"])
+        self.assertIs(entry["verified"], False, "the close rests on secondary reporting")
+        self.assertIn("137A", entry["note"])
+
+    def test_s137a_window_is_not_confused_with_tds_section_137A(self):
+        """ITA 2023 s.137A (club membership withholding) and VAT Act s.137A (the legacy
+        settlement window) share a number and are unrelated.  Each must say so, so that
+        grepping 137A cannot make either look like coverage of the other."""
+        real = REPO_ROOT / "src" / "data" / "rates-AY2026-27.toml"
+        raw = tb.RatesTable.from_toml_path(real).raw
+        vat_note = raw["deadlines"]["vat_legacy_settlement_s137a"]["note"]
+        tds_note = raw["tds"]["sections"]["137A"]["note"]
+        self.assertIn("VAT Act", vat_note)
+        self.assertIn("not", vat_note.lower())
+        self.assertIn("VAT Act", tds_note)
 
 
 if __name__ == "__main__":  # pragma: no cover
