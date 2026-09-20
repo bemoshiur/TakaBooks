@@ -147,6 +147,7 @@ KEY_SURCHARGE = "income_tax.individual.surcharge"
 KEY_SURCHARGE_BASE = "income_tax.individual.surcharge.base"
 KEY_SURCHARGE_MINIMUM = "income_tax.individual.surcharge.minimum"
 KEY_SURCHARGE_BANDS = "income_tax.individual.surcharge.bands"
+KEY_SURCHARGE_MULTI_CAR = "income_tax.individual.surcharge.multi_car_trigger"
 KEY_ENV_SURCHARGE = "income_tax.individual.environmental_surcharge"
 KEY_ENV_SURCHARGE_BANDS = "income_tax.individual.environmental_surcharge.bands"
 
@@ -498,11 +499,21 @@ class TaxComputation:
 
     @property
     def total_tax(self) -> tb.Money:
-        # The environmental surcharge is a SEPARATE charge, not a band of the wealth
-        # surcharge — but it is still the taxpayer's liability, so it belongs in the
-        # total.  When it was not assessed it contributes zero AND raises a caveat, so
-        # the total never silently omits it.
-        return self.tax_after_minimum + self.surcharge.surcharge + self.environmental_surcharge.surcharge
+        """The tax the RETURN settles: slabs, rebate, minimum tax and surcharge.
+
+        The environmental surcharge is deliberately NOT here.  Finance Act 2026
+        তফসিল-২ তৃতীয় অংশ proviso (খ) collects it at source on registration or fitness
+        renewal, and proviso (চ) makes it neither refundable nor adjustable against any
+        other tax — so it cannot be settled by advance tax or TDS, and netting it
+        against them overstates what is owed with the return.  It is reported beside
+        this total, never inside it; see :attr:`total_liability`.
+        """
+        return self.tax_after_minimum + self.surcharge.surcharge
+
+    @property
+    def total_liability(self) -> tb.Money:
+        """Everything the taxpayer owes for the year, however it is collected."""
+        return self.total_tax + self.environmental_surcharge.surcharge
 
     @property
     def net_payable(self) -> tb.Money:
@@ -905,19 +916,40 @@ def compute_surcharge(
     tax_before_rebate: tb.Money,
     tax_after_rebate: tb.Money,
     tax_after_minimum: tb.Money,
+    motor_cars: int = 0,
 ) -> SurchargeWorking:
     """Step 4.  Without a net-wealth figure the surcharge is *not assessed* — reported as
-    such, never assumed to be zero."""
-    if net_wealth is None:
+    such, never assumed to be zero.
+
+    But net wealth is not the only trigger.  Finance Act 2026 তফসিল-২ দ্বিতীয় অংশ band (খ)
+    reads "…বা, স্বীয় নামে একের অধিক মোটর গাড়ি; বা, মোট ৮০০০ বর্গফুটের অধিক আয়তনের
+    গৃহ-সম্পত্তি" — the limbs are ALTERNATIVES, so owning more than one motor car engages
+    that band on its own, with no net-wealth figure at all.  The threshold is read from
+    ``surcharge.multi_car_trigger``, not hardcoded.
+    """
+    # Only consult the trigger when there are cars to consider: an unassessed surcharge
+    # must not pull surcharge rates into the working, which is what `rates.used()`
+    # reports and what the caveats are built from.
+    engaged_by_cars = False
+    if motor_cars:
+        trigger = rates.optional_rate(KEY_SURCHARGE_MULTI_CAR)
+        engaged_by_cars = trigger is not None and motor_cars > int(trigger.as_decimal())
+    if net_wealth is None and not engaged_by_cars:
         return SurchargeWorking(assessed=False)
 
     specs = _build_band_specs(rates)
     chosen = specs[0]
-    for spec in specs[1:]:
-        if spec.wealth_above is not None and net_wealth > spec.wealth_above:
-            chosen = spec
-        else:
-            break
+    if net_wealth is not None:
+        for spec in specs[1:]:
+            if spec.wealth_above is not None and net_wealth > spec.wealth_above:
+                chosen = spec
+            else:
+                break
+    if engaged_by_cars:
+        # A floor, never a ceiling: a taxpayer already in a higher band stays there.
+        floor = next((spec for spec in specs if spec.rate > 0), None)
+        if floor is not None and chosen.rate < floor.rate:
+            chosen = floor
 
     base = rates.choice(KEY_SURCHARGE_BASE, SURCHARGE_BASES)
     base_amount = {
@@ -1105,6 +1137,7 @@ def compute_income_tax(
         tax_before_rebate=gross_tax,
         tax_after_rebate=rebate.tax_after_rebate,
         tax_after_minimum=minimum.tax_after,
+        motor_cars=len(inputs.motor_car_engine_cc or ()),
     )
 
     environmental = compute_environmental_surcharge(
@@ -1437,10 +1470,6 @@ def render_markdown(
         ["add: minimum tax adjustment", fmt(mt.adjustment)],
         ["Tax after minimum tax", fmt(result.tax_after_minimum)],
         ["add: surcharge", fmt(sc.surcharge) if sc.assessed else "not assessed"],
-        [
-            "add: পরিবেশ সারচার্জ / environmental surcharge",
-            fmt(env.surcharge) if env.assessed else "not assessed — see caveats",
-        ],
         ["**Total tax liability / মোট করদায়**", f"**{fmt(result.total_tax)}**"],
         ["less: tax already paid (advance tax, TDS)", f"({fmt(inp.tax_paid)})" if inp.tax_paid.is_positive() else fmt(inp.tax_paid)],
     ]
@@ -1450,6 +1479,36 @@ def render_markdown(
         summary_rows.append(["**Net tax payable / নিট প্রদেয় কর**", f"**{fmt(net)}**"])
     lines.append(tb.markdown_table(["Line", "Amount"], summary_rows, aligns=["l", "r"]))
     lines.append("")
+    # The environmental surcharge sits BELOW the return's net figure, never inside it:
+    # it is collected at source on registration or fitness renewal and is not adjustable
+    # against advance tax or TDS, so folding it into "net tax payable" would misstate
+    # what is due with the return.
+    if env.assessed:
+        lines.append("### পরিবেশ সারচার্জ / environmental surcharge — collected separately")
+        lines.append("")
+        env_rows = [[f"{cc} cc — {label}", fmt(amount)] for cc, label, amount in env.cars]
+        if env.exempt_car:
+            env_rows.append([
+                f"less: exempt car ({env.exempt_car[0]} cc — lowest surcharge, proviso (ক))",
+                f"({fmt(env.exempt_car[2])})",
+            ])
+        env_rows.append(["**পরিবেশ সারচার্জ payable**", f"**{fmt(env.surcharge)}**"])
+        lines.append(tb.markdown_table(["Motor car", "Amount"], env_rows, aligns=["l", "r"]))
+        lines.append("")
+        lines.append(
+            "Collected at source when the vehicle's registration or fitness is renewed "
+            "(Finance Act 2026 তফসিল-২ তৃতীয় অংশ proviso (খ)); **not** refundable and "
+            "**not** adjustable against any other tax or surcharge (proviso (চ)). It is "
+            "therefore shown apart from the return's net figure, not netted against tax "
+            "already paid."
+        )
+        lines.append("")
+        lines.append(
+            f"**Total for the year / বৎসরের মোট দায়: {fmt(result.total_liability)}** "
+            f"— {fmt(result.total_tax)} tax and surcharge, plus {fmt(env.surcharge)} "
+            "পরিবেশ সারচার্জ collected separately."
+        )
+        lines.append("")
     lines.append("All amounts in taka (৳ / BDT), Bangladeshi লাখ/কোটি grouping. Each slab's tax is rounded "
                  "ROUND_HALF_UP to the paisa once, so the rows add up exactly.")
     lines.append("")

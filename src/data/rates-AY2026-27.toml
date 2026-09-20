@@ -653,10 +653,15 @@ income from a firm or association of persons. tax.py applies income_cap_percent 
 taxable income the caller supplies. A taxpayer with any such income must reduce the income
 figure before running the calculation, or the cap will be computed too high.
 
-VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html).
+ITA 2023 s.78 limb (ক) reads "০.০৩ × ‘ক’", where ‘ক’ is total income less exempt income,
+income taxed at a reduced rate, share income from a firm or association of persons, and
+income bearing final tax. The professional summaries this node used to rest on were
+correct, and the figure no longer rests on them.
 
-VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
-This node stays a DERIVED parameter: the statute caps the REBATE at 3% of income; 30% is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. The derivation is exact arithmetic over a now-verified statutory limb. Quote 3% to a taxpayer, never 30%.
+THIS NODE STAYS DERIVED. The statute caps the REBATE at 3% of that income; 30% is the
+equivalent cap on eligible INVESTMENT at a 10% rebate rate. Quote 3% to a taxpayer,
+never 30%.
 """
 
   [income_tax.individual.rebate.absolute_cap]
@@ -676,13 +681,15 @@ Tk 7,500,000, which is the number this schema slot needs. Source for the underly
 ceiling: KPMG p.47, PwC p.6, TNP p.12. The underlying statutory limb is now verified — see the confirmation below.
 Top-bracket taxpayers lose up to Tk 250,000 of maximum rebate compared with AY 2025-26.
 
-VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html).
+ITA 2023 s.78 limb (গ) reads "[৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা", and the section's own
+amendment footnote records that "৭.৫০" replaced "১০ (দশ)" by Finance Act 2026 (Act 96 of
+2026) s.61(খ), effective 1 July 2026. The professional summaries this node used to rest on
+were correct, and the figure no longer rests on them.
 
-VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
-This node stays a DERIVED parameter: the statute caps the REBATE at 3% of income; 30% is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. The derivation is exact arithmetic over a now-verified statutory limb. Quote 3% to a taxpayer, never 30%.
-
-VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
-This node stays a DERIVED parameter: the statute caps the REBATE at Tk 750,000; Tk 7,500,000 is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. Quote Tk 750,000 to a taxpayer, never Tk 7,500,000.
+THIS NODE STAYS DERIVED. The statute caps the REBATE at Tk 750,000; Tk 7,500,000 is the
+equivalent cap on eligible INVESTMENT at a 10% rebate rate. Quote Tk 750,000 to a taxpayer,
+never Tk 7,500,000.
 """
 
 # Instruments that count as allowable investment (Sixth Schedule Part 3). Descriptive only —
@@ -944,6 +951,28 @@ amended by the Finance Act 2026 at http://bdlaws.minlaw.gov.bd/act-details-1429.
 #
 # tax.py picks the LAST band whose `wealth_above` is <= the taxpayer's net wealth, then applies
 # that band's percentage to the base named in `base`.
+
+[income_tax.individual.surcharge.multi_car_trigger]
+label_en = "Motor cars above which the lowest positive surcharge band engages regardless of net assets"
+label_bn = "নিট পরিসম্পদ নির্বিশেষে সারচার্জের সর্বনিম্ন হার কার্যকর হইবার মোটর গাড়ির সংখ্যা"
+value = 1
+unit = "count"
+source = "https://nbr.gov.bd/uploads/acts/Finance_Act_2026.pdf"
+as_of = "2026-07-01"
+verified = true
+placeholder = false
+note = """
+Finance Act 2026, তফসিল-২ দ্বিতীয় অংশ, band (খ): the 10% band applies to net assets above
+৪ (চার) কোটি টাকা — "বা, স্বীয় নামে একের অধিক মোটর গাড়ি; বা, মোট ৮০০০ বর্গফুটের অধিক আয়তনের
+গৃহ-সম্পত্তি". The three limbs are ALTERNATIVES, so owning more than one motor car engages
+the band on its own, with no net-wealth figure at all. `value = 1` is the number of cars
+the band tolerates; more than that engages it.
+READ FROM THE GAZETTE BY OCR (tools/gazette.py --pages 148), the schedule's text layer
+being unextractable. The higher bands are by net assets only.
+NOT MODELLED: the third limb, গৃহ-সম্পত্তি above 8,000 square feet, engages the same band.
+TakaBooks has no input for house area, so a taxpayer who meets only that limb is
+UNDER-ASSESSED here. tax.py says so whenever the surcharge is computed.
+"""
 
 [income_tax.individual.surcharge]
 wealth_basis = "net_wealth"      # descriptive: what the bands are measured against

@@ -98,7 +98,12 @@ def percent_forms(value) -> list[str]:
     if "." in text:
         text = text.rstrip("0").rstrip(".")
     bn = to_bn(text)
-    return [f"{bn}%", f"{bn} শতাংশ", f"শতকরা {bn}", f"{bn} ভাগ", bn]
+    # NO BARE NUMERAL. A lone ``১`` matches the page furniture on essentially every
+    # bdlaws page — "( ২০২৩ সনের ১২ নং আইন )", section numbers, dates — so including it
+    # graded a page header as CITED evidence for a tax rate. That is the precise failure
+    # this module's docstring warns about, committed into a review queue before it was
+    # caught. A percentage must carry its unit to count.
+    return [f"{bn}%", f"{bn} শতাংশ", f"শতকরা {bn}", f"{bn} ভাগ"]
 
 
 def forms_for(value, unit: str) -> list[str]:
@@ -109,7 +114,9 @@ def forms_for(value, unit: str) -> list[str]:
     if unit == "percent":
         return percent_forms(value)
     if unit == "count":
-        return [to_bn(value), str(value)]
+        # Same rule: a count must be anchored to a word, or it matches any digit anywhere.
+        bn = to_bn(value)
+        return [f"{bn} (", f"{bn} বৎসর", f"{bn} বছর", f"{bn} মাস", f"{bn} দিন"]
     return []
 
 

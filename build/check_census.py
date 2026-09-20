@@ -138,6 +138,29 @@ def check() -> list[str]:
     if f"{total} rate nodes" not in index:
         problems.append(f"docs/index.md does not state '{total} rate nodes'")
 
+    # PRESENCE IS NOT ENOUGH. Every check above asks whether the CORRECT figure appears.
+    # None of them asks whether a STALE one still does, so a second sentence quoting an
+    # older census passes silently — which is exactly what happened: the guard reported
+    # OK while README's headline still said "529 rate nodes: 474 verified, 52 unverified".
+    # So: any three-digit number sitting next to "rate nodes", or in a "N verified"
+    # phrase, must be one the audit actually reports.
+    allowed = {str(total), str(ver), str(unv), str(ph)} | {
+        str(row.get(k, 0)) for row in by.values() for k in ("total", "verified", "unverified", "placeholder")
+    }
+    for name, body in (("README.md", readme), ("docs/index.md", index)):
+        for pattern, what in (
+            (r"(\d{3,4})\s+rate nodes", "rate nodes"),
+            (r"\*\*(\d{3,4}) rate nodes:", "rate-node census"),
+            (r"(\d{3,4}) verified", "verified count"),
+            (r"(\d{2,4}) unverified", "unverified count"),
+        ):
+            for found in re.findall(pattern, body):
+                if found not in allowed:
+                    problems.append(
+                        f"{name} states '{found} {what}', which the audit does not report "
+                        f"(total {total}, verified {ver}, unverified {unv}, placeholder {ph})"
+                    )
+
     # The per-area table: every prefix the table names must match the audit.
     for prefix, label in (
         ("income_tax", "income tax"),

@@ -70,7 +70,7 @@ TakaBooks reads every figure from a versioned rates file **at answer time, never
 | | |
 |---|---|
 | **Engine** | 7 Python modules, standard library only. Money is integer paisa, never float. Amounts print in lakh/crore grouping (৳12,34,567.89). **867 tests.** |
-| **Tax data** | 530 rate nodes for AY 2026-27 — each with a source URL, an `as_of` date and a `verified` flag |
+| **Tax data** | 531 rate nodes for AY 2026-27 — each with a source URL, an `as_of` date and a `verified` flag |
 | **Bookkeeping** | Double-entry enforced — an unbalanced entry is refused, never silently corrected |
 | **Bilingual** | Replies in Bangla, Banglish or English; statutory terms always paired |
 

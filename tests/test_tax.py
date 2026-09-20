@@ -269,6 +269,14 @@ label_bn = "তৃতীয় ধাপ"
   verified = true
 """
 
+ENV_SURCHARGE_BLOCK_TRIGGER = f"""\
+[income_tax.individual.surcharge.multi_car_trigger]
+value = 1
+unit = "count"
+{SRC}
+verified = true
+"""
+
 # Environmental surcharge — a SEPARATE charge on each motor car in excess of one.
 # Two bands, so a fixture taxpayer can own cars that fall in different bands and
 # exercise the unconfirmed exempt-car reading.
@@ -306,7 +314,7 @@ engine_cc_above = 1500
 
 # The environmental surcharge ships as part of the default fixture: it is a real part
 # of an individual's liability, and tax.py must account for it (or say it has not).
-FIXTURE = FIXTURE + ENV_SURCHARGE_BLOCK
+FIXTURE = FIXTURE + ENV_SURCHARGE_BLOCK + ENV_SURCHARGE_BLOCK_TRIGGER
 
 WIDTH_BLOCK = f"""\
   [income_tax.individual.slabs.width]
@@ -2041,7 +2049,45 @@ class TestEnvironmentalSurcharge(FixtureCase):
     def test_it_reaches_the_total(self):
         without = self.compute(1000000)
         with_cars = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
-        self.assertEqual(with_cars.total_tax - without.total_tax, T(5000))
+        # It belongs in the YEAR's liability but not in the RETURN's tax, because it is
+        # collected at source and is not adjustable — see the test below.
+        self.assertEqual(with_cars.total_liability - with_cars.total_tax, T(5000))
+
+    def test_it_is_not_netted_against_tax_already_paid(self):
+        """It is collected AT SOURCE on registration or fitness renewal — Finance Act
+        2026 তফসিল-২ তৃতীয় অংশ proviso (খ) — and proviso (চ) makes it neither refundable
+        nor adjustable against any other tax.  So it cannot be settled by advance tax or
+        TDS, and the balance due WITH THE RETURN must exclude it.
+
+        Shipped otherwise for part of a day: the charge sat inside total_tax and was then
+        netted against --tax-paid, so a taxpayer whose advance tax exactly covered their
+        income tax was told they still owed the surcharge on the return."""
+        square = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
+        paid = self.compute(1000000, motor_car_engine_cc=(1400, 2000),
+                            tax_paid=int(square.total_tax.taka))
+        # advance tax exactly covers the income tax, so the RETURN is square...
+        self.assertEqual(paid.net_payable, M.zero())
+        # ...while the surcharge remains due, separately and in full.
+        self.assertEqual(paid.environmental_surcharge.surcharge, T(5000))
+
+    def test_more_than_one_car_engages_the_surcharge_band_without_net_wealth(self):
+        """Finance Act 2026 তফসিল-২ দ্বিতীয় অংশ, band (খ): the 10% band applies to net
+        assets above ৪ কোটি — "বা, স্বীয় নামে একের অধিক মোটর গাড়ি" — OR to owning more
+        than one motor car, independent of net assets.  Declaring two cars is therefore
+        enough to engage it, and reporting the surcharge as "not assessed" understates
+        the liability."""
+        one = self.compute(1000000, motor_car_engine_cc=(1400,))
+        self.assertFalse(one.surcharge.assessed, "one car engages nothing")
+        two = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
+        self.assertTrue(two.surcharge.assessed, "two cars engage the band on their own")
+        self.assertEqual(two.surcharge.rate, Decimal(10))
+        self.assertTrue(two.surcharge.surcharge.is_positive())
+
+    def test_cars_do_not_lower_a_band_net_wealth_already_reached(self):
+        """The car trigger is a floor, not a ceiling: a taxpayer in a higher wealth band
+        stays there."""
+        rich = self.compute(1000000, net_wealth=60000000, motor_car_engine_cc=(1400, 2000))
+        self.assertEqual(rich.surcharge.band_order, 3)
 
     def test_it_is_rendered_as_its_own_line(self):
         text = tax.render_markdown(self.compute(1000000, motor_car_engine_cc=(1400, 2000)))
