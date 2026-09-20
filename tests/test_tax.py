@@ -2019,15 +2019,24 @@ class TestEnvironmentalSurcharge(FixtureCase):
         self.assertEqual(env.surcharge, T(5000))
         self.assertFalse(env.reading_affects_result)
 
-    def test_cars_across_bands_raise_the_unconfirmed_reading(self):
-        """NBR's Paripatra says only "each car in excess of one" and does not say WHICH
-        car is excluded; the professional summaries do.  Across bands that is money."""
+    def test_which_car_is_exempt_is_stated_and_sourced(self):
+        """NBR's Paripatra says only "each car in excess of one" and never says WHICH
+        car is excluded, so this was long carried as an unconfirmed reading.  The
+        Finance Act 2026 itself settles it — তফসিল-২ তৃতীয় অংশ, proviso (ক): the exempt
+        car is the one attracting the LOWEST surcharge.  So the working states the rule
+        and its source; it no longer warns about a guess, and it does not block."""
         result = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
         self.assertTrue(result.environmental_surcharge.reading_affects_result)
         self.assertTrue(
-            any("exempt" in c.lower() for c in result.caveats),
-            f"the unconfirmed exempt-car reading is not caveated: {result.caveats}",
+            any("exempt car" in n.lower() for n in result.notes),
+            f"the exempt-car rule is not stated: {result.notes}",
         )
+        self.assertTrue(
+            any("তফসিল-২" in n for n in result.notes),
+            "the note must cite the Schedule it comes from",
+        )
+        self.assertEqual(result.blocking_problems(), (),
+                         "a rule confirmed from enacted text must not block --strict")
 
     def test_it_reaches_the_total(self):
         without = self.compute(1000000)

@@ -1122,13 +1122,19 @@ def compute_income_tax(
             "(`income_tax.individual.environmental_surcharge`, NBR Paripatra 2026-27 §1.7). "
             "Pass --motor-cars with each car's engine cc to have it computed."
         )
-    elif environmental.reading_affects_result:
-        extra_caveats.append(
-            "পরিবেশ সারচার্জ / environmental surcharge: the cars fall in different capacity "
-            "bands, and WHICH car is the exempt one is UNCONFIRMED. The Paripatra says only "
-            "'each car in excess of one'; the professional summaries say it is the car "
-            "attracting the lowest surcharge, which is the reading used here. See "
-            "`income_tax.individual.environmental_surcharge.exempt_car_rule`."
+    elif environmental.assessed and environmental.cars:
+        # Which car is exempt was long carried as UNCONFIRMED — NBR's Paripatra says
+        # only "each car in excess of one". The Finance Act itself says which car, so
+        # this is now a statement of what was applied, not a warning about a guess.
+        exempt = environmental.exempt_car
+        extra_notes.append(
+            "পরিবেশ সারচার্জ / environmental surcharge: the exempt car is the one "
+            "attracting the LOWEST surcharge — Finance Act 2026, তফসিল-২ তৃতীয় অংশ, "
+            "proviso (ক). "
+            + (f"Here that is the {exempt[0]} cc car ({exempt[2].bdt}). " if exempt else "")
+            + "\"মোটর গাড়ি\" excludes buses, trucks, pickups, human haulers, "
+            "autorickshaws and motorcycles (proviso (ছ)), and the charge is collected at "
+            "registration or fitness renewal, not with the return (proviso (খ))."
         )
 
     return TaxComputation(
