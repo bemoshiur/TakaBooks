@@ -15,3 +15,6 @@ dist/
 
 # macOS
 .DS_Store
+
+# Harvested primary law from bdlaws — a cache, not a source. tools/lawcorpus.py
+.lawcache/
