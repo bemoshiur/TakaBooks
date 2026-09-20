@@ -1221,7 +1221,9 @@ itself.
 3. ✅ Anything not confirmed from primary text is `verified = false` or `placeholder = true` in the
    rates file and is flagged in [§13](#13-what-this-file-does-not-hold).
 4. ✅ Statutory terms appear as Bangla ∥ English pairs.
-5. ⬜ **Not yet reviewed by a Bangladeshi ITP or CA.** Required before release.
+5. ⬜ **Not reviewed by a Bangladeshi ITP or CA, and shipping does not imply one.** Recorded as a
+   standing limitation, not a release gate: two releases have shipped without such a review.
+   Verify every figure with an ITP or CA before filing.
 6. ✅ Header block filled in.
 
 **Updating after the next Finance Act:** find the new উৎসে কর বিধিমালা SRO on

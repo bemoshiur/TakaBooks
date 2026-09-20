@@ -1734,5 +1734,52 @@ class DeadlinesSurfacedTests(VatFixture):
         self.assertIn("VAT Act", tds_note)
 
 
+class UnreconciledIsRefusedTests(VatFixture):
+    """Spec §2: "Any script that would emit an unbalanced entry or an unreconciled report
+    MUST exit non-zero."
+
+    vat.py computed reconciliation issues, listed them in the report, and then exited 0
+    unless --strict was passed — so a scripted pipeline that never passes --strict would
+    take a figure set the engine itself knows does not tie. Integrity and provenance are
+    different things: a posting whose VAT does not equal value x its own tag rate is an
+    arithmetic failure and always refuses; an unverified or placeholder RATE is a
+    provenance caveat and stays behind --strict, because the arithmetic is sound and only
+    the source is unconfirmed.
+    """
+
+    WRONG = [
+        "2026-07-09,S-005,Wrong VAT,1200,11100.00,,Karim,INV-5,NONE,",
+        "2026-07-09,S-005,Wrong VAT,4100,,10000.00,Karim,INV-5,VAT:OUT:10,",
+        "2026-07-09,S-005,Wrong VAT,2310,,1100.00,Karim,INV-5,VAT:OUT:10,",
+    ]
+
+    def test_integrity_and_provenance_are_separated(self):
+        position = self.position(journals={"2026-07": self.WRONG})
+        self.assertTrue(position.integrity_problems(), "a mis-posted rate is an integrity failure")
+        self.assertEqual(position.provenance_problems(), (),
+                         "an all-verified fixture has nothing to say about provenance")
+        # blocking_problems stays the union, so --strict behaviour is unchanged.
+        self.assertEqual(
+            set(position.blocking_problems()),
+            set(position.integrity_problems()) | set(position.provenance_problems()),
+        )
+
+    def test_cli_refuses_an_unreconciled_run_without_strict(self):
+        books = self.write_books({"2026-07": self.WRONG})
+        rates = self.write_rates()
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates))
+        self.assertNotEqual(code, 0, "an unreconciled figure set must not exit 0")
+        self.assertIn("S-005", out + err)
+
+    def test_an_unverified_rate_alone_still_exits_zero(self):
+        """Provenance must NOT start refusing: the arithmetic is sound."""
+        books = self.write_books()
+        rates = self.write_rates(rates_toml(verified=False), name="rates-unverified.toml")
+        code, out, err = self.cli("--books", str(books), "--rates", str(rates),
+                                  "--allow-ay-mismatch")
+        self.assertEqual(code, 0, f"an unverified rate is a caveat, not a refusal: {err}")
+        self.assertIn("UNVERIFIED", out + err)
+
+
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()

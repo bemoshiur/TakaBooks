@@ -609,7 +609,7 @@ Stated plainly, so nobody assumes silence means zero:
   so the amended text could not be read. Ask NBR or the circle for the current consolidated
   exemption SRO before treating any supply as exempt. Only two exemption items are held, both
   unverified: `vat.exemptions.registered_startup_supplies` and
-  `vat.exemptions.content_creator_freelancer_until`.
+  `vat.exemptions.content_creator_freelancer`.
 - **The Second Schedule (supplementary duty) in general**, and the import-stage SD figures for
   nicotine and heated-tobacco products, which exceed what a `unit = "percent"` node may hold.
 - **Any Mushak 9.1 return-line number.** TakaBooks asserts none of its own; if you want a line

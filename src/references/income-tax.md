@@ -30,7 +30,7 @@ Every figure below carries one of two markers. **Never quote a ⚠️ figure wit
 | Marker | Meaning |
 |---|---|
 | ✅ | Read from **primary text** — NBR's own **আয়কর পরিপত্র ২০২৬-২০২৭** (Income Tax Paripatra 2026-27), a gazetted SRO, or the enacted statute on bdlaws. |
-| ⚠️ | Read from a **post-enactment professional summary** only. **The Finance Act 2026 gazette PDF is typeset in a legacy Bijoy-family Bangla font whose glyphs map to ASCII, so its Schedules could not be text-extracted.** Where three independent firms agree, the figure is probably right — but it has not been checked against enacted text, and this document will not pretend otherwise. |
+| ⚠️ | Read from a **post-enactment professional summary** only. **Such a figure has not yet been reconciled against enacted text** — not because the text is unavailable: bdlaws serves ITA 2023 and the Finance Act 2026 as Unicode Bangla, and the gazette's Schedules are read by OCR (`tools/gazette.py`), their text layer being unrecoverable because the body is set in Nikosh, a Unicode font, declared `WinAnsi`. Where three independent firms agree, the figure is probably right — but agreement is not enactment, and this document will not pretend otherwise. |
 
 | Key | Source |
 |---|---|
@@ -729,8 +729,11 @@ them to NBR and a licensed ITP or CA, and do not improvise a figure. **Absent be
 3. ✅ Anything unconfirmed from primary text is `verified = false` in the rates file and is marked
    ⚠️ here.
 4. ✅ Statutory terms appear as Bangla ∥ English pairs.
-5. ❌ **Not yet reviewed by a Bangladeshi Income Tax Practitioner or Chartered Accountant.** This is
-   the outstanding item before release.
+5. ❌ **Not reviewed by a Bangladeshi Income Tax Practitioner or Chartered Accountant, and
+   shipping does not imply one.** This was written as "the outstanding item before release"; two
+   releases have since shipped without it, so it is recorded here as a STANDING LIMITATION rather
+   than a gate the project pretends to enforce. Verify every figure with an ITP or CA before
+   filing.
 6. ✅ Header block replaced — "Current as of", "Sources" and "Status" filled in.
 
 ---

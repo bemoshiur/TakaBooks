@@ -3704,21 +3704,33 @@ defined status whose registration route the research did not establish. To confi
 the exemption SRO and the startup-registration criteria from NBR before invoicing without VAT.
 """
 
-  [vat.exemptions.content_creator_freelancer_until]
-  label_en = "End date of the content creator and freelancer VAT exemption"
-  label_bn = "কনটেন্ট ক্রিয়েটর ও ফ্রিল্যান্সারের মূসক অব্যাহতির শেষ তারিখ"
-  value = "2029-06-30"
-  unit = "date"
-  source = "https://www.pwc.com/bd/en/assets/pdfs/budget/finance-act-2026-key-amendments.pdf"
-  as_of = "2026-06-30"
-  verified = false
+  [vat.exemptions.content_creator_freelancer]
+  label_en = "Content creator and freelancer services — exempt, with no statutory end date"
+  label_bn = "কনটেন্ট ক্রিয়েটর ও ফ্রিল্যান্সারের সেবা — মূসক অব্যাহত, আইনে কোনো মেয়াদ নাই"
+  value = "EXEMPT with no end date in the Act. The VAT and SD Act 2012, প্রথম তফসিল, দ্বিতীয় খণ্ড (exempt services), অনুচ্ছেদ-৬ (ব্যক্তিগত সেবা) gained a new clause (চ) — 'কনটেন্ট ক্রিয়েটর ও ফ্রিল্যান্সার কর্তৃক প্রদত্ত সেবা' — inserted by the Finance Act 2026 s.20(2). The exemption sits in the Schedule itself and carries NO sunset. Do not diarise an expiry."
+  unit = "policy"
+  source = "http://bdlaws.minlaw.gov.bd/act-1725/section-59174.html"
+  as_of = "2026-07-01"
+  verified = true
   placeholder = false
   note = """
-Content creators and freelancers are exempt under an SRO running to 30 June 2029. NOT
-VERIFIED: rests on PwC Bangladesh, Finance Act 2026: Key Amendments, corroborated by Tuhin &
-Partners; the SRO itself was not opened and its number was not recorded. To confirm: obtain
-the SRO from NBR. Note the tension with vat.rates.reduced.it_enabled_services — ITES at
-S099.10 is a 5% CHARGE, so which of the two a given engagement falls under matters.
+CORRECTED. This node previously published an end date of 30 June 2029, carried as
+`content_creator_freelancer_until` and sourced to PwC Bangladesh, Finance Act 2026: Key
+Amendments (corroborated by Tuhin & Partners), which described the relief as an SRO
+running to that date. The enacted text contradicts it: Finance Act 2026 s.20(2) inserts
+the exemption into the FIRST SCHEDULE of the VAT and SD Act 2012 itself, as
+অনুচ্ছেদ-৬ দফা (চ) of the exempt-services part, with no end date whatsoever. A Schedule
+entry stands until amended.
+WHY THIS MATTERED: a freelancer reading the old node would have diarised an expiry the
+law does not impose, and might have registered for মূসক or started charging it in 2029
+for no reason. A wrong figure is worse than an unverified one, which is why this was
+corrected rather than merely re-flagged.
+WHAT IS STILL OPEN: if a separate S.R.O. also grants a time-limited relief in this area,
+it was not traced, and it would not shorten the Schedule exemption in any case. The
+tension with `vat.rates.reduced.it_enabled_services` remains open and unchanged: ITES at
+S099.10 is a 5% CHARGE, so which of the two a given engagement falls under is a
+classification question for an ITP, not something TakaBooks decides.
+The key was renamed from `content_creator_freelancer_until` because there is no "until".
 """
 
 # =========================================================================================

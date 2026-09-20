@@ -14,9 +14,10 @@ Practitioner or Chartered Accountant.**
 
 > **How to read the confidence marks.**
 > **[PRIMARY]** — read from the gazette, from bdlaws, or from an NBR-published Act/SRO/Paripatra.
-> **[SUMMARY]** — rests on one or more professional firms' post-enactment summaries. The Finance Act
-> 2026 gazette PDF is typeset in a legacy Bijoy Bangla encoding that does not extract to readable
-> text, so anything sourced only to "Finance Act 2026 Schedule" is in this class. State the source to
+> **[SUMMARY]** — rests on one or more professional firms' post-enactment summaries, not yet
+> reconciled against enacted text. Anything sourced only to "Finance Act 2026 Schedule" is in this
+> class. The enacted text IS readable — bdlaws serves it as Unicode Bangla, and the gazette's
+> Schedules are read by OCR — so this class shrinks as reconciliation proceeds. State the source to
 > the user when you use one of these.
 > **[UNCONFIRMED]** — the research could not confirm it, or sources conflict. **Do not present an
 > [UNCONFIRMED] item as a rule, a rate or a deadline.** Say what is known, say what is not, and send

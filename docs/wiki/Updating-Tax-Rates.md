@@ -210,11 +210,21 @@ command to run before quoting any figure to anybody.
 against it rather than refusing outright.
 
 `[meta] verified` remains **`false`**, deliberately, and it is not a formality. It records
-that some figures rest on professional summaries rather than on enacted text. The reason is
-specific and documented in the file header: the Finance Act 2026 gazette PDF is typeset in a
-legacy Bijoy-family Bangla font whose glyphs map to ASCII, so its Schedules could not be
-text-extracted. Where a figure was instead read from NBR's own আয়কর পরিপত্র ২০২৬-২০২৭, from
-bdlaws, or from a gazetted SRO, that node carries `verified = true`.
+that some figures rest on professional summaries rather than on enacted text — pending
+reconciliation, not because the text cannot be had. It can:
+
+- **bdlaws serves the enacted sections as Unicode Bangla**, one page per section, amendment
+  footnotes included — ITA 2023, the VAT & SD Act 2012 and the Finance Act 2026 itself.
+  `python3 tools/lawcorpus.py ita2023 --out ita.json` harvests them.
+- **The gazette's Schedules are read by OCR**: `python3 tools/gazette.py --pages 142`. Its text
+  layer is unrecoverable — the body is set in Nikosh, a Unicode font, declared `WinAnsi`, so the
+  character codes are gone and no transliteration could recover them — but the glyphs render.
+- **`python3 tools/reconcile.py`** puts every unverified node against that corpus and quotes the
+  Bangla beside it, so a figure can be checked before it is landed.
+
+After landing anything, run `python3 build/check_census.py`: it refuses a published count that no
+longer matches the engine's audit. Where a figure was read from NBR's own আয়কর পরিপত্র ২০২৬-২০২৭,
+from bdlaws, or from a gazetted SRO, that node carries `verified = true`.
 
 So three populations coexist in one file, and the engine treats them differently:
 

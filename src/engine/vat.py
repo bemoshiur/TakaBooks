@@ -229,6 +229,9 @@ def rate_text(rate: Decimal) -> str:
 
 
 #: ``ReferenceSpec.required`` values.
+#: Warning lines that are really integrity, not provenance.
+RECONCILIATION_PREFIX = "RECONCILIATION:"
+
 REQUIRED_ALWAYS = "always"
 REQUIRED_WITH_VDS = "with_vds"
 OPTIONAL = "optional"
@@ -831,9 +834,34 @@ class VatPosition:
     def figure_map(self) -> dict[str, ReturnFigure]:
         return {figure.key: figure for figure in self.return_figures()}
 
+    def integrity_problems(self) -> tuple[str, ...]:
+        """Arithmetic that does not tie — always refused, with or without ``--strict``.
+
+        A posting whose VAT does not equal its taxable value times the rate written on
+        its own ``tax_tag`` is not a caveat about provenance: it is a figure set that
+        contradicts itself. Spec §2 — "any script that would emit an unbalanced entry or
+        an unreconciled report must exit non-zero" — and until this was split out,
+        vat.py listed such issues in the report and then exited 0 unless the caller
+        happened to pass ``--strict``.
+        """
+        return tuple(
+            [issue.message() for issue in self.issues]
+            + [w for w in self.warnings if w.startswith(RECONCILIATION_PREFIX)]
+        )
+
+    def provenance_problems(self) -> tuple[str, ...]:
+        """Figures whose SOURCE is unconfirmed — the arithmetic is sound.
+
+        Refused only under ``--strict``, because an unverified rate is a question for
+        the NBR, not an error in the computation.  The reconciliation summary line is
+        carried in the warnings list too; it belongs to integrity and is excluded here
+        so the two sets stay disjoint and neither loses a line.
+        """
+        return tuple(w for w in self.warnings if not w.startswith(RECONCILIATION_PREFIX))
+
     def blocking_problems(self) -> tuple[str, ...]:
         """Everything ``--strict`` refuses to produce a filing-ready figure set over."""
-        return tuple([issue.message() for issue in self.issues] + list(self.warnings))
+        return self.integrity_problems() + self.provenance_problems()
 
 
 # ======================================================================================
@@ -2878,6 +2906,20 @@ def run(args: argparse.Namespace, *, stdout: Any = None) -> VatPosition:
         out.write(text)
     if args.csv_out:
         tb.write_text_atomic(args.csv_out, render_csv(position))
+
+    # Integrity first, and unconditionally: a figure set that does not tie is refused
+    # whether or not --strict was asked for (spec §2).
+    integrity = position.integrity_problems()
+    if integrity:
+        raise tb.ValidationError(
+            f"this {tb.term('vat')} figure set does not reconcile — "
+            f"{len(integrity)} entry/entries post a {tb.term('vat')} amount that is not "
+            f"their taxable value times the rate on their own tax_tag:\n  - "
+            + "\n  - ".join(integrity),
+            problems=integrity,
+            hint="Correct the posting, or its tax_tag, so the two agree. TakaBooks does "
+                 "not silently accept a figure set it can see is wrong.",
+        )
 
     if args.strict:
         problems = position.blocking_problems()
