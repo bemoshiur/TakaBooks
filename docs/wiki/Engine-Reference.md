@@ -383,9 +383,9 @@ schema for a later module; this script computes the individual liability only.
 ```
 tax.py [-h] [--books DIR] [--json] [--version] [--income BDT]
        [--investment BDT] [--net-wealth BDT] [--gross-receipts BDT]
-       [--tax-paid BDT] [--category ID] [--location TIER]
+       [--tax-paid BDT] [--motor-cars CC] [--category ID] [--location TIER]
        [--assessment-year AY] [--rates PATH] [--data-dir DIR]
-       [--allow-placeholder-rates] [--language {en,bn,bn-en}]
+       [--allow-placeholder-rates] [--strict] [--language {en,bn,bn-en}]
        [--list-options]
 ```
 
@@ -395,7 +395,9 @@ tax.py [-h] [--books DIR] [--json] [--version] [--income BDT]
 | `--investment` | Allowable investment claimed for the rebate (default 0). |
 | `--net-wealth` | Net wealth for the surcharge. **Omit and the surcharge is not assessed** — it is not assumed to be zero, and the output says so. |
 | `--gross-receipts` | Gross receipts, for the minimum tax on receipts. Omitted means not assessed. |
-| `--tax-paid` | Advance tax and TDS already paid (default 0). |
+| `--tax-paid` | Advance tax and TDS already paid (default 0). The পরিবেশ সারচার্জ is **not** settled by these and is never netted against them. |
+| `--motor-cars` | Engine capacity in cc of each **motor car** owned, comma-separated (`--motor-cars 1300,1800`). Computes the পরিবেশ সারচার্জ / environmental surcharge, charged on each car **in excess of one** — the exempt car being the one attracting the lowest rate (Finance Act 2026 তফসিল-২ তৃতীয় অংশ proviso (ক)). More than one car also engages the 10% wealth-surcharge band on its own, with no `--net-wealth` figure. **List cars only:** proviso (ছ) excludes buses, trucks, pickup vans, human haulers, autorickshaws and motorcycles. Omit the flag and the charge is not computed — and the output says so. |
+| `--strict` | Refuse to produce a figure set that rests on an unverified or placeholder rate. |
 | `--category`, `--location` | Taxpayer category and minimum-tax location tier, by id from the rates file. |
 | `--assessment-year`, `--rates`, `--data-dir` | Which rates file (see the resolution order on [Updating Tax Rates](Updating-Tax-Rates)). |
 | `--allow-placeholder-rates` | Compute from a placeholder file; the output is stamped PROVISIONAL and must not be filed. |
