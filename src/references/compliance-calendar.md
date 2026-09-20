@@ -333,6 +333,12 @@ the scheme (which periods qualify, what has to be paid and by when) were not rea
 itself. If a client has an old VAT demand, **this is the last quarter to use it — take it to an ITP
 or CA now.** `vat-mushak.md` §9 states the same scheme in the same terms.
 
+This window is also a machine-readable rate node — `deadlines.vat_legacy_settlement_s137a` —
+so `rates.py --key deadlines.vat_legacy_settlement_s137a` prints it with its provenance, and
+`vat.py` raises it on every run while it remains open. It is **not** the same provision as
+`tds.sections.137A` (ITA 2023, withholding on registered club membership); the two share a
+section number and no more.
+
 ---
 
 ## 8. Non-standard income years, and how the dates move

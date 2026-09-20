@@ -269,6 +269,45 @@ label_bn = "তৃতীয় ধাপ"
   verified = true
 """
 
+# Environmental surcharge — a SEPARATE charge on each motor car in excess of one.
+# Two bands, so a fixture taxpayer can own cars that fall in different bands and
+# exercise the unconfirmed exempt-car reading.
+ENV_SURCHARGE_BLOCK = f"""\
+[income_tax.individual.environmental_surcharge]
+basis = "per_motor_car_in_excess_of_one"
+period = "per car, per year"
+exempt_car_rule = "FIXTURE: the lowest-surcharge car is the exempt one. UNCONFIRMED."
+{SRC}
+
+[[income_tax.individual.environmental_surcharge.bands]]
+order = 1
+label_en = "Fixture small car"
+label_bn = "ছোট গাড়ি"
+engine_cc_upto = 1500
+
+  [income_tax.individual.environmental_surcharge.bands.amount]
+  value = 1000
+  unit = "BDT"
+  {SRC}
+  verified = true
+
+[[income_tax.individual.environmental_surcharge.bands]]
+order = 2
+label_en = "Fixture large car"
+label_bn = "বড় গাড়ি"
+engine_cc_above = 1500
+
+  [income_tax.individual.environmental_surcharge.bands.amount]
+  value = 5000
+  unit = "BDT"
+  {SRC}
+  verified = true
+"""
+
+# The environmental surcharge ships as part of the default fixture: it is a real part
+# of an individual's liability, and tax.py must account for it (or say it has not).
+FIXTURE = FIXTURE + ENV_SURCHARGE_BLOCK
+
 WIDTH_BLOCK = f"""\
   [income_tax.individual.slabs.width]
   value = 12345
@@ -360,6 +399,7 @@ class FixtureCase(unittest.TestCase):
         text: str | None = None,
         rates: rt.RateSet | None = None,
         allow_placeholders: bool = False,
+        motor_car_engine_cc=None,
     ) -> tax.TaxComputation:
         rates = rates or self.rates(text, allow_placeholders=allow_placeholders)
         inputs = tax.TaxInputs(
@@ -369,6 +409,7 @@ class FixtureCase(unittest.TestCase):
             investment=T(investment),
             net_wealth=None if net_wealth is None else T(net_wealth),
             gross_receipts=None if gross_receipts is None else T(gross_receipts),
+            motor_car_engine_cc=motor_car_engine_cc,
             tax_paid=T(tax_paid),
         )
         return tax.compute_income_tax(rates, inputs)
@@ -1905,6 +1946,215 @@ class TestEnginePostureSymmetry(FixtureCase):
                     vat.rates_file_is_placeholder(rate_set),
                     label,
                 )
+
+
+class TestEnvironmentalSurcharge(FixtureCase):
+    """পরিবেশ সারচার্জ — the per-motor-car charge on each car in excess of one.
+
+    The rates file has carried this schedule, fully verified, since 1.0.0 and
+    ``tax.py`` consumed none of it: the working printed a line labelled
+    "Net tax payable / নিট প্রদেয় কর" that silently omitted a real statutory charge,
+    and then told the reader "Every rate used in this computation is marked verified
+    in the rates file."  A multi-car taxpayer was understated with no warning.
+
+    It stays OPT-IN (``--motor-cars``) because nothing in a ledger says how many cars
+    a person owns — but its ABSENCE is now always stated.
+    """
+
+    def test_absence_is_always_caveated(self):
+        result = self.compute(1000000)
+        self.assertFalse(result.environmental_surcharge.assessed)
+        self.assertTrue(
+            any("environmental" in n.lower() for n in result.notes),
+            f"no note names the omitted environmental surcharge: {result.notes}",
+        )
+        # ...but a charge the taxpayer never elected to declare must not make an
+        # otherwise-verified working refuse under --strict.
+        self.assertEqual(result.blocking_problems(), ())
+
+    def test_absence_caveat_survives_an_otherwise_clean_run(self):
+        """The false reassurance: with every rate verified, the renderer used to print
+        a bare "Every rate used ... is marked verified in the rates file." and stop —
+        while the total silently omitted a verified statutory charge.  The sentence may
+        still be said, but it may no longer be said UNQUALIFIED."""
+        text = tax.render_markdown(self.compute(1000000))
+        self.assertNotIn(
+            "- Every rate used in this computation is marked verified in the rates file.\n",
+            text,
+            "the unqualified reassurance is back",
+        )
+        self.assertIn("but see what it does not cover", text)
+        self.assertIn("environmental surcharge is NOT included in this total", text)
+
+    def test_not_assessed_reads_no_environmental_rate(self):
+        rates = self.rates()
+        self.compute(1000000, rates=rates)
+        self.assertFalse(
+            any("environmental_surcharge" in e.key for e in rates.used()),
+            "an unassessed charge must not pull its rates into the working",
+        )
+
+    def test_one_car_attracts_nothing(self):
+        env = self.compute(1000000, motor_car_engine_cc=(1400,)).environmental_surcharge
+        self.assertTrue(env.assessed)
+        self.assertEqual(env.surcharge, M.zero())
+
+    def test_no_cars_is_not_the_same_as_not_assessed(self):
+        env = self.compute(1000000, motor_car_engine_cc=()).environmental_surcharge
+        self.assertTrue(env.assessed)
+        self.assertEqual(env.surcharge, M.zero())
+
+    def test_two_cars_charges_only_the_dearer_one(self):
+        """Fixture bands: <=1500cc Tk 1,000; >1500cc Tk 5,000.  One of each — the
+        exempt car is the one attracting the LOWEST surcharge."""
+        env = self.compute(1000000, motor_car_engine_cc=(1400, 2000)).environmental_surcharge
+        self.assertEqual(env.surcharge, T(5000))
+
+    def test_three_cars_exempts_exactly_one(self):
+        env = self.compute(1000000, motor_car_engine_cc=(1400, 1600, 1800)).environmental_surcharge
+        self.assertEqual(env.surcharge, T(10000))
+
+    def test_cars_in_one_band_need_no_reading(self):
+        env = self.compute(1000000, motor_car_engine_cc=(1600, 1800)).environmental_surcharge
+        self.assertEqual(env.surcharge, T(5000))
+        self.assertFalse(env.reading_affects_result)
+
+    def test_cars_across_bands_raise_the_unconfirmed_reading(self):
+        """NBR's Paripatra says only "each car in excess of one" and does not say WHICH
+        car is excluded; the professional summaries do.  Across bands that is money."""
+        result = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
+        self.assertTrue(result.environmental_surcharge.reading_affects_result)
+        self.assertTrue(
+            any("exempt" in c.lower() for c in result.caveats),
+            f"the unconfirmed exempt-car reading is not caveated: {result.caveats}",
+        )
+
+    def test_it_reaches_the_total(self):
+        without = self.compute(1000000)
+        with_cars = self.compute(1000000, motor_car_engine_cc=(1400, 2000))
+        self.assertEqual(with_cars.total_tax - without.total_tax, T(5000))
+
+    def test_it_is_rendered_as_its_own_line(self):
+        text = tax.render_markdown(self.compute(1000000, motor_car_engine_cc=(1400, 2000)))
+        self.assertIn("পরিবেশ সারচার্জ", text)
+
+    def test_the_shipped_schedule_computes(self):
+        """AY 2026-27 §1.7: Tk 25,000 up to 1,500 cc; Tk 50,000 above 1,500 up to 2,000.
+        Two cars, one in each band — the Tk 25,000 car is exempt."""
+        rates = rt.RateSet.from_path(
+            REPO_ROOT / "src" / "data" / "rates-AY2026-27.toml", allow_placeholders=True
+        )
+        env = tax.compute_environmental_surcharge(rates, engine_cc=(1400, 1800))
+        self.assertTrue(env.assessed)
+        self.assertEqual(env.surcharge, T(50000))
+
+
+class TestRealAY2026_27(unittest.TestCase):
+    """Golden cases against the SHIPPED rates file — not the fixture.
+
+    Every other test in this file computes against a synthetic fixture whose figures are
+    labelled FIXTURE precisely so they cannot be mistaken for Bangladeshi law.  That is
+    right, and it left a hole: **not one test asserted a real AY 2026-27 amount**, so
+    corrupting a verified slab width in `src/data/rates-AY2026-27.toml` — the single
+    likeliest way a wrong number reaches a filer — was caught by nothing in the repo.
+
+    The expected totals below were computed BY HAND from NBR Paripatra 2026-27 §1.1
+    (করমুক্ত আয়সীমা Tk 4,00,000, then Tk 3,00,000 @ 10%, Tk 4,00,000 @ 15%,
+    Tk 5,00,000 @ 20%, Tk 20,00,000 @ 25%, balance @ 30%) and then checked against the
+    engine — not read off it.  A change to any of those ten nodes breaks these tests.
+    """
+
+    SLABS = ((300000, 10), (400000, 15), (500000, 20), (2000000, 25), (None, 30))
+
+    @classmethod
+    def setUpClass(cls):
+        cls.rates_path = REPO_ROOT / "src" / "data" / "rates-AY2026-27.toml"
+
+    def rates(self):
+        return rt.RateSet.from_path(self.rates_path, allow_placeholders=True)
+
+    def gross(self, income, *, category="general", rates=None):
+        result = tax.compute_income_tax(
+            rates or self.rates(),
+            tax.TaxInputs(income=T(income), category=category, location="all_areas"),
+        )
+        return result.gross_tax
+
+    def by_hand(self, income, threshold):
+        """The Paripatra ladder, written out independently of the engine."""
+        remaining, total = max(0, income - threshold), 0
+        for width, rate in self.SLABS:
+            take = remaining if width is None else min(remaining, width)
+            total += take * rate // 100
+            remaining -= take
+            if remaining <= 0:
+                break
+        return T(total)
+
+    # -- the shape of the ladder itself ------------------------------------------------
+
+    def test_the_shipped_slab_ladder_is_the_paripatra_ladder(self):
+        """If this fails, the slab schedule changed — which is a Finance Act event, not
+        a refactor.  Update the ladder here and in CHANGELOG.md together."""
+        rates = self.rates()
+        self.assertEqual(rates.money("income_tax.individual.thresholds.general"), T(400000))
+        self.assertEqual(rates.money("income_tax.individual.thresholds.female"), T(450000))
+        bands = rates.items("income_tax.individual.slabs")
+        self.assertEqual(len(bands), 6, "AY 2026-27 has six slabs")
+        widths = [b["width"]["value"] for b in bands if "width" in b]
+        rates_pc = [b["rate"]["value"] for b in bands]
+        self.assertEqual(widths, [300000, 400000, 500000, 2000000])
+        self.assertEqual(rates_pc, [0, 10, 15, 20, 25, 30])
+
+    def test_top_marginal_rate_is_30_not_35(self):
+        """The 35% band belongs to AY 2028-29. A chart showing it for AY 2026-27 is
+        reading a later year of the five-year card — the node's own note says so."""
+        bands = self.rates().items("income_tax.individual.slabs")
+        self.assertEqual(bands[-1]["rate"]["value"], 30)
+
+    # -- golden amounts ------------------------------------------------------------------
+
+    def test_golden_amounts(self):
+        for category, threshold, income, expected in (
+            ("general", 400000, 400000, 0),            # exactly at the threshold
+            ("general", 400000, 700000, 30000),        # first taxable slab only
+            ("general", 400000, 1000000, 75000),       # spans two slabs
+            ("general", 400000, 5000000, 1110000),     # reaches the 30% balance
+            ("general", 400000, 25000000, 7110000),    # deep into the balance
+            ("female", 450000, 1000000, 67500),        # a higher threshold shifts every slab
+            ("senior_citizen", 450000, 2000000, 277500),
+        ):
+            with self.subTest(category=category, income=income):
+                self.assertEqual(
+                    self.by_hand(income, threshold), T(expected),
+                    "the hand ladder disagrees with the expected figure",
+                )
+                self.assertEqual(self.gross(income, category=category), T(expected))
+
+    def test_a_corrupted_slab_width_is_caught(self):
+        """The point of the whole class: prove these tests actually bite.  Widen the
+        10% slab by Tk 1 in a copy of the shipped file and the golden amount must move."""
+        text = self.rates_path.read_text(encoding="utf-8")
+        corrupted = text.replace("value = 300000", "value = 300001", 1)
+        self.assertNotEqual(corrupted, text, "the 10% slab width was not found")
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "rates-AY2026-27.toml"
+            path.write_text(corrupted, encoding="utf-8")
+            rates = rt.RateSet.from_path(path, allow_placeholders=True)
+            self.assertNotEqual(
+                self.gross(1000000, rates=rates), T(75000),
+                "a corrupted verified slab width changed nothing — the guard is asleep",
+            )
+
+    # -- VAT ------------------------------------------------------------------------------
+
+    def test_standard_vat_rate_is_fifteen_percent(self):
+        self.assertEqual(self.rates().percent("vat.rates.standard"), Decimal(15))
+
+    def test_vat_registration_and_turnover_thresholds(self):
+        rates = self.rates()
+        self.assertEqual(rates.money("vat.thresholds.registration"), T(5000000))
+        self.assertEqual(rates.money("vat.thresholds.turnover_tax_enlistment"), T(3000000))
 
 
 if __name__ == "__main__":

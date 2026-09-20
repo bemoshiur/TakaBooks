@@ -13,7 +13,7 @@ description: "Double-entry bookkeeping, income tax, VAT/মূসক, Mushak for
   "applicationCategory": "FinanceApplication",
   "applicationSubCategory": "Accounting and Taxation",
   "operatingSystem": "Cross-platform (Python 3.11+)",
-  "softwareVersion": "1.0.0",
+  "softwareVersion": "1.1.1",
   "license": "https://opensource.org/licenses/MIT",
   "url": "https://github.com/bemoshiur/TakaBooks",
   "downloadUrl": "https://github.com/bemoshiur/TakaBooks/releases/latest",
@@ -53,7 +53,7 @@ description: "Double-entry bookkeeping, income tax, VAT/মূসক, Mushak for
 
 Double-entry books, income tax, VAT/মূসক and the Mushak forms, TDS/VDS withholding, payroll and the NBR compliance calendar for **করবর্ষ / assessment year 2026-27** — with a zero-dependency Python engine that owns every calculation.
 
-[⬇ Download v1.0.0](https://github.com/bemoshiur/TakaBooks/releases/latest){: .btn }
+[⬇ Download v1.1.1](https://github.com/bemoshiur/TakaBooks/releases/latest){: .btn }
 [⭐ Star on GitHub](https://github.com/bemoshiur/TakaBooks){: .btn }
 [📖 Read the wiki](https://github.com/bemoshiur/TakaBooks/wiki){: .btn }
 
@@ -70,7 +70,7 @@ TakaBooks reads every figure from a versioned rates file **at answer time, never
 | | |
 |---|---|
 | **Engine** | 7 Python modules, standard library only. Money is integer paisa, never float. Amounts print in lakh/crore grouping (৳12,34,567.89). **867 tests.** |
-| **Tax data** | 436 rate nodes for AY 2026-27 — each with a source URL, an `as_of` date and a `verified` flag |
+| **Tax data** | 530 rate nodes for AY 2026-27 — each with a source URL, an `as_of` date and a `verified` flag |
 | **Bookkeeping** | Double-entry enforced — an unbalanced entry is refused, never silently corrected |
 | **Bilingual** | Replies in Bangla, Banglish or English; statutory terms always paired |
 

@@ -6759,6 +6759,9 @@ NEW section inserted by the Finance Act 2026. Note the s.264 interaction: applyi
 membership of a club registered under the Companies Act 1994 or the Societies Registration
 Act 1860 is on the PSR list, so a member who cannot produce PSR faces the s.142(1) uplift on
 top of this charge.
+NOT THE SAME PROVISION AS `deadlines.vat_legacy_settlement_s137a`.  That key is VAT Act
+s.137A, the legacy-demand interest-waiver window closing 31 December 2026.  This one is
+ITA 2023 s.137A.  They share a section number and nothing else.
 """
 
     [tds.sections.137A.rate]
@@ -10612,6 +10615,31 @@ WHAT WOULD CONFIRM IT: an NBR General Order or Standing Order fixing the cycle, 
 quarter shown on the business's own BIN profile in the NBR VAT online system.  Ask the
 Divisional VAT office before entering these dates in a calendar. A missed VAT return costs
 Tk 2,000 and can get the BIN temporarily locked.
+"""
+
+  [deadlines.vat_legacy_settlement_s137a]
+  label_en = "Legacy VAT settlement — interest-waiver window, closes 31 December 2026"
+  label_bn = "পুরনো মূসক দাবি নিষ্পত্তির সুযোগ — সুদ মওকুফ, ৩১ ডিসেম্বর ২০২৬ শেষ"
+  value = "ONE-OFF WINDOW, CLOSES 31 December 2026. VAT Act s.137A opens an interest-waiver scheme for LEGACY VAT demands — dues under the repealed VAT Act 1991 and specified periods under the 2012 Act — running six months from 1 July 2026. The waiver is of INTEREST only; the tax and any penalty are a separate question. If you hold an old VAT demand, take it to an ITP or CA before the window closes."
+  unit = "date"
+  source = "http://bdlaws.minlaw.gov.bd/act-1106.html"
+  as_of = "2026-07-01"
+  verified = false
+  placeholder = false
+  note = """
+WHY THIS IS NOT VERIFIED: the six-month run from 1 July 2026 is stated in this package's
+research, but the hard close of 31 December 2026 comes from SECONDARY REPORTING, and the
+text of s.137A itself was NOT read.  The mechanics — which periods qualify, what must be
+paid, and by when — are therefore unconfirmed.  Do not advise a client off this node alone.
+WHAT WOULD CONFIRM IT: s.137A (১৩৭ক) of the VAT and SD Act 2012 as inserted by the Finance
+Act 2026, read from the Bangla primary text on bdlaws, together with any NBR General Order
+or S.R.O. setting the scheme's procedure.
+NOT THE SAME PROVISION AS `tds.sections.137A`.  That key is ITA 2023 s.137A, withholding on
+registered club membership, and has nothing to do with this VAT Act s.137A waiver window.
+The two share a section number and no more; grepping "137A" will return both.
+WHY IT IS A DEADLINE NODE AT ALL: it is the only dated obligation in the compliance calendar
+that expires inside AY 2026-27, and it existed nowhere a tool could reach — only as prose in
+`compliance-calendar.md` §7 and inside the note on `vat.penalties.interest_per_month`.
 """
 
 # -----------------------------------------------------------------------------------------
