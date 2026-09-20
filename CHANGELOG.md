@@ -25,7 +25,15 @@ not only a release note.
 
 ## [Unreleased]
 
-No changes since 1.1.1.
+### Fixed
+
+- Retired the `KNOWN BLOCKER` banner at the top of `.github/workflows/publish-packages.yml`.
+  It asserted that publishing "FAILS until that scope is granted" and that "no edit here can
+  work around it" — but the Actions publish step authenticates with `secrets.GITHUB_TOKEN`,
+  which the workflow's own `permissions` block grants `packages: write`, so it never depended
+  on any human's personal token scope. Tagging v1.1.1 published
+  `@bemoshiur/takabooks@1.1.1` on the first attempt. The genuinely useful half — that a
+  hand-run `npm publish` needs a CLASSIC personal access token — is kept.
 
 ## [1.1.1] - 2026-09-20
 

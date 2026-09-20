@@ -1,36 +1,22 @@
 # .github/workflows/publish-packages.yml
 #
-# ############################################################################
-# #                                                                          #
-# #   KNOWN BLOCKER — THIS WORKFLOW FAILS UNTIL A TOKEN SCOPE IS GRANTED      #
-# #                                                                          #
-# #   The repository owner's GitHub token currently LACKS the                #
-# #   `write:packages` scope, so publishing @bemoshiur/takabooks to GitHub    #
-# #   Packages FAILS until that scope is granted. This is not a defect in    #
-# #   the YAML below and no edit here can work around it.                    #
-# #                                                                          #
-# #   THE FIX — run once, as the account that owns the @bemoshiur namespace: #
-# #                                                                          #
-# #       gh auth refresh -h github.com -s write:packages,read:packages       #
-# #                                                                          #
-# #   then re-run the failed run (Actions → "Publish to GitHub Packages" →   #
-# #   Re-run jobs) or dispatch it by hand with the tag name. Spec 8 records  #
-# #   the same caveat: "Requires the write:packages token scope; publishing  #
-# #   fails until it is granted."                                            #
-# #                                                                          #
-# #   What that scope does and does not cover:                               #
-# #   - A hand-run `npm publish` from a laptop authenticates with a CLASSIC   #
-# #     personal access token — fine-grained PATs do not work with the npm    #
-# #     registry — and that token needs write:packages (read:packages just   #
-# #     to install). The command above grants exactly those two scopes.      #
-# #   - Inside Actions the publish step authenticates with                   #
-# #     secrets.GITHUB_TOKEN, which the permissions block below grants        #
-# #     `packages: write`. If a run still fails with 401 / 403 / E404 on the  #
-# #     publish step, the account / namespace side is what to check, not     #
-# #     this file: the scope above, and that the package's `repository`      #
-# #     field points at https://github.com/bemoshiur/TakaBooks.git.          #
-# #                                                                          #
-# ############################################################################
+# PUBLISHING WORKS. It was long marked here as blocked on a missing
+# `write:packages` token scope; v1.1.1 published `@bemoshiur/takabooks@1.1.1`
+# from this workflow on 2026-09-20, so that banner is retired. The reason it
+# always would have worked is recorded below, because it is easy to re-derive
+# the wrong conclusion:
+#
+#   - INSIDE ACTIONS the publish step authenticates with secrets.GITHUB_TOKEN,
+#     and the permissions block below grants it `packages: write`. It never
+#     depended on any human's personal token scope.
+#   - A HAND-RUN `npm publish` from a laptop is the case that does need a
+#     CLASSIC personal access token carrying write:packages (read:packages just
+#     to install); fine-grained PATs do not work with the npm registry:
+#         gh auth refresh -h github.com -s write:packages,read:packages
+#
+# If a run fails with 401 / 403 / E404 on the publish step, check the account /
+# namespace side and that package.json's `repository` field points at
+# https://github.com/bemoshiur/TakaBooks.git — not this file.
 #
 # TakaBooks — publish the npm installer package to GitHub Packages.
 # Moshiur Rahman (@bemoshiur) · TICON SYSTEM LTD — https://ticonsys.com
