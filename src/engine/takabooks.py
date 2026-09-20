@@ -207,7 +207,7 @@ __all__ = [
 # Project metadata and attribution (spec §9)
 # --------------------------------------------------------------------------------------
 
-__version__ = "1.1.1"
+__version__ = "1.2.0"
 
 PROJECT_NAME = "TakaBooks"
 PROJECT_URL = "https://github.com/bemoshiur/TakaBooks"

@@ -25,6 +25,15 @@ not only a release note.
 
 ## [Unreleased]
 
+No changes since 1.2.0.
+
+## [1.2.0] - 2026-09-20
+
+The gazette that "could not be read" is read; two of the three remaining
+placeholders turn out to describe thresholds the law never imposed; and a
+wrong figure, two wrong tax computations and a false-evidence bug found by
+adversarially re-auditing the same day's own work are corrected.
+
 ### Added
 
 - **`tools/` — the primary law is readable after all.** Every unverified node blamed the
@@ -420,7 +429,8 @@ specification of 2026-09-05 (`docs/superpowers/specs/2026-09-05-takabooks-design
 - All four workflows run under a top-level `permissions: {}` and opt in per job; release
   assets ship with `SHA256SUMS.txt`.
 
-[Unreleased]: https://github.com/bemoshiur/TakaBooks/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/bemoshiur/TakaBooks/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/bemoshiur/TakaBooks/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/bemoshiur/TakaBooks/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/bemoshiur/TakaBooks/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/bemoshiur/TakaBooks/releases/tag/v1.0.0

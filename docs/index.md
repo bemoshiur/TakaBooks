@@ -13,7 +13,7 @@ description: "Double-entry bookkeeping, income tax, VAT/মূসক, Mushak for
   "applicationCategory": "FinanceApplication",
   "applicationSubCategory": "Accounting and Taxation",
   "operatingSystem": "Cross-platform (Python 3.11+)",
-  "softwareVersion": "1.1.1",
+  "softwareVersion": "1.2.0",
   "license": "https://opensource.org/licenses/MIT",
   "url": "https://github.com/bemoshiur/TakaBooks",
   "downloadUrl": "https://github.com/bemoshiur/TakaBooks/releases/latest",
@@ -53,7 +53,7 @@ description: "Double-entry bookkeeping, income tax, VAT/মূসক, Mushak for
 
 Double-entry books, income tax, VAT/মূসক and the Mushak forms, TDS/VDS withholding, payroll and the NBR compliance calendar for **করবর্ষ / assessment year 2026-27** — with a zero-dependency Python engine that owns every calculation.
 
-[⬇ Download v1.1.1](https://github.com/bemoshiur/TakaBooks/releases/latest){: .btn }
+[⬇ Download v1.2.0](https://github.com/bemoshiur/TakaBooks/releases/latest){: .btn }
 [⭐ Star on GitHub](https://github.com/bemoshiur/TakaBooks){: .btn }
 [📖 Read the wiki](https://github.com/bemoshiur/TakaBooks/wiki){: .btn }
 
