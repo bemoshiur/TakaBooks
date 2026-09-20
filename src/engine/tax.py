@@ -1813,10 +1813,15 @@ def build_parser() -> "tb.argparse.ArgumentParser":  # type: ignore[name-defined
         "--motor-cars",
         metavar="CC",
         default=None,
-        help="engine capacity in cc of each motor car owned, comma-separated "
+        help="engine capacity in cc of each MOTOR CAR owned, comma-separated "
              "(e.g. --motor-cars 1300,1800). The পরিবেশ সারচার্জ / environmental "
-             "surcharge is charged on each car IN EXCESS OF ONE. Omit the flag and "
-             "the surcharge is not computed, and the output says so.",
+             "surcharge is charged on each car IN EXCESS OF ONE. "
+             "LIST CARS ONLY: Finance Act 2026 তফসিল-২ তৃতীয় অংশ proviso (ছ) excludes "
+             "buses, minibuses, coasters, prime movers, trucks, lorries, tank lorries, "
+             "pickup vans, human haulers, autorickshaws and motorcycles — listing one "
+             "of those charges a vehicle the Act does not charge. TakaBooks cannot tell "
+             "a car from a pickup by engine capacity, so the list is yours to get right. "
+             "Omit the flag and the surcharge is not computed, and the output says so.",
     )
     who = parser.add_argument_group("taxpayer profile")
     who.add_argument("--category", metavar="ID", default=None,
