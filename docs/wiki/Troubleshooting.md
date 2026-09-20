@@ -221,8 +221,9 @@ At least one figure among those the run read is a placeholder or unverified. You
 amounts are exact; the statutory context is what is flagged, item by item under *Warnings*.
 
 Expect to see this on the AY 2026-27 file even for a plain standard-rated sale: `vat.py`
-reads a wide set of reference figures, and several Third Schedule reduced-rate nodes are still
-placeholders because no SRO has been traced for them. **One flagged key anywhere stamps the
+reads a wide set of reference figures, and one Third Schedule reduced-rate node
+(`vat.rates.reduced.digital_advertisement`) is still a placeholder because no SRO has been
+traced for it. **One flagged key anywhere stamps the
 whole output.** So read the warnings block rather than the stamp: if every key it names is
 irrelevant to your supply, the figures still stand — but that is a judgement for you or your
 ITP. [Updating Tax Rates](Updating-Tax-Rates).
