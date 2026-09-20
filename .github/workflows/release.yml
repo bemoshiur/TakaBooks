@@ -279,35 +279,17 @@ jobs:
             echo
             echo "### Rates data in this release"
             echo
-            python3 - <<'PY'
-          import pathlib
-          import tomllib
-
-          files = sorted(pathlib.Path("src/data").glob("rates-AY*.toml"))
-          if not files:
-              print("- _No rates file under src/data/ — this release carries no tax figures._")
-
-          for path in files:
-              data = tomllib.loads(path.read_text(encoding="utf-8"))
-              total = 0
-              unverified = 0
-
-              def walk(node):
-                  global total, unverified
-                  if isinstance(node, dict):
-                      if "verified" in node:
-                          total += 1
-                          if node["verified"] is False:
-                              unverified += 1
-                      for value in node.values():
-                          walk(value)
-                  elif isinstance(node, list):
-                      for value in node:
-                          walk(value)
-
-              walk(data)
-              print(f"- `{path}` — {total} sourced figure(s), **{unverified} marked `verified = false`**")
-          PY
+            # Ask the engine, do not recount. An earlier inline walker here counted
+            # every table carrying a `verified` key — including the value-less ones
+            # rates.py deliberately excludes — and never mentioned placeholders at
+            # all, so the release page published 620/73 where the audit says
+            # 530/474/53/3. rates.py is the only sanctioned reader of this file;
+            # its census is the one the README, the Pages site and CI all state.
+            for f in src/data/rates-AY*.toml; do
+              ay="${f##*rates-AY}"; ay="${ay%.toml}"
+              python3 src/engine/rates.py --assessment-year "$ay" --all
+              echo
+            done
             echo
             echo "Every rate, threshold and deadline lives in that file with a source URL and a \`verified\` flag (spec 4.5)."
             echo "Anything marked \`verified = false\` could not be confirmed from a primary source: confirm it with NBR before relying on it."

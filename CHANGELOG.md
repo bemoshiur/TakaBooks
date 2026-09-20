@@ -78,6 +78,14 @@ not only a release note.
   rates file" — a reassurance about what it *did* use that read as a statement about
   completeness. The charge is now either computed (`--motor-cars`) or its absence is
   stated on every run, and that reassurance can no longer be printed unqualified.
+- **Release notes published a fifth set of rate counts.** `release.yml` recounted the
+  rates file with its own inline walker, which counted every table carrying a `verified`
+  key — including the value-less ones `rates.py` deliberately excludes — and never
+  mentioned placeholders at all. The release page would have said "620 sourced figure(s),
+  73 marked `verified = false`" where the engine's audit says 530 nodes, 474 verified,
+  53 unverified and 3 placeholders. It now calls `rates.py --all`, the only sanctioned
+  reader of that file, so the most public surface states the same census as the README,
+  the Pages site and CI.
 - **Notes are now separated from caveats.** `TaxComputation.notes` carries what the working
   did *not* do; `caveats` and `warnings` continue to carry what is unconfirmed about what it
   *did* use, and only those two are `blocking_problems()`. Without the split, saying "the
