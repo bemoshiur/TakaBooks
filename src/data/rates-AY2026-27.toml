@@ -627,11 +627,7 @@ verified = true
 10% of the eligible investment, REDUCED by the Finance Act 2026 from 15%. Stated by KPMG /
 Rahman Rahman Huq, Bangladesh Tax 2026 p.47, by PwC Bangladesh Finance Act 2026: Key
 Amendments p.6, and by Tuhin & Partners p.12 — three post-enactment summaries that agree.
-NOT VERIFIED against enacted text: the Finance Act 2026 gazette PDF is in a legacy Bijoy Bangla
-font that could not be extracted, and NBR's আয়কর পরিপত্র ২০২৬-২০২৭ rate excerpt covers the rate
-schedules only, not s.78. Confirm against ITA 2023 s.78 on bdlaws.minlaw.gov.bd
-(http://bdlaws.minlaw.gov.bd/act-details-1429.html) as amended by the Finance Act 2026 before
-relying on it. Practical effect of the cut: a taxpayer must now invest roughly 50% more to
+Those three summaries were correct; the figure no longer rests on them — see the confirmation below. Practical effect of the cut: a taxpayer must now invest roughly 50% more to
 obtain the same rebate.
 
 VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
@@ -650,8 +646,7 @@ verified = true
 ENGINE PARAMETER, not a figure printed in the law. The statute caps the rebate at 3% of total
 taxable income; at a 10% rebate rate that is the same as capping the eligible investment at 30%
 of taxable income (10% x 30% = 3%). Quote "3% of total taxable income" to a user, not "30%".
-Source for the underlying 3% limb: KPMG p.47 (also PwC p.6, TNP p.12). Unverified for the same
-reason as the rebate rate.
+Source for the underlying 3% limb: KPMG p.47 (also PwC p.6, TNP p.12). The underlying statutory limb is now verified — see the confirmation below.
 ALSO NOTE A MODELLING LIMIT: the statutory 3% is computed on total taxable income EXCLUDING
 income that is exempt, taxed at a reduced rate, or taxed as final tax, and excluding a share of
 income from a firm or association of persons. tax.py applies income_cap_percent to whatever
@@ -678,7 +673,7 @@ ENGINE PARAMETER, not a figure printed in the law. ⚠️ DO NOT QUOTE Tk 7,500,
 The statute caps the REBATE ITSELF at Tk 750,000 (reduced by the Finance Act 2026 from
 Tk 1,000,000). At a 10% rebate rate that is the same as capping the eligible INVESTMENT at
 Tk 7,500,000, which is the number this schema slot needs. Source for the underlying Tk 750,000
-ceiling: KPMG p.47, PwC p.6, TNP p.12. Unverified for the same reason as the rebate rate.
+ceiling: KPMG p.47, PwC p.6, TNP p.12. The underlying statutory limb is now verified — see the confirmation below.
 Top-bracket taxpayers lose up to Tk 250,000 of maximum rebate compared with AY 2025-26.
 
 VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
