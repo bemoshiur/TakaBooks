@@ -147,6 +147,8 @@ KEY_SURCHARGE = "income_tax.individual.surcharge"
 KEY_SURCHARGE_BASE = "income_tax.individual.surcharge.base"
 KEY_SURCHARGE_MINIMUM = "income_tax.individual.surcharge.minimum"
 KEY_SURCHARGE_BANDS = "income_tax.individual.surcharge.bands"
+KEY_ENV_SURCHARGE = "income_tax.individual.environmental_surcharge"
+KEY_ENV_SURCHARGE_BANDS = "income_tax.individual.environmental_surcharge.bands"
 
 #: Rebate constructions this module implements.  A rates file naming any other ``formula``
 #: is refused rather than computed wrongly.
@@ -258,6 +260,10 @@ class TaxInputs:
     investment: tb.Money = tb.Money.zero()
     net_wealth: tb.Money | None = None
     gross_receipts: tb.Money | None = None
+    #: Engine capacity (cc) of each motor car owned, one entry per car.  ``None``
+    #: means "not stated", which is NOT the same as owning none — see
+    #: :func:`compute_environmental_surcharge`.
+    motor_car_engine_cc: tuple[int, ...] | None = None
     tax_paid: tb.Money = tb.Money.zero()
 
     def __post_init__(self) -> None:
@@ -419,10 +425,15 @@ class TaxComputation:
     rebate: RebateWorking
     minimum_tax: MinimumTaxWorking
     surcharge: SurchargeWorking
+    environmental_surcharge: EnvironmentalSurchargeWorking
     provisional: bool
     caveats: tuple[str, ...]
     rates_used: tuple[rt.RateEntry, ...]
     warnings: tuple[str, ...] = ()
+    #: Informational lines shown beside the caveats.  Unlike ``caveats`` and
+    #: ``warnings`` these are NOT blocking problems: they say what the working did
+    #: not do, not that something it did use is unconfirmed.
+    notes: tuple[str, ...] = ()
     business_name: str = ""
     tin: str = ""
     rates_file_placeholder: bool = False
@@ -487,7 +498,11 @@ class TaxComputation:
 
     @property
     def total_tax(self) -> tb.Money:
-        return self.tax_after_minimum + self.surcharge.surcharge
+        # The environmental surcharge is a SEPARATE charge, not a band of the wealth
+        # surcharge — but it is still the taxpayer's liability, so it belongs in the
+        # total.  When it was not assessed it contributes zero AND raises a caveat, so
+        # the total never silently omits it.
+        return self.tax_after_minimum + self.surcharge.surcharge + self.environmental_surcharge.surcharge
 
     @property
     def net_payable(self) -> tb.Money:
@@ -933,6 +948,122 @@ def compute_surcharge(
     )
 
 
+@dataclass(frozen=True)
+class EnvironmentalSurchargeWorking:
+    """পরিবেশ সারচার্জ / environmental surcharge — Tk per motor car, per year, on each
+    car **in excess of one** (Finance Act 2026 Schedule 2 Part Three, NBR Paripatra
+    2026-27 §1.7).
+
+    ``assessed`` is False when the taxpayer did not say how many cars they own.  That is
+    reported, never assumed to be zero — the same posture :class:`SurchargeWorking` takes
+    to a missing net-wealth figure.
+    """
+
+    assessed: bool = False
+    #: (engine cc, band label, amount) for every car, dearest first.
+    cars: tuple[tuple[int, str, tb.Money], ...] = ()
+    #: The car excluded as the one "not in excess of one".
+    exempt_car: tuple[int, str, tb.Money] | None = None
+    surcharge: tb.Money = field(default_factory=tb.Money.zero)
+    #: True when the cars do not all attract the same amount, so WHICH car is exempt
+    #: changes the answer — and the rates file says that reading is unconfirmed.
+    reading_affects_result: bool = False
+
+
+@dataclass(frozen=True)
+class _EnvBandSpec:
+    order: int
+    label_en: str
+    label_bn: str
+    cc_above: int | None
+    cc_upto: int | None
+    amount: tb.Money
+
+    @property
+    def label(self) -> str:
+        return f"{self.label_bn} / {self.label_en}" if self.label_bn else self.label_en
+
+    def covers(self, cc: int) -> bool:
+        if self.cc_above is not None and cc <= self.cc_above:
+            return False
+        return not (self.cc_upto is not None and cc > self.cc_upto)
+
+
+def _build_environmental_bands(rates: rt.RateSet) -> list[_EnvBandSpec]:
+    """Read the schedule.  ``engine_cc_above`` / ``engine_cc_upto`` bound a band and are
+    descriptive integers; only ``amount`` is a rate node."""
+    bands = rates.items(KEY_ENV_SURCHARGE_BANDS)
+    specs: list[_EnvBandSpec] = []
+    for index, band in enumerate(bands):
+        prefix = f"{KEY_ENV_SURCHARGE_BANDS}[{index}]"
+        if "amount" not in band:
+            raise tb.RatesError(f"{rates.filename}: {prefix} has no 'amount' node.")
+        amount = rates.entry_from_node(band["amount"], f"{prefix}.amount").as_money()
+        cc_above = band.get("engine_cc_above")
+        cc_upto = band.get("engine_cc_upto")
+        specs.append(
+            _EnvBandSpec(
+                order=band.get("order", index + 1),
+                label_en=str(band.get("label_en", f"Band {index + 1}")),
+                label_bn=str(band.get("label_bn", "")),
+                cc_above=int(cc_above) if isinstance(cc_above, int) else None,
+                cc_upto=int(cc_upto) if isinstance(cc_upto, int) else None,
+                amount=amount,
+            )
+        )
+    if not specs:
+        raise tb.RatesError(f"{rates.filename}: {KEY_ENV_SURCHARGE_BANDS} is empty.")
+    return specs
+
+
+def compute_environmental_surcharge(
+    rates: rt.RateSet,
+    *,
+    engine_cc: Sequence[int] | None,
+) -> EnvironmentalSurchargeWorking:
+    """The charge on every motor car **in excess of one**.
+
+    ``engine_cc is None`` means the taxpayer did not state their cars, so nothing is
+    assessed and nothing is read from the rates file.  An empty sequence is a positive
+    statement of "no cars" and assesses to zero.
+
+    WHICH car is the exempt one is **not settled by the Paripatra**, which says only
+    "each car in excess of one".  KPMG and Tuhin & Partners both read it as the car
+    attracting the lowest surcharge, and that reading is followed here — but where the
+    cars fall in different bands the choice is money, so the working flags it and
+    ``compute_income_tax`` raises a caveat naming ``exempt_car_rule``.
+    """
+    if engine_cc is None:
+        return EnvironmentalSurchargeWorking(assessed=False)
+
+    specs = _build_environmental_bands(rates)
+    priced: list[tuple[int, str, tb.Money]] = []
+    for cc in engine_cc:
+        match = next((spec for spec in specs if spec.covers(cc)), None)
+        if match is None:
+            raise tb.RatesError(
+                f"{rates.filename}: no environmental-surcharge band covers {cc} cc.",
+                hint="The schedule must cover every engine capacity; check its bands.",
+            )
+        priced.append((int(cc), match.label, match.amount))
+
+    # Dearest first, so the exempt car is the last — the cheapest.
+    priced.sort(key=lambda row: row[2], reverse=True)
+    exempt = priced[-1] if priced else None
+    charged = priced[:-1]
+    total = tb.Money.zero()
+    for _, _, amount in charged:
+        total = total + amount
+    distinct = {row[2] for row in priced}
+    return EnvironmentalSurchargeWorking(
+        assessed=True,
+        cars=tuple(priced),
+        exempt_car=exempt,
+        surcharge=total,
+        reading_affects_result=len(priced) > 1 and len(distinct) > 1,
+    )
+
+
 # --------------------------------------------------------------------------------------
 # The whole computation
 # --------------------------------------------------------------------------------------
@@ -976,6 +1107,30 @@ def compute_income_tax(
         tax_after_minimum=minimum.tax_after,
     )
 
+    environmental = compute_environmental_surcharge(
+        rates, engine_cc=inputs.motor_car_engine_cc
+    )
+
+    # The charge is real, verified and shipped; silence about it is the one thing the
+    # working must never do.  Either it was computed, or the reader is told it was not.
+    extra_caveats: list[str] = []
+    extra_notes: list[str] = []
+    if not environmental.assessed:
+        extra_notes.append(
+            "পরিবেশ সারচার্জ / environmental surcharge is NOT included in this total. "
+            "It is Tk 25,000-350,000 per motor car per year on each car in excess of one "
+            "(`income_tax.individual.environmental_surcharge`, NBR Paripatra 2026-27 §1.7). "
+            "Pass --motor-cars with each car's engine cc to have it computed."
+        )
+    elif environmental.reading_affects_result:
+        extra_caveats.append(
+            "পরিবেশ সারচার্জ / environmental surcharge: the cars fall in different capacity "
+            "bands, and WHICH car is the exempt one is UNCONFIRMED. The Paripatra says only "
+            "'each car in excess of one'; the professional summaries say it is the car "
+            "attracting the lowest surcharge, which is the reading used here. See "
+            "`income_tax.individual.environmental_surcharge.exempt_car_rule`."
+        )
+
     return TaxComputation(
         assessment_year=assessment_year,
         rates_source=rates.provenance(),
@@ -988,8 +1143,10 @@ def compute_income_tax(
         rebate=rebate,
         minimum_tax=minimum,
         surcharge=surcharge,
+        environmental_surcharge=environmental,
         provisional=rates.is_provisional or rates_file_is_placeholder(rates),
-        caveats=tuple(rates.caveats()),
+        caveats=tuple(list(rates.caveats()) + extra_caveats),
+        notes=tuple(extra_notes),
         rates_used=rates.used(),
         warnings=tuple(warnings),
         business_name=config.display_name if config and config.business_name else "",
@@ -1266,6 +1423,7 @@ def render_markdown(
     lines.append("## Step 5 · সারসংক্ষেপ / Summary")
     lines.append("")
     net = result.net_payable
+    env = result.environmental_surcharge
     summary_rows = [
         ["Gross tax by slab", fmt(result.gross_tax)],
         ["less: investment rebate", f"({fmt(reb.rebate)})" if reb.rebate.is_positive() else fmt(reb.rebate)],
@@ -1273,6 +1431,10 @@ def render_markdown(
         ["add: minimum tax adjustment", fmt(mt.adjustment)],
         ["Tax after minimum tax", fmt(result.tax_after_minimum)],
         ["add: surcharge", fmt(sc.surcharge) if sc.assessed else "not assessed"],
+        [
+            "add: পরিবেশ সারচার্জ / environmental surcharge",
+            fmt(env.surcharge) if env.assessed else "not assessed — see caveats",
+        ],
         ["**Total tax liability / মোট করদায়**", f"**{fmt(result.total_tax)}**"],
         ["less: tax already paid (advance tax, TDS)", f"({fmt(inp.tax_paid)})" if inp.tax_paid.is_positive() else fmt(inp.tax_paid)],
     ]
@@ -1308,8 +1470,14 @@ def render_markdown(
     lines.append("")
     if result.caveats:
         lines += [f"- {caveat}" for caveat in result.caveats]
-    else:
+    elif not result.notes:
         lines.append("- Every rate used in this computation is marked verified in the rates file.")
+    else:
+        lines.append(
+            "- Every rate used in this computation is marked verified in the rates file — "
+            "but see what it does not cover, below."
+        )
+    lines += [f"- {note}" for note in result.notes]
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -1341,6 +1509,7 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
     reb = result.rebate
     mt = result.minimum_tax
     sc = result.surcharge
+    env = result.environmental_surcharge
     net = result.net_payable
     return {
         "ok": True,
@@ -1439,6 +1608,24 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
             "lifted_to_minimum": sc.lifted_to_minimum,
             "surcharge": sc.surcharge,
         },
+        "environmental_surcharge": {
+            "assessed": env.assessed,
+            "cars": [
+                {"engine_cc": cc, "band": label, "amount": amount}
+                for cc, label, amount in env.cars
+            ],
+            "exempt_car": (
+                None
+                if env.exempt_car is None
+                else {
+                    "engine_cc": env.exempt_car[0],
+                    "band": env.exempt_car[1],
+                    "amount": env.exempt_car[2],
+                }
+            ),
+            "exempt_car_reading_affects_result": env.reading_affects_result,
+            "surcharge": env.surcharge,
+        },
         "summary": {
             "gross_tax": result.gross_tax,
             "rebate": reb.rebate,
@@ -1454,6 +1641,7 @@ def to_json_dict(result: TaxComputation) -> dict[str, Any]:
         },
         "rates_used": [_entry_dict(e) for e in result.rates_used],
         "caveats": list(result.caveats),
+        "notes": list(result.notes),
         "warnings": list(result.warnings),
         "blocking_problems": list(result.blocking_problems()),
         "disclaimer": {"en": tb.DISCLAIMER_EN, "bn": tb.DISCLAIMER_BN},
@@ -1472,6 +1660,23 @@ def load_config_if_present(books_dir: "Path | str") -> tb.Config | None:
     if not tb.config_path(books_dir).is_file():
         return None
     return tb.Config.load(books_dir)
+
+
+def _parse_engine_cc(raw: str | None) -> tuple[int, ...] | None:
+    """``--motor-cars 1300,1800`` -> ``(1300, 1800)``.  ``None`` when the flag is absent,
+    which means "not stated" and is never read as "owns none"."""
+    if raw is None:
+        return None
+    parts = [piece.strip() for piece in raw.split(",") if piece.strip()]
+    cc: list[int] = []
+    for piece in parts:
+        if not piece.isdigit() or int(piece) <= 0:
+            raise tb.ConfigError(
+                f"--motor-cars: {piece!r} is not an engine capacity in cc.",
+                hint="Give a whole number of cc per car, comma-separated, e.g. 1300,1800.",
+            )
+        cc.append(int(piece))
+    return tuple(cc)
 
 
 def _parse_money(text: str | None, *, flag: str) -> tb.Money | None:
@@ -1539,6 +1744,15 @@ def build_parser() -> "tb.argparse.ArgumentParser":  # type: ignore[name-defined
                        help="gross receipts / turnover, for the minimum tax on receipts")
     money.add_argument("--tax-paid", metavar="BDT", default="0",
                        help="tax already paid: advance tax and TDS (default 0)")
+    money.add_argument(
+        "--motor-cars",
+        metavar="CC",
+        default=None,
+        help="engine capacity in cc of each motor car owned, comma-separated "
+             "(e.g. --motor-cars 1300,1800). The পরিবেশ সারচার্জ / environmental "
+             "surcharge is charged on each car IN EXCESS OF ONE. Omit the flag and "
+             "the surcharge is not computed, and the output says so.",
+    )
     who = parser.add_argument_group("taxpayer profile")
     who.add_argument("--category", metavar="ID", default=None,
                      help="taxpayer category id from the rates file (see --list-options); "
@@ -1627,6 +1841,7 @@ def main(argv: "Sequence[str] | None" = None) -> int:
             investment=_parse_money(args.investment, flag="--investment"),
             net_wealth=_parse_money(args.net_wealth, flag="--net-wealth"),
             gross_receipts=_parse_money(args.gross_receipts, flag="--gross-receipts"),
+            motor_car_engine_cc=_parse_engine_cc(args.motor_cars),
             tax_paid=_parse_money(args.tax_paid, flag="--tax-paid"),
         )
         result = compute_income_tax(rates, inputs, config=config, warnings=warnings)
