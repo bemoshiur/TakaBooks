@@ -34,7 +34,7 @@
 > এটি পেশাদার পরামর্শ নয় — দাখিলের আগে লাইসেন্সপ্রাপ্ত আইটিপি বা সিএ-এর সঙ্গে যাচাই করুন। Full [disclaimer](#disclaimer) below.
 
 > [!NOTE]
-> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **531 rate nodes: 479 verified, 49 unverified, 3 still placeholders.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 49 *unverified* ones rest on post-enactment professional summaries that agree with each other, pending reconciliation against the enacted text — which is now readable: bdlaws serves the statutes as Unicode Bangla and [`tools/`](tools/) reads the gazette's schedules by OCR — or, in one case, on two readings of the law that the sources do not settle, in which case the node states both and names neither as fact. The 3 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
+> **Where the project stands (September 2026).** The bookkeeping engine is complete and tested. The income-tax and VAT engines are complete, and the rates file for করবর্ষ / assessment year 2026-27 is no longer a schema of placeholders — real figures have been landed. `rates.py` audits it at **532 rate nodes: 488 verified, 43 unverified, 1 still placeholder.** *Verified* means the figure was read from primary text — NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws. The 43 *unverified* ones rest on post-enactment professional summaries that agree with each other, pending reconciliation against the enacted text — which is now readable: bdlaws serves the statutes as Unicode Bangla and [`tools/`](tools/) reads the gazette's schedules by OCR — or, in one case, on two readings of the law that the sources do not settle, in which case the node states both and names neither as fact. The 3 *placeholders* were never landed and the engine refuses them one by one. **Nothing in the file has been reviewed by an ITP or a CA.** Details, and what each engine does when it meets an unverified figure, in [What it covers](#covers).
 
 ## 📑 Contents
 
@@ -288,7 +288,7 @@ Honesty about status matters more here than anywhere else in the README, because
 | Area | বাংলা | Engine | Reference text | Rates data (AY 2026-27) |
 | :--- | :--- | :---: | :---: | :--- |
 | Double-entry bookkeeping — journal, ledger, trial balance, P&L, balance sheet, 131-account BD chart | জাবেদা · খতিয়ান · রেওয়ামিল | ✅ complete | ✅ core rules shipped | n/a — needs no rates |
-| Income tax — slabs, rebate, minimum tax, surcharge; corporate schema | আয়কর | ✅ `tax.py` (individual) | ✅ landed | 🟡 89 nodes — 58 verified · 29 unverified · 2 placeholder |
+| Income tax — slabs, rebate, minimum tax, surcharge; corporate schema | আয়কর | ✅ `tax.py` (individual) | ✅ landed | 🟡 90 nodes — 67 verified · 23 unverified · 0 placeholder |
 | VAT / Mushak — position, input/output reconciliation, VDS, the return figure set | মূসক · মূসক ৯.১ | ✅ `vat.py` complete | ✅ landed | 🟡 78 nodes — 63 verified · 14 unverified · 1 placeholder |
 | Withholding TDS — `tax_tag`, dedicated payable/receivable accounts, SRO 273 rate matrix | উৎসে কর কর্তন | ✅ accounts and tags | ✅ landed | 🟢 273 nodes — 272 verified · 1 unverified (the openly contested s.142 stacking question) · 0 placeholder |
 | Withholding VDS — 45 gazetted service serials | উৎসে মূসক কর্তন | ✅ accounts and tags | ✅ landed | 🟢 63 nodes — all 63 verified |
@@ -298,12 +298,12 @@ Honesty about status matters more here than anywhere else in the README, because
 | Bookkeeping standards — Companies Act 1994, FRA 2015, IFRS/IAS | হিসাবরক্ষণ মানদণ্ড | — | ✅ landed | n/a |
 | Glossary — Bangla ↔ English statutory and accounting terms | শব্দকোষ | — | ✅ ~240 entries in 9 sections | n/a |
 
-Node counts are `rates.py`'s own audit of `src/data/rates-AY2026-27.toml`, 531 rate nodes in total. Run it yourself — see [How the rates stay current](#rates). "Landed" describes the reference text, not a professional review: **no ITP or CA has signed off on any of it.**
+Node counts are `rates.py`'s own audit of `src/data/rates-AY2026-27.toml`, 532 rate nodes in total. Run it yourself — see [How the rates stay current](#rates). "Landed" describes the reference text, not a professional review: **no ITP or CA has signed off on any of it.**
 
 **What the three flags mean, and what each tool does about them.** Every rate node carries `verified` and `placeholder`:
 
-- **`verified = true` (479 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
-- **`verified = false` (49 nodes)** — a real figure, but read from post-enactment professional summaries (PwC Bangladesh, KPMG / Rahman Rahman Huq, Tuhin & Partners) that agree with one another rather than from enacted text. They are being reconciled against the enacted text, which is now readable: bdlaws serves ITA 2023, the VAT & SD Act 2012 and the Finance Act 2026 as Unicode Bangla, and [`tools/`](tools/) OCRs the gazette's schedules — whose text layer is unrecoverable because the body is set in Nikosh, a Unicode font, declared `WinAnsi`, so no transliteration could ever have recovered it. Each such node's `note` says what is unconfirmed and what would confirm it.
+- **`verified = true` (488 nodes)** — read from primary text: NBR's আয়কর পরিপত্র ২০২৬-২০২৭, a gazetted SRO, or the enacted law on bdlaws.minlaw.gov.bd.
+- **`verified = false` (43 nodes)** — a real figure, but read from post-enactment professional summaries (PwC Bangladesh, KPMG / Rahman Rahman Huq, Tuhin & Partners) that agree with one another rather than from enacted text. They are being reconciled against the enacted text, which is now readable: bdlaws serves ITA 2023, the VAT & SD Act 2012 and the Finance Act 2026 as Unicode Bangla, and [`tools/`](tools/) OCRs the gazette's schedules — whose text layer is unrecoverable because the body is set in Nikosh, a Unicode font, declared `WinAnsi`, so no transliteration could ever have recovered it. Each such node's `note` says what is unconfirmed and what would confirm it.
 - **`placeholder = true` (3 nodes)** — nothing was landed at all. The `value` is a stand-in, not a rate. They are the two turnover-tax gross-receipts thresholds (individual and corporate) under ITA 2023 s.163(6), and `vat.rates.reduced.digital_advertisement`, whose reinstating SRO could not be opened. `rates.py --all` lists all three by key. The property-transfer, developer and import schedules that used to sit here have since been transcribed from the SRO 273 gazette, and the three fixed-amount withholdings (ss.138, 138A, 139) from the Act's own tables.
 
 `tax.py` **refuses** the moment a computation needs a placeholder node, and exits `8`:
@@ -347,7 +347,7 @@ Please read this before relying on anything TakaBooks produces.
 - **Not professional advice.** TakaBooks is software plus reference text. It is not a licensed Income Tax Practitioner (ITP), Chartered Accountant (CA), lawyer or tax adviser, and nothing it outputs — a journal entry, a report, a tax computation, a deadline — is advice. **Verify every figure with a licensed ITP or CA before you file.**
 - **Not affiliated with NBR or any government body.** TakaBooks is an independent open-source project. It is not affiliated with, endorsed by, sponsored by or connected to the National Board of Revenue (জাতীয় রাজস্ব বোর্ড), the Ministry of Finance, the Registrar of Joint Stock Companies, or any other authority of the Government of Bangladesh. Form names such as *Mushak 6.3* or *Mushak 9.1* are used only to refer to the public statutory forms they name.
 - **Not an e-filing tool.** TakaBooks prepares figures and explains forms. Humans file returns.
-- **Rates change, and some are unverified.** Every Finance Act re-rates something. Every figure in `src/data/rates-AY2026-27.toml` carries a `source` URL, an `as_of` date, a `verified` flag and a `placeholder` flag, and the engine surfaces the flag on every figure it uses. As it ships today, **479 of its 531 figures are verified against primary text, 49 rest on agreeing professional summaries (or, in one case, on an unresolved conflict between two readings that the node states in full) pending reconciliation against the enacted text, which [`tools/`](tools/) now reads, and 3 are placeholders that were never landed.** Check the flag before you rely on a number, check the node's `note` for the conditions attached to it, and check both again after a new Finance Act. No figure in the file has been reviewed by an ITP or a CA.
+- **Rates change, and some are unverified.** Every Finance Act re-rates something. Every figure in `src/data/rates-AY2026-27.toml` carries a `source` URL, an `as_of` date, a `verified` flag and a `placeholder` flag, and the engine surfaces the flag on every figure it uses. As it ships today, **488 of its 532 figures are verified against primary text, 43 rest on agreeing professional summaries (or, in one case, on an unresolved conflict between two readings that the node states in full) pending reconciliation against the enacted text, which [`tools/`](tools/) now reads, and 1 is a placeholder that was never landed.** Check the flag before you rely on a number, check the node's `note` for the conditions attached to it, and check both again after a new Finance Act. No figure in the file has been reviewed by an ITP or a CA.
 - **The assistant can still be wrong.** TakaBooks stops the LLM from doing arithmetic and from inventing rates, but the LLM still chooses which accounts a transaction hits and which rule applies. Review every classification. You are responsible for your books and your return.
 - **No warranty.** Provided "as is" under the [MIT License](LICENSE), without warranty of any kind. The authors and TICON SYSTEM LTD accept no liability for any loss arising from its use.
 
@@ -406,10 +406,10 @@ The first of those prints, today:
 ```text
 | Rate nodes | Count |
 | :--- | ---: |
-| verified | 479 |
-| unverified | 49 |
-| placeholder | 3 |
-| total | 531 |
+| verified | 488 |
+| unverified | 43 |
+| placeholder | 1 |
+| total | 532 |
 ...
 This file is NOT ready to produce a fileable figure. See its header for the procedure that lands a verified value.
 ```
@@ -487,7 +487,7 @@ If TakaBooks helped you close your books, a ⭐ helps other Bangladeshi business
 - **দুতরফা দাখিলা পদ্ধতির হিসাব** — জাবেদা, খতিয়ান, রেওয়ামিল, লাভ-ক্ষতি হিসাব ও স্থিতিপত্র। সব হিসাব সাধারণ CSV ফাইলে থাকে, Excel-এ খোলা যায়, আপনার কম্পিউটারের বাইরে কিছুই যায় না।
 - **AI কখনো নিজে অঙ্ক কষে না।** প্রতিটি সংখ্যা পাইথন ইঞ্জিন হিসাব করে; AI শুধু লেনদেন শ্রেণিবদ্ধ করে ও ব্যাখ্যা দেয়। ডেবিট-ক্রেডিট না মিললে ইঞ্জিন এন্ট্রি প্রত্যাখ্যান করে — কখনো নিজে থেকে সংখ্যা "ঠিক" করে না।
 - **কোনো করহার, সীমা বা সময়সীমা বানিয়ে বলা হয় না।** প্রতিটি হার `src/data/rates-AY<করবর্ষ>.toml` ফাইলে থাকে, সঙ্গে উৎসের লিংক, তারিখ, `verified` ও `placeholder` চিহ্ন। যাচাই না হওয়া হার থাকলে ইঞ্জিন তা স্পষ্টভাবে জানিয়ে দেয়।
-- **বর্তমান অবস্থা (সেপ্টেম্বর ২০২৬):** হিসাবরক্ষণের অংশ সম্পূর্ণ ও পরীক্ষিত। ২০২৬-২৭ করবর্ষের হারের ফাইলে এখন প্রকৃত হার যুক্ত হয়েছে — মোট **৫৩১টি নোডের মধ্যে ৪৭৯টি মূল উৎস থেকে যাচাইকৃত** (এনবিআরের আয়কর পরিপত্র ২০২৬-২০২৭, গেজেটভুক্ত এসআরও, অথবা bdlaws-এ প্রকাশিত আইনের পাঠ), **৪৯টি** কেবল পেশাদার প্রতিষ্ঠানের সারসংক্ষেপনির্ভর (অর্থ আইন ২০২৬-এর গেজেট পিডিএফটি পুরনো বিজয় ফন্টে ছাপা বলে তার তফসিল পড়া যায়নি), আর **৩টি** এখনো ফাঁকা — সেগুলো ইঞ্জিন সরাসরি প্রত্যাখ্যান করে। **কোনো সংখ্যাই এখনো কোনো আইটিপি বা সিএ পর্যালোচনা করেননি।**
+- **বর্তমান অবস্থা (সেপ্টেম্বর ২০২৬):** হিসাবরক্ষণের অংশ সম্পূর্ণ ও পরীক্ষিত। ২০২৬-২৭ করবর্ষের হারের ফাইলে এখন প্রকৃত হার যুক্ত হয়েছে — মোট **৫৩২টি নোডের মধ্যে ৪৮৮টি মূল উৎস থেকে যাচাইকৃত** (এনবিআরের আয়কর পরিপত্র ২০২৬-২০২৭, গেজেটভুক্ত এসআরও, অথবা bdlaws-এ প্রকাশিত আইনের পাঠ), **৪৩টি** কেবল পেশাদার প্রতিষ্ঠানের সারসংক্ষেপনির্ভর (অর্থ আইন ২০২৬-এর গেজেট পিডিএফটি পুরনো বিজয় ফন্টে ছাপা বলে তার তফসিল পড়া যায়নি), আর **১টি** এখনো ফাঁকা — সেগুলো ইঞ্জিন সরাসরি প্রত্যাখ্যান করে। **কোনো সংখ্যাই এখনো কোনো আইটিপি বা সিএ পর্যালোচনা করেননি।**
 - **টাকার অঙ্ক** লাখ/কোটি রীতিতে দেখানো হয় — ৳12,34,567.89 — আর `config.toml`-এ `digits = "bangla"` দিলে বাংলা অঙ্কে: ১২,৩৪,৫৬৭.৮৯।
 - **ভাষা:** বাংলা, বাংলিশ বা ইংরেজি — যে ভাষায় প্রশ্ন করবেন, সেই ভাষায় উত্তর। প্রতিটি আইনি শব্দ বাংলা ও ইংরেজি দুইভাবেই থাকে (মূসক / VAT, উৎসে কর কর্তন / TDS), যাতে এনবিআর পোর্টালে ফরম খুঁজে পেতে সুবিধা হয়।
 

@@ -905,9 +905,9 @@ IS NOT SOURCED HERE. Confirm with the tax circle for a second-year filer.
   [income_tax.individual.minimum_tax.on_gross_receipts.rate]
   value = 1
   unit = "percent"
-  source = "https://tnp.legal/wp-content/uploads/2026/07/TNP_Finance_Act_2026_Briefing.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = """
 1% of gross receipts — the residual "all other cases" turnover tax rate under ITA 2023 s.163(6).
@@ -918,15 +918,44 @@ undertaking 0.2% in its first three income years, registered startups 0%. Those 
 recorded under income_tax.corporate.minimum_tax.by_sector and are not applied by tax.py.
 Turnover tax does NOT apply at all to commission business, delivery order business, money
 exchange business, or trading in gold, silver, ornaments, gems, diamonds or platinum.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html). ITA 2023 s.163(6) sets the turnover-tax table in full:
+serial ১ tobacco products manufacturer ৩%; serial ২ carbonated or sweetened beverage
+manufacturer ২.৫%; serial ৩ mobile phone operator and NTTN ১.৫%; serial ৪ "অন্যান্য ক্ষেত্রে"
+১%. It bites "মুনাফা বা লোকসান নির্বিশেষে" — regardless of profit or loss — whenever the tax
+otherwise payable on business or professional income falls below it.
 """
 
-  [income_tax.individual.minimum_tax.on_gross_receipts.applies_above]
+  [income_tax.individual.minimum_tax.on_gross_receipts.excluded_businesses]
+label_en = "Businesses on whose turnover no turnover tax is charged"
+label_bn = "যে ব্যবসা বা পেশার গ্রস প্রাপ্তির উপর টার্নওভার ট্যাক্স প্রযোজ্য নহে"
+value = "NOT charged on gross receipts from: (অ) import, distribution or open-market sale of fertiliser, seed or essential consumer goods by a government body, state-owned enterprise or corporation; (আ) commission business; (ই) DO (delivery order) business; (ঈ) money exchange business; (উ) trading in gold, silver, gold or silver ornaments, gems, diamonds or platinum. Where the taxpayer has exempt or reduced-rate income, the table rate is reduced proportionately for receipts from that source."
+unit = "policy"
+source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
+as_of = "2026-07-01"
+verified = true
+placeholder = false
+note = """
+ITA 2023 s.163(6), first proviso, transcribed in full from the enacted Bangla. This is the
+only thing that limits the charge: there is NO gross-receipts threshold — see
+`income_tax.individual.minimum_tax.on_gross_receipts.applies_above`.
+The final proviso also reduces the table rate proportionately for receipts from a source
+that is tax-exempt or bears a reduced rate; and an excess of turnover tax over the tax
+otherwise payable carries forward to the next assessment year and may be adjusted there
+(third proviso).
+NOT MODELLED BY tax.py. `--gross-receipts` applies the table rate to whatever figure it is
+given; it has no input for business class and cannot tell a commission business from any
+other. Exclude the receipts of an excluded business BEFORE passing the figure, or the
+computation will charge turnover tax the Act does not.
+"""
+
+[income_tax.individual.minimum_tax.on_gross_receipts.applies_above]
   value = 0
   unit = "BDT"
-  source = "https://tnp.legal/wp-content/uploads/2026/07/TNP_Finance_Act_2026_Briefing.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
 STILL A PLACEHOLDER, DELIBERATELY. The gross-receipts threshold at which turnover tax engages
 for an individual under ITA 2023 s.163(6) COULD NOT BE SOURCED. The research establishes only
@@ -936,6 +965,16 @@ else — without stating its amount. Because this node is a placeholder, tax.py 
 the turnover-tax floor at all when --gross-receipts is supplied, instead of guessing a threshold.
 That refusal is the correct behaviour: absent beats wrong. To land it, read ITA 2023 s.163(6) as
 amended by the Finance Act 2026 at http://bdlaws.minlaw.gov.bd/act-details-1429.html.
+
+LANDED, AND THE ANSWER IS THAT THERE IS NO THRESHOLD (http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html).
+This node was a placeholder because the research could not find the gross-receipts figure
+at which turnover tax engages. It could not be found because ITA 2023 s.163(6) does not
+impose one: the charge applies to gross receipts from the first taka whenever the tax
+otherwise payable on business or professional income is lower, "মুনাফা বা লোকসান
+নির্বিশেষে". `value = 0` is therefore the enacted position, not a stand-in.
+WHAT DOES LIMIT IT is the proviso's exclusion list, carried at
+`income_tax.individual.minimum_tax.on_gross_receipts.excluded_businesses`, and the
+proportional reduction for exempt or reduced-rate income in the final proviso.
 """
 
 # -----------------------------------------------------------------------------------------
@@ -1909,9 +1948,9 @@ disability made by the Finance Act 2026. Not read from enacted text.
   [income_tax.corporate.minimum_tax.on_gross_receipts.rate]
   value = 1
   unit = "percent"
-  source = "https://tnp.legal/wp-content/uploads/2026/07/TNP_Finance_Act_2026_Briefing.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = """
 1% of gross receipts — the residual "all other cases" turnover tax rate. SINGLE SOURCE: Tuhin &
@@ -1920,15 +1959,21 @@ Turnover tax does NOT apply to: government bodies and state-owned enterprises im
 distributing or selling fertiliser, seed or daily-essential consumer commodities; commission
 business; delivery order (DO) business; money exchange business; and trading in gold, silver,
 ornaments, gems, diamonds or platinum.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html). ITA 2023 s.163(6) sets the turnover-tax table in full:
+serial ১ tobacco products manufacturer ৩%; serial ২ carbonated or sweetened beverage
+manufacturer ২.৫%; serial ৩ mobile phone operator and NTTN ১.৫%; serial ৪ "অন্যান্য ক্ষেত্রে"
+১%. It bites "মুনাফা বা লোকসান নির্বিশেষে" — regardless of profit or loss — whenever the tax
+otherwise payable on business or professional income falls below it.
 """
 
   [income_tax.corporate.minimum_tax.on_gross_receipts.applies_above]
   value = 0
   unit = "BDT"
-  source = "https://tnp.legal/wp-content/uploads/2026/07/TNP_Finance_Act_2026_Briefing.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
-  placeholder = true
+  verified = true
+  placeholder = false
   note = """
 STILL A PLACEHOLDER, DELIBERATELY — the gross-receipts threshold at which turnover tax engages
 COULD NOT BE SOURCED. TNP p.17 records only that trusts, firms and associations of persons are
@@ -1936,6 +1981,16 @@ liable "irrespective of the gross-receipts threshold", which establishes that a 
 for other taxpayers without giving its amount. Read ITA 2023 s.163(6) as amended
 (http://bdlaws.minlaw.gov.bd/act-details-1429.html) to land it. Leaving it a placeholder makes
 the engine refuse rather than guess.
+
+LANDED, AND THE ANSWER IS THAT THERE IS NO THRESHOLD (http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html).
+This node was a placeholder because the research could not find the gross-receipts figure
+at which turnover tax engages. It could not be found because ITA 2023 s.163(6) does not
+impose one: the charge applies to gross receipts from the first taka whenever the tax
+otherwise payable on business or professional income is lower, "মুনাফা বা লোকসান
+নির্বিশেষে". `value = 0` is therefore the enacted position, not a stand-in.
+WHAT DOES LIMIT IT is the proviso's exclusion list, carried at
+`income_tax.individual.minimum_tax.on_gross_receipts.excluded_businesses`, and the
+proportional reduction for exempt or reduced-rate income in the final proviso.
 """
 
 # Sector-specific overrides of the turnover tax, keyed by sector id. None read from enacted text.
@@ -1944,9 +1999,9 @@ the engine refuse rather than guess.
   label_bn = "তামাকজাত পণ্য প্রস্তুতকারক"
   value = 3
   unit = "percent"
-  source = "https://tnp.legal/wp-content/uploads/2026/07/TNP_Finance_Act_2026_Briefing.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = "3% of gross receipts. TNP p.17. Not read from enacted text."
 
@@ -1955,9 +2010,9 @@ the engine refuse rather than guess.
   label_bn = "কার্বোনেটেড ও মিষ্টিজাতীয় পানীয় প্রস্তুতকারক"
   value = "2.5"
   unit = "percent"
-  source = "https://www.pwc.com/bd/en/assets/pdfs/budget/finance-act-2026-key-amendments.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = "2.5% of gross receipts, REDUCED by the Finance Act 2026 from 3%. PwC p.13; TNP p.17. Not read from enacted text."
 
@@ -1966,9 +2021,9 @@ the engine refuse rather than guess.
   label_bn = "মোবাইল ফোন অপারেটর ও এনটিটিএন অপারেটর"
   value = "1.5"
   unit = "percent"
-  source = "https://www.pwc.com/bd/en/assets/pdfs/budget/finance-act-2026-key-amendments.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = "1.5% of gross receipts. NTTN operators were newly brought in by the Finance Act 2026. PwC p.13; TNP p.17. Not read from enacted text."
 
@@ -1977,9 +2032,9 @@ the engine refuse rather than guess.
   label_bn = "পণ্য উৎপাদনকারী শিল্প প্রতিষ্ঠান (নির্দিষ্ট শিল্প ব্যতীত), বাণিজ্যিক উৎপাদন শুরুর প্রথম তিন আয়বর্ষ"
   value = "0.2"
   unit = "percent"
-  source = "https://www.pwc.com/bd/en/assets/pdfs/budget/finance-act-2026-key-amendments.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51993.html"
   as_of = "2026-07-01"
-  verified = false
+  verified = true
   placeholder = false
   note = "0.2% of gross receipts, INCREASED by the Finance Act 2026 from 0.1%. PwC p.13; KPMG p.20. Not read from enacted text."
 
