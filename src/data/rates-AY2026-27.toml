@@ -619,9 +619,9 @@ statutory_formulation_bn = "রেয়াত = নিম্নের মধ্
   label_bn = "রেয়াতের হার — বিনিয়োগের ১০% (আইনগত শর্ত (খ))"
   value = 10
   unit = "percent"
-  source = "https://assets.kpmg.com/content/dam/kpmg/bd/pdf/Tax/Bangladesh_Tax_2026.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html"
   as_of = "2026-07-01"
-  verified = false
+verified = true
   placeholder = false
   note = """
 10% of the eligible investment, REDUCED by the Finance Act 2026 from 15%. Stated by KPMG /
@@ -633,6 +633,8 @@ schedules only, not s.78. Confirm against ITA 2023 s.78 on bdlaws.minlaw.gov.bd
 (http://bdlaws.minlaw.gov.bd/act-details-1429.html) as amended by the Finance Act 2026 before
 relying on it. Practical effect of the cut: a taxpayer must now invest roughly 50% more to
 obtain the same rebate.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
 """
 
   [income_tax.individual.rebate.income_cap_percent]
@@ -640,9 +642,9 @@ obtain the same rebate.
   label_bn = "উদ্ভূত ইঞ্জিন প্যারামিটার — করযোগ্য আয়ের ৩০% পর্যন্ত বিনিয়োগ গ্রহণযোগ্য, যা ১০% রেয়াত হারে আইনের 'আয়ের ৩%' শর্তেরই রূপান্তর। করদাতাকে ৩০% নয়, আয়ের ৩% বলুন।"
   value = 30
   unit = "percent"
-  source = "https://assets.kpmg.com/content/dam/kpmg/bd/pdf/Tax/Bangladesh_Tax_2026.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html"
   as_of = "2026-07-01"
-  verified = false
+verified = true
   placeholder = false
   note = """
 ENGINE PARAMETER, not a figure printed in the law. The statute caps the rebate at 3% of total
@@ -655,6 +657,11 @@ income that is exempt, taxed at a reduced rate, or taxed as final tax, and exclu
 income from a firm or association of persons. tax.py applies income_cap_percent to whatever
 taxable income the caller supplies. A taxpayer with any such income must reduce the income
 figure before running the calculation, or the cap will be computed too high.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+This node stays a DERIVED parameter: the statute caps the REBATE at 3% of income; 30% is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. The derivation is exact arithmetic over a now-verified statutory limb. Quote 3% to a taxpayer, never 30%.
 """
 
   [income_tax.individual.rebate.absolute_cap]
@@ -662,9 +669,9 @@ figure before running the calculation, or the cap will be computed too high.
   label_bn = "উদ্ভূত ইঞ্জিন প্যারামিটার — ৭৫,০০,০০০ টাকা পর্যন্ত বিনিয়োগ গ্রহণযোগ্য, যা ১০% রেয়াত হারে আইনের সর্বোচ্চ ৭,৫০,০০০ টাকা রেয়াতেরই রূপান্তর। আইনের সংখ্যা ৭,৫০,০০০ টাকা।"
   value = 7500000
   unit = "BDT"
-  source = "https://assets.kpmg.com/content/dam/kpmg/bd/pdf/Tax/Bangladesh_Tax_2026.pdf"
+  source = "http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html"
   as_of = "2026-07-01"
-  verified = false
+verified = true
   placeholder = false
   note = """
 ENGINE PARAMETER, not a figure printed in the law. ⚠️ DO NOT QUOTE Tk 7,500,000 TO A TAXPAYER.
@@ -673,6 +680,14 @@ Tk 1,000,000). At a 10% rebate rate that is the same as capping the eligible INV
 Tk 7,500,000, which is the number this schema slot needs. Source for the underlying Tk 750,000
 ceiling: KPMG p.47, PwC p.6, TNP p.12. Unverified for the same reason as the rebate rate.
 Top-bracket taxpayers lose up to Tk 250,000 of maximum rebate compared with AY 2025-26.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+This node stays a DERIVED parameter: the statute caps the REBATE at 3% of income; 30% is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. The derivation is exact arithmetic over a now-verified statutory limb. Quote 3% to a taxpayer, never 30%.
+
+VERIFIED FROM ENACTED TEXT (http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html). ITA 2023 s.78 as consolidated on bdlaws reads: '(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’; বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম' — whichever of the three is least. The section's own amendment footnotes record that ‘০.১০’ replaced ‘০.১৫’ and ‘৭.৫০’ replaced ‘১০ (দশ)’, both by Finance Act 2026 (Act 96 of 2026) s.61, effective 1 July 2026. The three professional summaries this node used to rest on are therefore correct, and the figure no longer rests on them.
+This node stays a DERIVED parameter: the statute caps the REBATE at Tk 750,000; Tk 7,500,000 is the equivalent cap on eligible INVESTMENT at a 10% rebate rate. Quote Tk 750,000 to a taxpayer, never Tk 7,500,000.
 """
 
 # Instruments that count as allowable investment (Sixth Schedule Part 3). Descriptive only —
@@ -1170,7 +1185,9 @@ not confirmed; verify against Schedule 2 before charging it to a client.
 [income_tax.individual.environmental_surcharge]
 basis = "per_motor_car_in_excess_of_one"
 period = "per car, per year"
-exempt_car_rule = "Professional summaries (KPMG p.48; TNP p.26) say the car attracting the lowest surcharge is the exempt one. NBR Paripatra 2026-27 §1.7 says only 'each car in excess of one' and does not identify which car is excluded. UNCONFIRMED — the reading matters only where the cars fall in different capacity bands."
+exempt_car_rule = "CONFIRMED FROM ENACTED TEXT. Finance Act 2026, তফসিল-২ তৃতীয় অংশ, proviso (ক): 'একাধিক গাড়ির ক্ষেত্রে যে গাড়ির উপর সর্বনিম্ন হারে পরিবেশ সারচার্জ আরোপিত হইবে উক্ত গাড়ি ব্যতীত অন্যান্য গাড়ির বিপরীতে পরিবেশ সারচার্জ পরিশোধ করিতে হইবে' — the exempt car is the one attracting the LOWEST surcharge. This was long carried as UNCONFIRMED because NBR Paripatra 2026-27 §1.7 says only 'each car in excess of one'; the Act itself says which car. Read from the gazette by OCR (tools/gazette.py --pages 149), the schedule text having proved unextractable."
+motor_car_definition = "Finance Act 2026, তফসিল-২ তৃতীয় অংশ, proviso (ছ): 'মোটর গাড়ি' EXCLUDES bus, minibus, coaster, prime mover, truck, lorry, tank lorry, pickup van, human hauler, autorickshaw and motorcycle. A commercial fleet therefore attracts no পরিবেশ সারচার্জ; the charge is on cars, jeeps and microbuses."
+collection_point = "Finance Act 2026, তফসিল-২ তৃতীয় অংশ, proviso (খ): collected AT SOURCE by the registration or fitness-renewal authority, not paid with the return. Proviso (চ): it is NOT refundable and NOT adjustable against any other tax or surcharge."
 source = "https://nbr.gov.bd/uploads/paripatra/আয়কর_পরিপত্র_২০২৬-২০২৭.pdf"
 as_of = "2026-07-01"
 note = """

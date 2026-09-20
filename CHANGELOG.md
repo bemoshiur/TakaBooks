@@ -25,7 +25,59 @@ not only a release note.
 
 ## [Unreleased]
 
+### Added
+
+- **`tools/` — the primary law is readable after all.** Every unverified node blamed the
+  Finance Act 2026 gazette being typeset in a legacy Bijoy font that "could not be
+  text-extracted". Three things turned out to be so: bdlaws serves ITA 2023, the VAT & SD
+  Act 2012 **and the Finance Act 2026 itself** as Unicode Bangla, one page per section,
+  amendment footnotes included; the gazette is hotlink-protected (403 without a Referer),
+  not missing; and its body defeats extraction for a different reason than assumed — it is
+  set in **Nikosh, a Unicode font, declared `WinAnsi`**, so the character codes are gone
+  and no transliteration map could ever have recovered them. OCR can, because the glyphs
+  are still on the page.
+  - `lawcorpus.py` harvests bdlaws (681 sections, ~3 MB of Bangla) with retry and caching.
+  - `gazette.py` downloads and OCRs the gazette at 450 dpi, `--psm 4` — which is what holds
+    the two-column rate tables together. Corrects one systematic confusion, Bengali ৪ read
+    as ASCII `8`, only inside a Bengali numeral run.
+  - `bnnum.py` renders a figure the way a statute writes it — `৭,৫০,০০০`, `সাত লক্ষ`, `১০ শতাংশ`.
+  - `reconcile.py` puts every unverified node against the corpus and quotes the Bangla.
+  - `docs/research/unverified-vs-primary-law.md` — the resulting review queue.
+  - Verified end to end against the AY 2026-27 slab ladder on gazette page 142, which the
+    pipeline recovers exactly as the rates file and the golden tests hold it: ৪,০০,০০০ nil,
+    then ৩,০০,০০০ at ১০%, ৪,০০,০০০ at ১৫%, ৫,০০,০০০ at ২০%, ২০,০০,০০০ at ২৫%, balance at ৩০%.
+
+### Changed
+
+- **`income_tax.individual.environmental_surcharge.exempt_car_rule` — UNCONFIRMED → CONFIRMED.**
+  Which car is exempt could not be established: NBR's Paripatra 2026-27 §1.7 says only "each
+  car in excess of one". The Act says which. Finance Act 2026, তফসিল-২ তৃতীয় অংশ, proviso (ক):
+  *"একাধিক গাড়ির ক্ষেত্রে যে গাড়ির উপর সর্বনিম্ন হারে পরিবেশ সারচার্জ আরোপিত হইবে উক্ত গাড়ি ব্যতীত
+  অন্যান্য গাড়ির বিপরীতে পরিবেশ সারচার্জ পরিশোধ করিতে হইবে"* — the exempt car is the one
+  attracting the lowest surcharge, which is the reading `tax.py` already applies. Read from
+  the gazette by OCR. `tax.py` now states the rule and cites the Schedule instead of warning
+  that it is a guess, and no longer blocks `--strict` over it.
+  - Two further provisos recorded on the same node: `motor_car_definition` — "মোটর গাড়ি"
+    EXCLUDES buses, minibuses, coasters, prime movers, trucks, lorries, tank lorries, pickup
+    vans, human haulers, autorickshaws and motorcycles (proviso (ছ)), so a commercial fleet
+    attracts none of this charge; and `collection_point` — it is collected at source on
+    registration or fitness renewal, and is neither refundable nor adjustable (provisos (খ), (চ)).
+
 ### Fixed
+
+- **Three investment-rebate nodes landed from enacted text** — `income_tax.individual.rebate.rate`,
+  `.income_cap_percent` and `.absolute_cap`, all `verified = false` since 1.0.0, now
+  `verified = true` against ITA 2023 s.78 as consolidated on bdlaws
+  (<http://bdlaws.minlaw.gov.bd/act-1429/section-51908.html>): *"(ক) ০.০৩ × ‘ক’; বা (খ) [০.১০] × ‘খ’;
+  বা (গ) [৭.৫০ (সাত দশমিক পাঁচ শূন্য)] লক্ষ টাকা, এই তিনটির মধ্যে যাহা কম"*. The section's own
+  footnotes date both changes: ০.১০ replaced ০.১৫, and ৭.৫০ replaced ১০ (দশ), by Finance Act
+  2026 s.61, effective 1 July 2026. **No value changed** — the three professional summaries the
+  nodes rested on were right, and the figures no longer rest on them. Census: 530 nodes, 477
+  verified, 50 unverified, 3 placeholder.
+  - The two derived nodes stay derived and stay labelled as such: the statute caps the
+    *rebate* at 3% of income and Tk 750,000, which at a 10% rebate rate is the same as capping
+    eligible *investment* at 30% and Tk 7,500,000. Quote the statutory figures to a taxpayer,
+    never the derived ones.
 
 - Retired the `KNOWN BLOCKER` banner at the top of `.github/workflows/publish-packages.yml`.
   It asserted that publishing "FAILS until that scope is granted" and that "no edit here can
