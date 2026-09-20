@@ -345,3 +345,48 @@ jobs:
       - name: npm pack --dry-run
         if: runner.os == 'Linux'
         run: npm pack --dry-run
+
+  published-figures:
+    name: Published figures match the code
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      # Two classes of number have drifted out of step with the code before, and
+      # nothing caught either one:
+      #
+      #   - The project version. package.json, src/engine/takabooks.py,
+      #     build/build.py and CITATION.cff once read 0.0.0, 0.1.0, 1.0.0 and
+      #     1.0.0 simultaneously, so every script's --version reported a version
+      #     that never shipped, and `npm publish` would have pushed 0.0.0.
+      #     The "Validate package.json" step above checks five fields but not
+      #     this one.
+      #
+      #   - The rate-node census. README.md, docs/index.md and the Bangla summary
+      #     each quote how many nodes are verified. They once carried four
+      #     mutually inconsistent sets while `rates.py` reported a fifth.
+      #
+      # build/check_census.py re-derives both from the files themselves and from
+      # rates.py's own audit, and exits non-zero on any disagreement.
+      - name: Versions and rate-node counts agree with the engine
+        run: python3 build/check_census.py
+
+      - name: Publish the census as a job summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo '## Rate-node census'
+            echo
+            python3 src/engine/rates.py --assessment-year 2026-27
+          } >> "$GITHUB_STEP_SUMMARY"
